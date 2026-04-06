@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tesis DeLone y McLean
 
-## Getting Started
+Aplicacion Next.js para evaluar software con el modelo DeLone y McLean,
+integrando datos de Moodle mediante un backend proxy seguro.
 
-First, run the development server:
+## Requisitos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20+
+- pnpm
+- Moodle con webservices REST habilitados
+
+## Variables de entorno
+
+Configura el archivo `.env` con:
+
+```env
+MOODLE_URL=http://localhost/webservice/rest/server.php
+MOODLE_TOKEN=tu_token_de_webservice
+AUTH_SECRET=una_clave_larga_para_firmar_cookies
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Desarrollo
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Abrir `http://localhost:3000`.
 
-## Learn More
+## Flujo de login implementado
 
-To learn more about Next.js, take a look at the following resources:
+1. El usuario accede a `/auth/login`.
+2. El formulario hace `POST` a `/api/auth/login`.
+3. El Route Handler consulta Moodle con `core_user_get_users_by_field`.
+4. Si el usuario existe y esta activo, se emite cookie HttpOnly (`dlm_session`).
+5. `middleware.ts` protege `/dashboard` y redirige al login si no hay sesion valida.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Nota de alcance actual
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+La fase inicial valida existencia de usuario por email usando Moodle. La
+validacion criptografica del password contra Moodle requiere un flujo adicional
+de autenticacion en Moodle (plugin/endpoint especifico).

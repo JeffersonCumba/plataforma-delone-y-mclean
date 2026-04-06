@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export default async function Home() {
+export default async function DashboardIndexPage() {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
 
