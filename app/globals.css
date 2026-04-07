@@ -128,3 +128,27 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  @keyframes form-enter-right {
+    from {
+      opacity: 0;
+      transform: translate3d(28px, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .animate-form-enter-right {
+    animation: form-enter-right 800ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-form-enter-right {
+      animation: none;
+    }
+  }
+}

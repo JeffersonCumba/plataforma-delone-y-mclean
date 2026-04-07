@@ -13,7 +13,7 @@ Análisis: Integración futura con scripts de Python (Google Colab) y APIs de LL
 👥 Perfiles de Usuario y Flujo de Trabajo
 Debes implementar una lógica de acceso dual basada en los roles de Moodle:
 
-1. Perfil Evaluador (Estudiante/Usuario Final)
+1. Perfil Evaluador (Super Admin, admin(evaluadores), usuarios_finales(evaluados))
    Propósito: Responder encuestas de calidad.
 
 Flujo: Login -> Dashboard de Encuestas -> Formulario DeLone & McLean -> Confirmación.
