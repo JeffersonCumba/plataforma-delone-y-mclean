@@ -1,19 +1,8 @@
-import Link from "next/link";
-import { FolderClosed } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MoodleCourse } from "@/services/courseService";
 import { obtenerCursosProfesor } from "@/services/courseService";
-
-function cleanSummary(summary?: string): string {
-  if (!summary) {
-    return "Sin descripcion disponible";
-  }
-
-  return summary.replace(/<[^>]*>/g, "").trim() || "Sin descripcion disponible";
-}
+import { CourseCard } from "@/app/dashboard/_components/course-card";
 
 export function CoursesSkeleton({ count = 6 }: { count?: number }) {
   return (
@@ -62,27 +51,7 @@ export async function CoursesGrid({
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {visibleCourses.map((curso) => (
-        <Card key={curso.id} className="border-slate-200/80 bg-white/90">
-          <CardHeader className="space-y-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-900">
-              <FolderClosed className="h-5 w-5" />
-            </div>
-            <CardTitle className="line-clamp-2 text-lg leading-6">
-              {curso.fullname}
-            </CardTitle>
-            <p className="text-xs text-slate-500">{curso.shortname}</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="line-clamp-3 text-sm text-slate-600">
-              {cleanSummary(curso.summary)}
-            </p>
-            <Button asChild className="w-full" size="lg">
-              <Link href={`/dashboard/cursos/${curso.id}/analitica`}>
-                Ver analítica
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <CourseCard key={curso.id} course={curso} />
       ))}
     </div>
   );

@@ -1,0 +1,15 @@
+## 👥 Perfiles de Usuario y Flujo de Trabajo
+Implementar una lógica de acceso dual basada en los roles de Moodle:
+
+### 1. Perfil Evaluador (Estudiantes / Usuarios Finales)
+* **Propósito:** Responder encuestas de calidad de software.
+* **Flujo:** Login ➔ Dashboard de Encuestas ➔ Formulario DeLone & McLean (Escala Likert 1-5) ➔ Confirmación de envío.
+* **Habilidad:** Los datos deben enviarse sincrónicamente al módulo `mod_feedback` de Moodle usando la API REST para mantener la integridad de la base de datos académica.
+
+### 2. Perfil Administrador (Investigador / Auditor de Software)
+* **Propósito:** Analizar la estabilidad del software evaluado de forma predictiva.
+* **Flujo:** Login ➔ Panel de Control Avanzado ➔ Inicialización de Analíticas de D&M ➔ Visualización de Impacto (Pesos Beta e interpretaciones).
+* **Habilidad:** * Extrae el consolidado raw de respuestas desde Moodle.
+  * Valida las restricciones muestrales (Candado de datos: bloquear cálculos analíticos si hay menos de 5 a 10 encuestas registradas para evitar errores de división por cero).
+  * Ejecuta los cálculos nativos de Alfa de Cronbach y extrae los coeficientes de Regresión Lineal Múltiple usando `ml-regression-multivariate-linear`.
+  * Envía el JSON matemático estructurado final a la API de un LLM (Gemini/OpenAI) junto con un prompt de sistema para que la IA genere una interpretación narrativa y conclusiones de negocio de la tesis, en lugar de enviarle datos crudos desorganizados.

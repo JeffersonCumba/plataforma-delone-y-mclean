@@ -43,10 +43,6 @@ export interface BatchRegistrationResult {
   errors: Array<{ email: string; message: string }>;
 }
 
-interface CourseContextRow extends RowDataPacket {
-  id: number;
-}
-
 function normalizeStudentInput(input: StudentInput): StudentInput {
   try {
     return studentInputSchema.parse(input);
@@ -73,21 +69,6 @@ function validateRegisterInput(input: RegisterUserInput): RegisterUserInput {
 
     throw error;
   }
-}
-
-async function getCourseContextId(courseId: number): Promise<number> {
-  const [rows] = await pool.execute<CourseContextRow[]>(
-    "SELECT id FROM mdl_context WHERE contextlevel = 50 AND instanceid = ? LIMIT 1",
-    [courseId],
-  );
-
-  const contextId = rows[0]?.id;
-
-  if (!contextId) {
-    throw new Error("No se encontro el contexto del curso para asignar el rol");
-  }
-
-  return contextId;
 }
 
 async function findUserByEmail(email: string): Promise<MoodleUserRow | null> {
@@ -218,34 +199,5 @@ export async function registrarUsuario(
   input: RegisterUserInput,
 ): Promise<void> {
   const data = validateRegisterInput(input);
-
-  const courseIdRaw = process.env.MOODLE_COURSE_ID;
-  const teacherRoleIdRaw = process.env.MOODLE_TEACHER_ROLE_ID;
-
-  const courseId = Number(courseIdRaw);
-  const teacherRoleId = Number(teacherRoleIdRaw);
-
-  if (!Number.isInteger(courseId) || courseId <= 0) {
-    throw new Error("MOODLE_COURSE_ID no esta configurado correctamente");
-  }
-
-  if (!Number.isInteger(teacherRoleId) || teacherRoleId <= 0) {
-    throw new Error("MOODLE_TEACHER_ROLE_ID no esta configurado correctamente");
-  }
-
-  const createdUserId = await createMoodleUser(data);
-
-  await fetchMoodle<unknown>("enrol_manual_enrol_users", {
-    "enrolments[0][roleid]": String(teacherRoleId),
-    "enrolments[0][userid]": String(createdUserId),
-    "enrolments[0][courseid]": String(courseId),
-  });
-
-  const courseContextId = await getCourseContextId(courseId);
-
-  await fetchMoodle<unknown>("core_role_assign_roles", {
-    "assignments[0][roleid]": String(teacherRoleId),
-    "assignments[0][userid]": String(createdUserId),
-    "assignments[0][contextid]": String(courseContextId),
-  });
+  await createMoodleUser(data);
 }

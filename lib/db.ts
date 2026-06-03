@@ -33,6 +33,7 @@ const pool =
     waitForConnections: true,
     connectionLimit: 10,
     namedPlaceholders: false,
+    charset: "utf8mb4",
   });
 
 if (process.env.NODE_ENV !== "production") {

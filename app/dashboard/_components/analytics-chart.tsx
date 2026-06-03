@@ -14,7 +14,6 @@ import {
 import type { AnalyticsBarDatum } from "@/services/analyticsService";
 
 export function AnalyticsChart({ data }: { data: AnalyticsBarDatum[] }) {
-  console.log("🚀 ~ AnalyticsChart ~ data:", data)
   return (
     <div className="h-105 w-full">
       <ResponsiveContainer width="100%" height="100%">

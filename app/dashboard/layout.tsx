@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import {
-  FolderClosed,
-  GraduationCap,
-  LayoutDashboard,
-  UsersRound,
-} from "lucide-react";
+import { FolderClosed, GraduationCap, UsersRound } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -24,6 +19,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { SidebarUserFooter } from "@/app/dashboard/_components/sidebar-user-footer";
+import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 
 export default async function DashboardLayout({
   children,
@@ -65,14 +61,6 @@ export default async function DashboardLayout({
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href="/dashboard">
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>Resumen</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
                     <Link href="/dashboard/cursos">
                       <FolderClosed className="h-4 w-4" />
                       <span>Cursos</span>
@@ -97,12 +85,18 @@ export default async function DashboardLayout({
 
       <SidebarInset>
         <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/90 backdrop-blur">
-          <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-6" />
-            <div>
-              <p className="text-sm text-slate-500">Dashboard principal</p>
-              <p className="text-sm font-medium text-slate-900">{userName}</p>
+          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 lg:px-6">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-6" />
+              <div>
+                <p className="text-sm text-slate-500">Dashboard principal</p>
+                <p className="text-sm font-medium text-slate-900">{userName}</p>
+              </div>
+            </div>
+
+            <div className="flex w-full max-w-sm justify-end">
+              <GoogleTranslateWidget />
             </div>
           </div>
         </header>

@@ -4,16 +4,12 @@ import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  EncuestadosTable,
+  type EncuestadoRow,
+} from "@/app/dashboard/_components/encuestados-table";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
-
-interface SurveyRespondentRow {
-  id: number;
-  username: string;
-  fullname: string;
-  email: string;
-  courseName: string;
-}
 
 export default async function DashboardEncuestadosPage() {
   const cookieStore = await cookies();
@@ -30,11 +26,12 @@ export default async function DashboardEncuestadosPage() {
     courses.map(async (course) => {
       const respondents = await obtenerEncuestadosPorCurso(course.id);
 
-      return respondents.map<SurveyRespondentRow>((respondent) => ({
+      return respondents.map<EncuestadoRow>((respondent) => ({
         id: respondent.id,
         username: respondent.username,
         fullname: respondent.fullname,
         email: respondent.email ?? "Sin email",
+        courseId: course.id,
         courseName: course.fullname,
       }));
     }),
@@ -63,31 +60,7 @@ export default async function DashboardEncuestadosPage() {
               No hay encuestados matriculados por el momento.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="w-full min-w-190 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Nombre</th>
-                    <th className="px-4 py-3 font-medium">Usuario</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Curso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {respondents.map((row) => (
-                    <tr
-                      key={`${row.id}-${row.courseName}`}
-                      className="border-t border-slate-200 bg-white text-slate-800"
-                    >
-                      <td className="px-4 py-3">{row.fullname}</td>
-                      <td className="px-4 py-3">{row.username}</td>
-                      <td className="px-4 py-3">{row.email}</td>
-                      <td className="px-4 py-3">{row.courseName}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <EncuestadosTable rows={respondents} courses={courses} />
           )}
         </CardContent>
       </Card>

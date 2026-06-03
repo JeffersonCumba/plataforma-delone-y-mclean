@@ -6,6 +6,7 @@ import {
   CoursesGrid,
   CoursesSkeleton,
 } from "@/app/dashboard/_components/courses-grid";
+import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
 
 export default async function DashboardCursosPage() {
   const cookieStore = await cookies();
@@ -24,6 +25,8 @@ export default async function DashboardCursosPage() {
           Listado completo de cursos disponibles para el profesor.
         </p>
       </div>
+
+      <CreateCourseForm />
 
       <Suspense fallback={<CoursesSkeleton />}>
         <CoursesGrid userId={userId} />

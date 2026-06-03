@@ -17,6 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/services/authService";
 
+const surveyBaseUrl = process.env.NEXT_PUBLIC_MOODLE_BASE_URL?.trim() ?? "";
+const passwordUrl = `${surveyBaseUrl}/login/forgot_password.php`;
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -86,7 +89,7 @@ export default function LoginPage() {
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-slate-600 sm:text-xl">
-            Usa tu correo institucional para entrar al entorno de encuestas,
+            Usa tus credenciales para entrar al entorno de encuestas,
             dashboards y analisis del modelo DeLone y McLean.
           </p>
         </div>
@@ -139,6 +142,19 @@ export default function LoginPage() {
                     required
                   />
                 </div>
+
+                {surveyBaseUrl ? (
+                  <div className="flex justify-end">
+                    <a
+                      href={passwordUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-blue-500 transition-colors hover:text-blue-600 hover:underline"
+                    >
+                      Olvidé mi contraseña
+                    </a>
+                  </div>
+                ) : null}
 
                 {error ? (
                   <p className="border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">

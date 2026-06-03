@@ -227,7 +227,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-5 p-6">
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <Label>Curso destino</Label>
@@ -273,10 +273,12 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           onDragLeave={() => setDragActive(false)}
           onDragOver={(event) => event.preventDefault()}
           onDrop={handleDrop}
-          className={`flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-6 text-center transition ${
+          className={`flex min-h-20 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-6 text-center transition ${
             dragActive
               ? "border-slate-900 bg-slate-50"
-              : "border-slate-300 bg-slate-50/60"
+              : fileName
+                ? "border-green-400 bg-green-50/50"
+                : "border-slate-300 bg-slate-50/60"
           }`}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -293,7 +295,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           ) : null}
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-slate-900">
               {processing

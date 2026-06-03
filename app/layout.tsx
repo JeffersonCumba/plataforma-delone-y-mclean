@@ -22,10 +22,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.className} h-full antialiased`}>
+    <html lang="es" className={`${geistSans.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <TooltipProvider>{children}</TooltipProvider>
-        <Toaster position="bottom-left" />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
