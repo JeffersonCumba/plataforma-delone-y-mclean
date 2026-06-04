@@ -71,7 +71,6 @@ export async function GET(
       ORDER BY fc.id ASC, fi.position ASC`,
     [courseId],
   );
-  console.log("🚀 ~ GET ~ rows:", rows)
 
   const header = "completedId,dimension,pregunta,valor";
   const csvRows = rows.map((row) =>

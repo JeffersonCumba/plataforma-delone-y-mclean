@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Link2, MoreVertical, Trash2 } from "lucide-react";
+import { ExternalLink, Link2, MoreVertical, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { copyMoodleLoginLink } from "@/lib/survey-link";
 import { deleteCourseAction } from "@/app/dashboard/cursos/actions";
+import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,6 +40,7 @@ export function CourseCard({ course }: { course: CourseCardCourse }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [isDeleting, startDeletingTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -90,6 +92,17 @@ export function CourseCard({ course }: { course: CourseCardCourse }) {
             <ExternalLink className="h-4 w-4" />
             Ver curso
           </Link>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
+            onClick={() => {
+              setIsMenuOpen(false);
+              setIsEnrollDialogOpen(true);
+            }}
+          >
+            <UserPlus className="h-4 w-4" />
+            Matricular usuario
+          </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
@@ -165,6 +178,13 @@ export function CourseCard({ course }: { course: CourseCardCourse }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MatricularUsuarioDialog
+        courses={[course]}
+        defaultCourseId={course.id}
+        open={isEnrollDialogOpen}
+        onOpenChange={setIsEnrollDialogOpen}
+      />
     </div>
   );
 }

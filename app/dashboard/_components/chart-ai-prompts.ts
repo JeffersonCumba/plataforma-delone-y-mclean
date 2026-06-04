@@ -1,6 +1,6 @@
 import { type AnalyticsData } from "@/types/analytics";
 
-export function buildRadarPrompt(
+export function buildDescriptivePrompt(
   courseName: string,
   analytics: AnalyticsData,
 ): string {
@@ -9,7 +9,7 @@ export function buildRadarPrompt(
     .join("\n");
 
   return [
-    `Interpreta el **radar descriptivo de las 6 dimensiones DeLone y McLean** del curso "${courseName}".`,
+    `Interpreta el **histograma de promedios por las 6 dimensiones DeLone y McLean** del curso "${courseName}".`,
     "",
     "Promedios por dimensión (escala Likert 1-5):",
     table,

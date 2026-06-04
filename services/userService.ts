@@ -32,6 +32,40 @@ export interface StudentRegistrationResult {
   skipped?: string;
 }
 
+export interface MoodleUserSummary {
+  id: number;
+  username: string;
+  firstname: string;
+  lastname: string;
+  fullname: string;
+  email: string;
+}
+
+export type IndividualEnrollmentStatus =
+  | "created_and_enrolled"
+  | "enrolled"
+  | "already_enrolled"
+  | "error";
+
+export interface IndividualEnrollmentResult {
+  status: IndividualEnrollmentStatus;
+  message: string;
+  user: MoodleUserSummary;
+  courseId: number;
+}
+
+interface MoodleUserSearchRow extends RowDataPacket {
+  id: number;
+  username: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+}
+
+interface UserEnrolmentRow extends RowDataPacket {
+  id: number;
+}
+
 export interface BatchRegistrationResult {
   total: number;
   processed: number;
@@ -200,4 +234,183 @@ export async function registrarUsuario(
 ): Promise<void> {
   const data = validateRegisterInput(input);
   await createMoodleUser(data);
+}
+
+export async function buscarUsuariosMoodle(
+  query: string,
+): Promise<MoodleUserSummary[]> {
+  const trimmed = query.trim();
+
+  if (trimmed.length < 2) {
+    return [];
+  }
+
+  try {
+    const response = await fetchMoodle<{
+      users?: Array<{
+        id: number;
+        username: string;
+        firstname: string;
+        lastname: string;
+        email: string;
+      }>;
+    }>("core_user_get_users", {
+      "criteria[0][key]": "username",
+      "criteria[0][value]": trimmed,
+    });
+
+    const users = Array.isArray(response?.users) ? response.users : [];
+
+    return users
+      .filter(
+        (user) =>
+          !user.username?.startsWith("guest") &&
+          !user.username?.startsWith("admin"),
+      )
+      .map<MoodleUserSummary>((user) => ({
+        id: user.id,
+        username: user.username,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        fullname: `${user.firstname} ${user.lastname}`.trim(),
+        email: user.email,
+      }));
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No fue posible buscar usuarios en Moodle";
+    throw new Error(message);
+  }
+}
+
+async function isUserEnrolledInCourse(
+  userId: number,
+  courseId: number,
+): Promise<boolean> {
+  const [rows] = await pool.execute<UserEnrolmentRow[]>(
+    `SELECT ue.id
+       FROM mdl_user_enrolments ue
+       JOIN mdl_enrol e ON e.id = ue.enrolid
+      WHERE ue.userid = ? AND e.courseid = ?
+      LIMIT 1`,
+    [userId, courseId],
+  );
+
+  return rows.length > 0;
+}
+
+async function getMoodleUserById(
+  userId: number,
+): Promise<MoodleUserSummary | null> {
+  const [rows] = await pool.execute<MoodleUserSearchRow[]>(
+    "SELECT id, username, firstname, lastname, email FROM mdl_user WHERE id = ? AND deleted = 0 LIMIT 1",
+    [userId],
+  );
+
+  const row = rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    username: row.username,
+    firstname: row.firstname,
+    lastname: row.lastname,
+    fullname: `${row.firstname} ${row.lastname}`.trim(),
+    email: row.email,
+  };
+}
+
+export async function matricularUsuarioIndividual(input: {
+  courseId: number;
+  mode: "existing" | "new";
+  existingUserId?: number;
+  newUser?: StudentInput;
+}): Promise<IndividualEnrollmentResult> {
+  if (!Number.isInteger(input.courseId) || input.courseId <= 0) {
+    throw new Error("El courseId no es valido para matricular");
+  }
+
+  if (!input.existingUserId) {
+    throw new Error("El existingUserId es obligatorio para el modo 'existing'");
+  }
+
+  if (input.mode === "existing") {
+    if (!Number.isInteger(input.existingUserId) || input.existingUserId <= 0) {
+      throw new Error("Selecciona un usuario existente para matricular");
+    }
+
+    const user = await getMoodleUserById(input.existingUserId);
+    if (!user) {
+      throw new Error("El usuario seleccionado no existe o fue eliminado");
+    }
+
+    if (await isUserEnrolledInCourse(user.id, input.courseId)) {
+      return {
+        status: "already_enrolled",
+        message: `${user.fullname || user.username} ya esta matriculado en este curso`,
+        user,
+        courseId: input.courseId,
+      };
+    }
+
+    await enrolUserInCourse(user.id, input.courseId);
+
+    return {
+      status: "enrolled",
+      message: `${user.fullname || user.username} matriculado correctamente`,
+      user,
+      courseId: input.courseId,
+    };
+  }
+
+  if (input.mode === "new") {
+    if (!input.newUser) {
+      throw new Error("Datos del nuevo usuario son obligatorios");
+    }
+
+    const data = normalizeStudentInput(input.newUser);
+
+    const existing = await findUserByEmail(data.email);
+    let user: MoodleUserSummary;
+
+    if (existing) {
+      const summary = await getMoodleUserById(existing.id);
+      if (!summary) {
+        throw new Error("Usuario existente en BD pero no se pudo recuperar");
+      }
+      user = summary;
+    } else {
+      const createdId = await createMoodleUser(data);
+      const summary = await getMoodleUserById(createdId);
+      if (!summary) {
+        throw new Error("Usuario creado pero no se pudo recuperar");
+      }
+      user = summary;
+    }
+
+    if (await isUserEnrolledInCourse(user.id, input.courseId)) {
+      return {
+        status: "already_enrolled",
+        message: `${user.fullname || user.username} ya esta matriculado en este curso`,
+        user,
+        courseId: input.courseId,
+      };
+    }
+
+    await enrolUserInCourse(user.id, input.courseId);
+
+    return {
+      status: existing ? "enrolled" : "created_and_enrolled",
+      message: existing
+        ? `${user.fullname || user.username} ya existia y fue matriculado`
+        : `${user.fullname || user.username} creado y matriculado correctamente`,
+      user,
+      courseId: input.courseId,
+    };
+  }
+
+  throw new Error("Modo de matriculacion invalido");
 }

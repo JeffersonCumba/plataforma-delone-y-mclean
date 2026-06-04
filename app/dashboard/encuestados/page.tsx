@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Upload, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import {
   EncuestadosTable,
   type EncuestadoRow,
 } from "@/app/dashboard/_components/encuestados-table";
+import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 
@@ -42,16 +44,30 @@ export default async function DashboardEncuestadosPage() {
   return (
     <section className="space-y-6">
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-2xl">Encuestados</CardTitle>
             <p className="text-sm text-slate-600">
               Tabla general de usuarios matriculados en tus cursos.
             </p>
           </div>
-          <Button asChild size="lg">
-            <Link href="/dashboard/encuestados/matricular">Matricular</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="lg">
+              <Link href="/dashboard/encuestados/matricular">
+                <Upload className="mr-2 h-4 w-4" />
+                Matricular CSV
+              </Link>
+            </Button>
+            <MatricularUsuarioDialog
+              courses={courses}
+              trigger={
+                <Button size="lg">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Matricular usuario
+                </Button>
+              }
+            />
+          </div>
         </CardHeader>
 
         <CardContent>

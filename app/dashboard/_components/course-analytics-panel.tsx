@@ -16,12 +16,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -42,8 +36,8 @@ import { FrequenciesBarChart } from "@/app/dashboard/_components/frequencies-bar
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
+  buildDescriptivePrompt,
   buildFrequenciesPrompt,
-  buildRadarPrompt,
   buildSatisfactionDistributionPrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
 import { useInterpretation } from "@/hooks/use-interpretation";
@@ -143,7 +137,7 @@ function CourseAnalyticsContent({
   analytics: AnalyticsData;
 }) {
   const interpretationContext = { courseId, courseName, analytics };
-  const radarInterp = useInterpretation(interpretationContext);
+  const descriptiveInterp = useInterpretation(interpretationContext);
   const betasInterp = useInterpretation(interpretationContext);
   const criticalInterp = useInterpretation(interpretationContext);
 
@@ -276,35 +270,40 @@ function CourseAnalyticsContent({
               <CardTitle className="text-xl">Análisis Descriptivo</CardTitle>
               <InterpretChartButton
                 onClick={() =>
-                  radarInterp.interpret(buildRadarPrompt(courseName, analytics))
+                  descriptiveInterp.interpret(
+                    buildDescriptivePrompt(courseName, analytics),
+                  )
                 }
-                hidden={analytics.totalSurveys === 0 || radarInterp.isLoading}
+                hidden={
+                  analytics.totalSurveys === 0 || descriptiveInterp.isLoading
+                }
               />
             </div>
             <p className="text-sm text-slate-600">
-              Radar comparativo de las seis dimensiones DeLone y McLean.
+              Promedio por dimensión DeLone y McLean (escala Likert 1-5).
             </p>
           </CardHeader>
           <CardContent>
             <div className="h-90 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={analytics.dimensionChartData}>
-                  <PolarGrid stroke="#cbd5e1" />
-                  <PolarAngleAxis
+                <BarChart
+                  data={analytics.dimensionChartData}
+                  margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
                     dataKey="name"
                     tick={{ fill: "#475569", fontSize: 12 }}
+                    interval={0}
+                    angle={-12}
+                    textAnchor="end"
+                    height={70}
                   />
-                  <PolarRadiusAxis
+                  <YAxis
+                    type="number"
                     domain={[0, 5]}
                     tickCount={6}
                     tick={{ fill: "#64748b", fontSize: 11 }}
-                  />
-                  <Radar
-                    name="Promedio"
-                    dataKey="score"
-                    stroke="#0891b2"
-                    fill="#0891b2"
-                    fillOpacity={0.22}
                   />
                   <Tooltip
                     formatter={(value) => [
@@ -312,15 +311,19 @@ function CourseAnalyticsContent({
                       "Promedio",
                     ]}
                   />
-                  <Legend />
-                </RadarChart>
+                  <Bar dataKey="score" radius={[8, 8, 0, 0]} maxBarSize={72}>
+                    {analytics.dimensionChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
             <InterpretationPanel
-              text={radarInterp.text}
-              isLoading={radarInterp.isLoading}
-              error={radarInterp.error}
-              onClose={radarInterp.reset}
+              text={descriptiveInterp.text}
+              isLoading={descriptiveInterp.isLoading}
+              error={descriptiveInterp.error}
+              onClose={descriptiveInterp.reset}
             />
           </CardContent>
         </Card>

@@ -40,7 +40,7 @@ export default function LoginPage() {
     }
 
     if (!password.trim()) {
-      setError("Ingresa una contrasena valida");
+      setError("Ingresa una contraseña valida");
       return;
     }
 

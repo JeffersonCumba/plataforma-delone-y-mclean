@@ -245,7 +245,7 @@ export async function login(
   }
 
   if (!password.trim()) {
-    throw new Error("La contrasena es obligatoria para iniciar sesion");
+    throw new Error("La contraseña es obligatoria para iniciar sesion");
   }
 
   const [rows] = await pool.execute<MoodleUserRow[]>(
