@@ -63,7 +63,9 @@ function GoogleTranslateWidget() {
 
     const injectScript = (id: string, src: string) =>
       new Promise<void>((resolve, reject) => {
-        const existing = document.getElementById(id) as HTMLScriptElement | null;
+        const existing = document.getElementById(
+          id,
+        ) as HTMLScriptElement | null;
 
         if (existing) {
           if (existing.dataset.loaded === "true") {
@@ -105,7 +107,9 @@ function GoogleTranslateWidget() {
           "https://translate.google.com/translate_a/element.js?cb=TranslateInit",
         );
       } catch {
-        console.warn("GoogleTranslateWidget: failed to initialize translate scripts");
+        console.warn(
+          "GoogleTranslateWidget: failed to initialize translate scripts",
+        );
       }
     };
 

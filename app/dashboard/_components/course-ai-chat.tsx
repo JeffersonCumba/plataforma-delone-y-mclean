@@ -280,7 +280,6 @@ function CourseAiChatPanel() {
     messages,
     error,
     input,
-    setInput,
     courseName,
     scrollRef,
   } = useCourseAiChat();
@@ -404,27 +403,6 @@ function CourseAiChatPanel() {
           onSubmit={handleSubmit}
           className="border-t border-slate-200/80 bg-white/90 p-3 backdrop-blur"
         >
-          <div className="flex items-center gap-2">
-            <Input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Escribe tu pregunta..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={isLoading || input.trim().length === 0}
-              aria-label="Enviar mensaje"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
           <p className="mt-2 text-[11px] text-slate-500">
             Las respuestas se generan a partir de los datos reales del curso.
             Verifica cualquier conclusion antes de tomar decisiones.

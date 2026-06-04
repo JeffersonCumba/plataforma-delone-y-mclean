@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -35,11 +35,8 @@ import {
   type AnalyticsQuestionAlert,
 } from "@/types/analytics";
 import { ExportColabButton } from "@/app/dashboard/_components/export-colab-button";
-import {
-  CourseAiChatProvider,
-  useCourseAiChat,
-} from "@/app/dashboard/_components/course-ai-chat";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
+import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
 import { SatisfactionPieChart } from "@/app/dashboard/_components/satisfaction-pie-chart";
 import { FrequenciesBarChart } from "@/app/dashboard/_components/frequencies-bar-chart";
 import {
@@ -49,6 +46,7 @@ import {
   buildRadarPrompt,
   buildSatisfactionDistributionPrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
+import { useInterpretation } from "@/hooks/use-interpretation";
 
 const DIMENSIONS_MAP = {
   calidad_sys: "Calidad del Sistema",
@@ -127,54 +125,28 @@ export function CourseAnalyticsPanel({
   analytics: AnalyticsData;
 }) {
   return (
-    <CourseAiChatProvider
+    <CourseAnalyticsContent
       courseId={courseId}
       courseName={courseName}
       analytics={analytics}
-    >
-      <CourseAnalyticsChatBridge
-        courseId={courseId}
-        courseName={courseName}
-        analytics={analytics}
-      />
-    </CourseAiChatProvider>
-  );
-}
-
-function CourseAnalyticsChatBridge({
-  courseId,
-  courseName,
-  analytics,
-}: {
-  courseId: number;
-  courseName: string;
-  analytics: AnalyticsData;
-}) {
-  const { openChat } = useCourseAiChat();
-
-  return (
-    <MemoizedCourseAnalyticsContent
-      courseId={courseId}
-      courseName={courseName}
-      analytics={analytics}
-      onOpenChat={openChat}
     />
   );
 }
-
-const MemoizedCourseAnalyticsContent = memo(CourseAnalyticsContent);
 
 function CourseAnalyticsContent({
   courseId,
   courseName,
   analytics,
-  onOpenChat,
 }: {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
-  onOpenChat: (prefill?: string) => void;
 }) {
+  const interpretationContext = { courseId, courseName, analytics };
+  const radarInterp = useInterpretation(interpretationContext);
+  const betasInterp = useInterpretation(interpretationContext);
+  const criticalInterp = useInterpretation(interpretationContext);
+
   const betaDomain = useMemo(() => {
     const values = analytics.betaCoefficients.map((entry) => entry.value);
     const maxValue = Math.max(...values, 0);
@@ -292,9 +264,9 @@ function CourseAnalyticsContent({
       <SatisfactionPieChart
         data={analytics.satisfactionDistribution}
         totalRespondents={analytics.totalRespondents}
-        onInterpret={() =>
-          onOpenChat(buildSatisfactionDistributionPrompt(courseName, analytics))
-        }
+        courseId={courseId}
+        courseName={courseName}
+        analytics={analytics}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -304,8 +276,9 @@ function CourseAnalyticsContent({
               <CardTitle className="text-xl">Análisis Descriptivo</CardTitle>
               <InterpretChartButton
                 onClick={() =>
-                  onOpenChat(buildRadarPrompt(courseName, analytics))
+                  radarInterp.interpret(buildRadarPrompt(courseName, analytics))
                 }
+                hidden={analytics.totalSurveys === 0 || radarInterp.isLoading}
               />
             </div>
             <p className="text-sm text-slate-600">
@@ -343,6 +316,12 @@ function CourseAnalyticsContent({
                 </RadarChart>
               </ResponsiveContainer>
             </div>
+            <InterpretationPanel
+              text={radarInterp.text}
+              isLoading={radarInterp.isLoading}
+              error={radarInterp.error}
+              onClose={radarInterp.reset}
+            />
           </CardContent>
         </Card>
 
@@ -354,8 +333,9 @@ function CourseAnalyticsContent({
               </CardTitle>
               <InterpretChartButton
                 onClick={() =>
-                  onOpenChat(buildBetasPrompt(courseName, analytics))
+                  betasInterp.interpret(buildBetasPrompt(courseName, analytics))
                 }
+                hidden={analytics.totalSurveys === 0 || betasInterp.isLoading}
               />
             </div>
             <p className="text-sm text-slate-600">
@@ -389,15 +369,21 @@ function CourseAnalyticsContent({
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <InterpretationPanel
+              text={betasInterp.text}
+              isLoading={betasInterp.isLoading}
+              error={betasInterp.error}
+              onClose={betasInterp.reset}
+            />
           </CardContent>
         </Card>
       </div>
 
       <FrequenciesBarChart
         data={analytics.questionFrequencies}
-        onInterpret={() =>
-          onOpenChat(buildFrequenciesPrompt(courseName, analytics))
-        }
+        courseId={courseId}
+        courseName={courseName}
+        analytics={analytics}
       />
 
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">
@@ -406,7 +392,13 @@ function CourseAnalyticsContent({
             <CardTitle className="text-xl">Preguntas Críticas</CardTitle>
             <InterpretChartButton
               onClick={() =>
-                onOpenChat(buildCriticalQuestionsPrompt(courseName, analytics))
+                criticalInterp.interpret(
+                  buildCriticalQuestionsPrompt(courseName, analytics),
+                )
+              }
+              hidden={
+                analytics.criticalQuestions.length === 0 ||
+                criticalInterp.isLoading
               }
             />
           </div>
@@ -429,6 +421,12 @@ function CourseAnalyticsContent({
               </div>
             )}
           </div>
+          <InterpretationPanel
+            text={criticalInterp.text}
+            isLoading={criticalInterp.isLoading}
+            error={criticalInterp.error}
+            onClose={criticalInterp.reset}
+          />
         </CardContent>
       </Card>
     </section>

@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, MoreVertical, Trash2 } from "lucide-react";
+import { ExternalLink, Link2, MoreVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { copyMoodleLoginLink } from "@/lib/survey-link";
 import { deleteCourseAction } from "@/app/dashboard/cursos/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,6 +90,17 @@ export function CourseCard({ course }: { course: CourseCardCourse }) {
             <ExternalLink className="h-4 w-4" />
             Ver curso
           </Link>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
+            onClick={async () => {
+              setIsMenuOpen(false);
+              await copyMoodleLoginLink();
+            }}
+          >
+            <Link2 className="h-4 w-4" />
+            Copiar enlace
+          </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-50 hover:cursor-pointer"

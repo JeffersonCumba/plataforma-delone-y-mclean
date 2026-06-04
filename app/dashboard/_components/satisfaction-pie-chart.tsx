@@ -4,12 +4,20 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
-import { type SatisfactionPieDatum } from "@/types/analytics";
+import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
+import { useInterpretation } from "@/hooks/use-interpretation";
+import {
+  type AnalyticsData,
+  type SatisfactionPieDatum,
+} from "@/types/analytics";
+import { buildSatisfactionDistributionPrompt } from "@/app/dashboard/_components/chart-ai-prompts";
 
 interface SatisfactionPieChartProps {
   data: SatisfactionPieDatum[];
   totalRespondents: number;
-  onInterpret: () => void;
+  courseId: number;
+  courseName: string;
+  analytics: AnalyticsData;
 }
 
 interface CustomTooltipPayload {
@@ -41,8 +49,11 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 export function SatisfactionPieChart({
   data,
   totalRespondents,
-  onInterpret,
+  courseId,
+  courseName,
+  analytics,
 }: SatisfactionPieChartProps) {
+  const interp = useInterpretation({ courseId, courseName, analytics });
   const total = data.reduce((acc, item) => acc + item.value, 0);
   const isEmpty = total === 0;
 
@@ -59,7 +70,14 @@ export function SatisfactionPieChart({
               la dimensión de satisfacción del usuario.
             </p>
           </div>
-          <InterpretChartButton onClick={onInterpret} />
+          <InterpretChartButton
+            onClick={() =>
+              interp.interpret(
+                buildSatisfactionDistributionPrompt(courseName, analytics),
+              )
+            }
+            hidden={isEmpty || interp.isLoading}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -106,6 +124,12 @@ export function SatisfactionPieChart({
         <p className="mt-2 text-xs text-slate-500">
           {total} usuario{total === 1 ? "" : "s"} clasificados de {totalRespondents} matriculados.
         </p>
+        <InterpretationPanel
+          text={interp.text}
+          isLoading={interp.isLoading}
+          error={interp.error}
+          onClose={interp.reset}
+        />
       </CardContent>
     </Card>
   );

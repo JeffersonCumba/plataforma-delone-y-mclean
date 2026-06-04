@@ -5,16 +5,11 @@ import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { type AnalyticsData } from "@/types/analytics";
 import { obtenerCursosProfesor } from "@/services/courseService";
 
-interface ChatRequestBody {
+interface InterpretRequestBody {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
-  messages: Array<{ role: "user" | "assistant"; content: string }>;
-}
-
-interface UpstashChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
+  prompt: string;
 }
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
@@ -52,14 +47,14 @@ export async function POST(request: Request): Promise<Response> {
     return unauthorized("Sesion invalida");
   }
 
-  let body: ChatRequestBody;
+  let body: InterpretRequestBody;
   try {
-    body = (await request.json()) as ChatRequestBody;
+    body = (await request.json()) as InterpretRequestBody;
   } catch {
     return badRequest("Cuerpo de la solicitud invalido");
   }
 
-  const { courseId, courseName, analytics, messages } = body;
+  const { courseId, courseName, analytics, prompt } = body;
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
     return badRequest("courseId invalido");
@@ -69,24 +64,18 @@ export async function POST(request: Request): Promise<Response> {
     return badRequest("courseName requerido");
   }
 
-  if (!analytics || !Array.isArray(messages)) {
-    return badRequest("messages y analytics son requeridos");
+  if (typeof prompt !== "string" || prompt.trim().length === 0) {
+    return badRequest("prompt requerido");
+  }
+
+  if (!analytics) {
+    return badRequest("analytics requerido");
   }
 
   const courses = await obtenerCursosProfesor(userId);
   if (!courses.some((course) => course.id === courseId)) {
     return forbidden("No tienes acceso a este curso");
   }
-
-  const sanitizedHistory: UpstashChatMessage[] = messages
-    .filter(
-      (entry) =>
-        (entry.role === "user" || entry.role === "assistant") &&
-        typeof entry.content === "string" &&
-        entry.content.trim().length > 0,
-    )
-    .slice(-12)
-    .map((entry) => ({ role: entry.role, content: entry.content.trim() }));
 
   const apiKey = process.env.OPEN_ROUTER_API_KEY;
   if (!apiKey) {
@@ -114,7 +103,7 @@ export async function POST(request: Request): Promise<Response> {
     temperature: 0.3,
     messages: [
       { role: "system", content: buildSystemPrompt(courseName, analytics) },
-      ...sanitizedHistory,
+      { role: "user", content: prompt.trim() },
     ],
   });
 

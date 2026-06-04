@@ -83,7 +83,7 @@ export default function LoginPage() {
             Acceso seguro a la plataforma de evaluacion
           </div>
 
-          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
             Inicia sesion para continuar con tu evaluacion o revisar los datos
             del estudio.
           </h1>

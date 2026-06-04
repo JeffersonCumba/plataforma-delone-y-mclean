@@ -8,13 +8,19 @@ interface InterpretChartButtonProps {
   onClick: () => void;
   label?: string;
   className?: string;
+  hidden?: boolean;
 }
 
 export function InterpretChartButton({
   onClick,
   label = "Interpretar con IA",
   className,
+  hidden = false,
 }: InterpretChartButtonProps) {
+  if (hidden) {
+    return null;
+  }
+
   return (
     <button
       type="button"

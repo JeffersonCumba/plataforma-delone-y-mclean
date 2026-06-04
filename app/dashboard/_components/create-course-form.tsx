@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CopyIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 
 function generateDefaultValues(): { fullname: string; shortname: string } {
   const now = new Date();
@@ -41,9 +41,6 @@ interface CreateCourseFormState {
   summary: string;
 }
 
-const surveyBaseUrl = process.env.NEXT_PUBLIC_MOODLE_BASE_URL?.trim() ?? "";
-const loginUrl = `${surveyBaseUrl}/login/index.php`;
-
 export function CreateCourseForm() {
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -53,20 +50,6 @@ export function CreateCourseForm() {
     shortname: generatedDefaults.shortname,
     summary: "",
   });
-
-  const handleCopySurveyLink = async () => {
-    if (!surveyBaseUrl) {
-      toast.error("No hay URL base configurada para Moodle");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(loginUrl);
-      toast.success("Enlace copiado");
-    } catch {
-      toast.error("No se pudo copiar el enlace");
-    }
-  };
 
   const onChange =
     (field: keyof CreateCourseFormState) =>
@@ -162,14 +145,6 @@ export function CreateCourseForm() {
           </form>
         </DialogContent>
       </Dialog>
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        onClick={handleCopySurveyLink}
-      >
-        copiar enlace encuesta <CopyIcon />
-      </Button>
     </div>
   );
 }

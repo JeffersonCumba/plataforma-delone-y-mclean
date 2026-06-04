@@ -13,15 +13,21 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
+import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
+import { useInterpretation } from "@/hooks/use-interpretation";
+import { buildFrequenciesPrompt } from "@/app/dashboard/_components/chart-ai-prompts";
 import {
   LIKERT_LABELS,
+  type AnalyticsData,
   type DimensionKey,
   type QuestionFrequency,
 } from "@/types/analytics";
 
 interface FrequenciesBarChartProps {
   data: QuestionFrequency[];
-  onInterpret: () => void;
+  courseId: number;
+  courseName: string;
+  analytics: AnalyticsData;
 }
 
 const LIKERT_COLORS: Record<(typeof LIKERT_LABELS)[number], string> = {
@@ -95,7 +101,13 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   );
 }
 
-export function FrequenciesBarChart({ data, onInterpret }: FrequenciesBarChartProps) {
+export function FrequenciesBarChart({
+  data,
+  courseId,
+  courseName,
+  analytics,
+}: FrequenciesBarChartProps) {
+  const interp = useInterpretation({ courseId, courseName, analytics });
   const isEmpty = data.length === 0;
 
   return (
@@ -111,7 +123,12 @@ export function FrequenciesBarChart({ data, onInterpret }: FrequenciesBarChartPr
               cuestionario DeLone y McLean.
             </p>
           </div>
-          <InterpretChartButton onClick={onInterpret} />
+          <InterpretChartButton
+            onClick={() =>
+              interp.interpret(buildFrequenciesPrompt(courseName, analytics))
+            }
+            hidden={isEmpty || interp.isLoading}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -177,6 +194,12 @@ export function FrequenciesBarChart({ data, onInterpret }: FrequenciesBarChartPr
           {data.length} pregunta{data.length === 1 ? "" : "s"} procesadas.
           Desplaza horizontalmente para ver todas las preguntas.
         </p>
+        <InterpretationPanel
+          text={interp.text}
+          isLoading={interp.isLoading}
+          error={interp.error}
+          onClose={interp.reset}
+        />
       </CardContent>
     </Card>
   );
