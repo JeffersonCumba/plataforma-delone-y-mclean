@@ -11,18 +11,169 @@ import {
   type AnalyticsBetaDatum,
   type AnalyticsData,
   type AnalyticsQuestionAlert,
+  type ConstructReliabilityResult,
+  type DeloneMcleanModelResult,
+  type DiscriminantValidityResult,
   type DimensionKey,
   type QuestionFrequency,
   type SatisfactionPieDatum,
+  type StructuralPathResult,
 } from "@/types/analytics";
 
 type LikertValue = 1 | 2 | 3 | 4 | 5;
 type LikertCounts = Record<LikertValue, number>;
 
 const EMPTY_LIKERT_COUNTS: LikertCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+const BOOTSTRAP_SAMPLES = 500;
+const DIMENSION_ORDER: DimensionKey[] = [
+  "calidad_sys",
+  "calidad_info",
+  "calidad_serv",
+  "uso_sistema",
+  "satis_user",
+  "benef_netos",
+];
 
 function isLikertValue(score: number): score is LikertValue {
   return Number.isInteger(score) && score >= 1 && score <= 5;
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  return values.reduce((acc, value) => acc + value, 0) / values.length;
+}
+
+function sampleStandardDeviation(values: number[]): number {
+  if (values.length < 2) {
+    return 0;
+  }
+  const mean = average(values);
+  const variance =
+    values.reduce((acc, value) => acc + (value - mean) ** 2, 0) /
+    (values.length - 1);
+  return Math.sqrt(Math.max(variance, 0));
+}
+
+function zScore(values: number[]): number[] {
+  const mean = average(values);
+  const std = sampleStandardDeviation(values);
+  if (std === 0) {
+    return values.map(() => 0);
+  }
+  return values.map((value) => (value - mean) / std);
+}
+
+function pearsonCorrelation(left: number[], right: number[]): number {
+  if (left.length !== right.length || left.length < 2) {
+    return 0;
+  }
+
+  const leftMean = average(left);
+  const rightMean = average(right);
+  let numerator = 0;
+  let leftDenominator = 0;
+  let rightDenominator = 0;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftCentered = left[index] - leftMean;
+    const rightCentered = right[index] - rightMean;
+    numerator += leftCentered * rightCentered;
+    leftDenominator += leftCentered ** 2;
+    rightDenominator += rightCentered ** 2;
+  }
+
+  const denominator = Math.sqrt(leftDenominator * rightDenominator);
+  if (!Number.isFinite(denominator) || denominator === 0) {
+    return 0;
+  }
+
+  return numerator / denominator;
+}
+
+function percentile(values: number[], fraction: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((left, right) => left - right);
+  const bounded = Math.min(Math.max(fraction, 0), 1);
+  const rawIndex = bounded * (sorted.length - 1);
+  const lowerIndex = Math.floor(rawIndex);
+  const upperIndex = Math.ceil(rawIndex);
+  const weight = rawIndex - lowerIndex;
+  const lower = sorted[lowerIndex] ?? sorted[0];
+  const upper = sorted[upperIndex] ?? sorted[sorted.length - 1];
+  return lower + (upper - lower) * weight;
+}
+
+interface RegressionResult {
+  coefficients: number[];
+  rSquared: number;
+}
+
+function regressAndScore(
+  predictors: number[][],
+  target: number[],
+): RegressionResult | null {
+  if (predictors.length !== target.length || predictors.length < 2) {
+    return null;
+  }
+  if (predictors[0]?.length === 0) {
+    return null;
+  }
+
+  try {
+    const yMatrix = target.map((value) => [value]);
+    const regression = new MultivariateLinearRegression(predictors, yMatrix, {
+      intercept: true,
+    });
+    const weights = regression.weights;
+    const coefficients = predictors[0].map(
+      (_, predictorIndex) => weights[predictorIndex + 1]?.[0] ?? 0,
+    );
+
+    let sse = 0;
+    const meanY = average(target);
+    let sst = 0;
+    for (let rowIndex = 0; rowIndex < predictors.length; rowIndex += 1) {
+      const predictionRaw = regression.predict(predictors[rowIndex]);
+      const prediction = Array.isArray(predictionRaw)
+        ? Number(predictionRaw[0] ?? 0)
+        : Number(predictionRaw ?? 0);
+      const residual = target[rowIndex] - prediction;
+      sse += residual * residual;
+      const centered = target[rowIndex] - meanY;
+      sst += centered * centered;
+    }
+    const rSquared = sst > 0 ? 1 - sse / sst : 0;
+
+    return {
+      coefficients,
+      rSquared: Number.isFinite(rSquared) ? rSquared : 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function standardizedRegression(
+  predictors: number[][],
+  target: number[],
+): RegressionResult | null {
+  if (predictors.length === 0 || predictors[0]?.length === 0) {
+    return null;
+  }
+
+  const standardizedPredictorsByColumn = predictors[0].map((_, columnIndex) =>
+    zScore(predictors.map((row) => row[columnIndex] ?? 0)),
+  );
+  const standardizedPredictors = predictors.map((_, rowIndex) =>
+    standardizedPredictorsByColumn.map((column) => column[rowIndex] ?? 0),
+  );
+  const standardizedTarget = zScore(target);
+
+  return regressAndScore(standardizedPredictors, standardizedTarget);
 }
 
 interface FeedbackAnalyticsRow extends RowDataPacket {
@@ -392,6 +543,321 @@ function buildQuestionFrequencies(
   }));
 }
 
+type SurveyDimensionMeans = Record<DimensionKey, number | null>;
+
+interface StructuralEquationConfig {
+  target: DimensionKey;
+  predictors: DimensionKey[];
+}
+
+const STRUCTURAL_EQUATIONS: StructuralEquationConfig[] = [
+  {
+    target: "uso_sistema",
+    predictors: ["calidad_sys", "calidad_info", "calidad_serv"],
+  },
+  {
+    target: "satis_user",
+    predictors: ["calidad_sys", "calidad_info", "calidad_serv", "uso_sistema"],
+  },
+  {
+    target: "benef_netos",
+    predictors: ["uso_sistema", "satis_user"],
+  },
+];
+
+function buildSurveyDimensionMeans(
+  surveyAccumulator: Map<
+    number,
+    {
+      dimensions: Map<DimensionKey, { sum: number; count: number }>;
+      questionValues: Map<string, number>;
+    }
+  >,
+): SurveyDimensionMeans[] {
+  return Array.from(surveyAccumulator.values()).map((survey) => {
+    const record = {} as SurveyDimensionMeans;
+    for (const dimension of DIMENSION_ORDER) {
+      const bucket = survey.dimensions.get(dimension);
+      record[dimension] =
+        bucket && bucket.count > 0 ? bucket.sum / bucket.count : null;
+    }
+    return record;
+  });
+}
+
+function collectEquationData(
+  rows: SurveyDimensionMeans[],
+  config: StructuralEquationConfig,
+): { predictors: number[][]; target: number[] } {
+  const validRows = rows.filter((row) => {
+    if (row[config.target] === null) {
+      return false;
+    }
+    return config.predictors.every((predictor) => row[predictor] !== null);
+  });
+
+  return {
+    predictors: validRows.map((row) =>
+      config.predictors.map((predictor) => Number(row[predictor] ?? 0)),
+    ),
+    target: validRows.map((row) => Number(row[config.target] ?? 0)),
+  };
+}
+
+function bootstrapStandardizedCoefficients(
+  predictors: number[][],
+  target: number[],
+  sampleCount: number,
+): number[][] {
+  const coefficientSamples: number[][] = predictors[0].map(() => []);
+  if (predictors.length < 3) {
+    return coefficientSamples;
+  }
+
+  for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex += 1) {
+    const sampledPredictors: number[][] = [];
+    const sampledTarget: number[] = [];
+
+    for (let rowIndex = 0; rowIndex < predictors.length; rowIndex += 1) {
+      const randomIndex = Math.floor(Math.random() * predictors.length);
+      sampledPredictors.push(predictors[randomIndex]);
+      sampledTarget.push(target[randomIndex]);
+    }
+
+    const result = standardizedRegression(sampledPredictors, sampledTarget);
+    if (!result) {
+      continue;
+    }
+
+    result.coefficients.forEach((coefficient, coefficientIndex) => {
+      coefficientSamples[coefficientIndex]?.push(coefficient);
+    });
+  }
+
+  return coefficientSamples;
+}
+
+function buildStructuralModel(
+  surveyDimensionRows: SurveyDimensionMeans[],
+): {
+  structuralPaths: StructuralPathResult[];
+  rSquared: Partial<Record<DimensionKey, number>>;
+} {
+  const structuralPaths: StructuralPathResult[] = [];
+  const rSquared: Partial<Record<DimensionKey, number>> = {};
+
+  for (const equation of STRUCTURAL_EQUATIONS) {
+    const equationData = collectEquationData(surveyDimensionRows, equation);
+    const regression = standardizedRegression(
+      equationData.predictors,
+      equationData.target,
+    );
+    if (!regression) {
+      equation.predictors.forEach((predictor) => {
+        structuralPaths.push({
+          key: `${predictor}->${equation.target}`,
+          from: predictor,
+          to: equation.target,
+          name: `${DIMENSIONS_MAP[predictor]} → ${DIMENSIONS_MAP[equation.target]}`,
+          coefficient: 0,
+          ciLow: 0,
+          ciHigh: 0,
+          significant: false,
+        });
+      });
+      rSquared[equation.target] = 0;
+      continue;
+    }
+
+    const bootstrapSamples = bootstrapStandardizedCoefficients(
+      equationData.predictors,
+      equationData.target,
+      BOOTSTRAP_SAMPLES,
+    );
+
+    equation.predictors.forEach((predictor, predictorIndex) => {
+      const coefficient = regression.coefficients[predictorIndex] ?? 0;
+      const coefficientSamples = bootstrapSamples[predictorIndex] ?? [];
+      const ciLow = percentile(coefficientSamples, 0.025);
+      const ciHigh = percentile(coefficientSamples, 0.975);
+      const significant =
+        (ciLow > 0 && ciHigh > 0) || (ciLow < 0 && ciHigh < 0);
+
+      structuralPaths.push({
+        key: `${predictor}->${equation.target}`,
+        from: predictor,
+        to: equation.target,
+        name: `${DIMENSIONS_MAP[predictor]} → ${DIMENSIONS_MAP[equation.target]}`,
+        coefficient: Number(coefficient.toFixed(3)),
+        ciLow: Number(ciLow.toFixed(3)),
+        ciHigh: Number(ciHigh.toFixed(3)),
+        significant,
+      });
+    });
+
+    rSquared[equation.target] = Number(regression.rSquared.toFixed(3));
+  }
+
+  return { structuralPaths, rSquared };
+}
+
+function buildConstructReliability(
+  rows: FeedbackAnalyticsRow[],
+): ConstructReliabilityResult[] {
+  const dimensions = new Map<
+    DimensionKey,
+    Map<number, Map<number, number>>
+  >();
+
+  for (const row of rows) {
+    const dimensionKey = resolveDimensionKey(row.question, row.dimension);
+    if (!dimensionKey) {
+      continue;
+    }
+    const score = parseMoodleValue(row.value);
+    const itemsByDimension = dimensions.get(dimensionKey) ?? new Map();
+    const respondentsByItem = itemsByDimension.get(row.itemId) ?? new Map();
+    respondentsByItem.set(row.completedId, score);
+    itemsByDimension.set(row.itemId, respondentsByItem);
+    dimensions.set(dimensionKey, itemsByDimension);
+  }
+
+  return DIMENSION_ORDER.map((dimension) => {
+    const itemMap = dimensions.get(dimension) ?? new Map();
+    const itemEntries = Array.from(itemMap.entries());
+    const itemCount = itemEntries.length;
+
+    if (itemCount < 2) {
+      return {
+        dimension,
+        name: DIMENSIONS_MAP[dimension],
+        itemCount,
+        cronbachAlpha: 0,
+        compositeReliability: 0,
+        ave: 0,
+      };
+    }
+
+    const respondentIntersection = itemEntries
+      .map(([, respondents]) => new Set(respondents.keys()))
+      .reduce((common, current) => {
+        return new Set(
+          Array.from(common).filter((respondentId) => current.has(respondentId)),
+        );
+      });
+
+    const respondentIds = Array.from(respondentIntersection.values());
+    const itemMatrix = respondentIds.map((respondentId) =>
+      itemEntries.map(([, respondents]) => Number(respondents.get(respondentId))),
+    );
+
+    const alpha = buildAlpha(itemMatrix);
+
+    const constructScores = itemMatrix.map((values) => average(values));
+    const loadings = itemEntries.map((_, itemIndex) => {
+      const itemValues = itemMatrix.map((row) => row[itemIndex] ?? 0);
+      const correlation = pearsonCorrelation(itemValues, constructScores);
+      return Number.isFinite(correlation) ? Math.abs(correlation) : 0;
+    });
+
+    const loadingSquares = loadings.map((loading) => loading ** 2);
+    const sumLoadings = loadings.reduce((acc, value) => acc + value, 0);
+    const errorVariance = loadingSquares.reduce(
+      (acc, loadingSquared) => acc + (1 - loadingSquared),
+      0,
+    );
+    const compositeReliability =
+      sumLoadings > 0
+        ? (sumLoadings ** 2) / ((sumLoadings ** 2) + errorVariance)
+        : 0;
+    const ave = average(loadingSquares);
+
+    return {
+      dimension,
+      name: DIMENSIONS_MAP[dimension],
+      itemCount,
+      cronbachAlpha: Number(alpha.toFixed(3)),
+      compositeReliability: Number(compositeReliability.toFixed(3)),
+      ave: Number(ave.toFixed(3)),
+    };
+  });
+}
+
+function buildDiscriminantValidity(
+  surveyDimensionRows: SurveyDimensionMeans[],
+  constructReliability: ConstructReliabilityResult[],
+): DiscriminantValidityResult[] {
+  const aveByDimension = new Map(
+    constructReliability.map((entry) => [entry.dimension, entry.ave]),
+  );
+  const results: DiscriminantValidityResult[] = [];
+
+  for (let leftIndex = 0; leftIndex < DIMENSION_ORDER.length; leftIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < DIMENSION_ORDER.length;
+      rightIndex += 1
+    ) {
+      const left = DIMENSION_ORDER[leftIndex];
+      const right = DIMENSION_ORDER[rightIndex];
+      const paired = surveyDimensionRows.filter(
+        (row) => row[left] !== null && row[right] !== null,
+      );
+
+      const leftValues = paired.map((row) => Number(row[left] ?? 0));
+      const rightValues = paired.map((row) => Number(row[right] ?? 0));
+      const correlation = pearsonCorrelation(leftValues, rightValues);
+
+      const sqrtAveLeft = Math.sqrt(Math.max(aveByDimension.get(left) ?? 0, 0));
+      const sqrtAveRight = Math.sqrt(Math.max(aveByDimension.get(right) ?? 0, 0));
+      const passesFornellLarcker =
+        sqrtAveLeft > Math.abs(correlation) &&
+        sqrtAveRight > Math.abs(correlation);
+
+      results.push({
+        left,
+        right,
+        leftName: DIMENSIONS_MAP[left],
+        rightName: DIMENSIONS_MAP[right],
+        correlation: Number(correlation.toFixed(3)),
+        sqrtAveLeft: Number(sqrtAveLeft.toFixed(3)),
+        sqrtAveRight: Number(sqrtAveRight.toFixed(3)),
+        passesFornellLarcker,
+      });
+    }
+  }
+
+  return results;
+}
+
+function buildDeloneMcleanModel(
+  rows: FeedbackAnalyticsRow[],
+  surveyAccumulator: Map<
+    number,
+    {
+      dimensions: Map<DimensionKey, { sum: number; count: number }>;
+      questionValues: Map<string, number>;
+    }
+  >,
+): DeloneMcleanModelResult {
+  const surveyDimensionRows = buildSurveyDimensionMeans(surveyAccumulator);
+  const structural = buildStructuralModel(surveyDimensionRows);
+  const constructReliability = buildConstructReliability(rows);
+  const discriminantValidity = buildDiscriminantValidity(
+    surveyDimensionRows,
+    constructReliability,
+  );
+
+  return {
+    sampleSize: surveyDimensionRows.length,
+    bootstrapSamples: BOOTSTRAP_SAMPLES,
+    structuralPaths: structural.structuralPaths,
+    constructReliability,
+    discriminantValidity,
+    rSquared: structural.rSquared,
+  };
+}
+
 function buildAnalyticsData(
   rows: FeedbackAnalyticsRow[],
 ): Omit<AnalyticsData, "totalRespondents" | "responseRate"> {
@@ -521,6 +987,7 @@ function buildAnalyticsData(
     criticalQuestions: buildQuestionAlerts(questionAccumulator),
     satisfactionDistribution: buildSatisfactionDistribution(surveyAccumulator),
     questionFrequencies: buildQuestionFrequencies(questionAccumulator),
+    deloneMcleanModel: buildDeloneMcleanModel(rows, surveyAccumulator),
   };
 }
 

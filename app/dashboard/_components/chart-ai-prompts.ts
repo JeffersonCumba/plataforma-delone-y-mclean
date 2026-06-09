@@ -1,4 +1,12 @@
 import { type AnalyticsData } from "@/types/analytics";
+const DIMENSION_LABELS = {
+  calidad_sys: "Calidad del Sistema",
+  calidad_info: "Calidad de la Información",
+  calidad_serv: "Calidad del Servicio",
+  uso_sistema: "Uso del Sistema",
+  satis_user: "Satisfacción del Usuario",
+  benef_netos: "Beneficios Netos",
+} as const;
 
 export function buildDescriptivePrompt(
   courseName: string,
@@ -19,6 +27,78 @@ export function buildDescriptivePrompt(
     "- Dimensión más débil y por qué.",
     "- Balance general del perfil del curso.",
     "- 2-3 acciones priorizadas de mejora.",
+  ].join("\n");
+}
+
+export function buildDeloneMcleanCompletePrompt(
+  courseName: string,
+  analytics: AnalyticsData,
+): string {
+  const model = analytics.deloneMcleanModel;
+
+  const r2Block =
+    Object.entries(model.rSquared)
+      .map(([dimension, value]) => {
+        const label =
+          DIMENSION_LABELS[dimension as keyof typeof DIMENSION_LABELS] ??
+          dimension;
+        return `- ${label}: R² = ${(value ?? 0).toFixed(3)}`;
+      })
+      .join("\n") || "- Sin valores de R² disponibles.";
+
+  const pathsBlock =
+    [...model.structuralPaths]
+      .sort(
+        (left, right) => Math.abs(right.coefficient) - Math.abs(left.coefficient),
+      )
+      .map(
+        (path) =>
+          `- ${path.name}: β=${path.coefficient.toFixed(3)}, IC95% [${path.ciLow.toFixed(3)}, ${path.ciHigh.toFixed(3)}], ${path.significant ? "significativa" : "no significativa"}`,
+      )
+      .join("\n") || "- Sin rutas estructurales disponibles.";
+
+  const reliabilityBlock =
+    model.constructReliability
+      .map(
+        (item) =>
+          `- ${item.name}: α=${item.cronbachAlpha.toFixed(3)}, CR=${item.compositeReliability.toFixed(3)}, AVE=${item.ave.toFixed(3)}, ítems=${item.itemCount}`,
+      )
+      .join("\n") || "- Sin resultados de fiabilidad por constructo.";
+
+  const discriminantFailures = model.discriminantValidity.filter(
+    (item) => !item.passesFornellLarcker,
+  );
+  const discriminantSummary = `- Pares evaluados: ${model.discriminantValidity.length}\n- Pares que incumplen Fornell-Larcker: ${discriminantFailures.length}`;
+  const discriminantFailureBlock =
+    discriminantFailures
+      .slice(0, 8)
+      .map(
+        (item) =>
+          `- ${item.leftName} vs ${item.rightName}: corr=${item.correlation.toFixed(3)}, √AVE(${item.leftName})=${item.sqrtAveLeft.toFixed(3)}, √AVE(${item.rightName})=${item.sqrtAveRight.toFixed(3)}`,
+      )
+      .join("\n") || "- No se detectan incumplimientos.";
+
+  return [
+    `Interpreta el **Modelo DeLone y McLean (completo)** del curso "${courseName}".`,
+    "",
+    "R² por variable endógena:",
+    r2Block,
+    "",
+    "Rutas estructurales (ordenadas por magnitud):",
+    pathsBlock,
+    "",
+    "Fiabilidad por constructo:",
+    reliabilityBlock,
+    "",
+    "Validez discriminante (Fornell-Larcker):",
+    discriminantSummary,
+    discriminantFailureBlock,
+    "",
+    "Tu respuesta debe incluir:",
+    "- Lectura ejecutiva de hallazgos principales del modelo.",
+    "- Qué relaciones son realmente sólidas y cuáles débiles/no concluyentes.",
+    "- Riesgos metodológicos detectados (fiabilidad/validez) y su impacto.",
+    "- 3 acciones priorizadas para mejorar calidad del sistema y resultados del modelo.",
   ].join("\n");
 }
 

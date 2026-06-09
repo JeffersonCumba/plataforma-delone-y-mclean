@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type AnalyticsData,
   type AnalyticsQuestionAlert,
+  type DimensionKey,
 } from "@/types/analytics";
 import { ExportColabButton } from "@/app/dashboard/_components/export-colab-button";
 import { ExportOdtButton } from "@/app/dashboard/_components/export-odt-button";
@@ -37,9 +38,8 @@ import { FrequenciesBarChart } from "@/app/dashboard/_components/frequencies-bar
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
+  buildDeloneMcleanCompletePrompt,
   buildDescriptivePrompt,
-  buildFrequenciesPrompt,
-  buildSatisfactionDistributionPrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
 import { useInterpretation } from "@/hooks/use-interpretation";
 
@@ -51,6 +51,12 @@ const DIMENSIONS_MAP = {
   satis_user: "Satisfacción del Usuario",
   benef_netos: "Beneficios Netos",
 };
+
+const DLM_R2_TARGETS: DimensionKey[] = [
+  "uso_sistema",
+  "satis_user",
+  "benef_netos",
+];
 
 function KpiCard({
   icon,
@@ -158,6 +164,10 @@ function CourseAnalyticsContent({
     ...interpretationContext,
     slot: "critical",
   });
+  const deloneMcleanCompleteInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "dlm-complete",
+  });
 
   const betaDomain = useMemo(() => {
     const values = analytics.betaCoefficients.map((entry) => entry.value);
@@ -170,6 +180,20 @@ function CourseAnalyticsContent({
       Math.max(0, maxValue + padding * 0.15),
     ];
   }, [analytics.betaCoefficients]);
+  const sortedStructuralPaths = useMemo(
+    () =>
+      [...analytics.deloneMcleanModel.structuralPaths].sort(
+        (left, right) => Math.abs(right.coefficient) - Math.abs(left.coefficient),
+      ),
+    [analytics.deloneMcleanModel.structuralPaths],
+  );
+  const discriminantFailures = useMemo(
+    () =>
+      analytics.deloneMcleanModel.discriminantValidity.filter(
+        (item) => !item.passesFornellLarcker,
+      ),
+    [analytics.deloneMcleanModel.discriminantValidity],
+  );
 
   return (
     <section className="space-y-6">
@@ -419,6 +443,169 @@ function CourseAnalyticsContent({
         analytics={analytics}
         interp={frequenciesInterp}
       />
+
+      <Card className="border-slate-200/80 bg-white/95 shadow-sm">
+        <CardHeader className="space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="text-xl">
+              Modelo DeLone y McLean (completo)
+            </CardTitle>
+            <InterpretChartButton
+              onClick={() =>
+                deloneMcleanCompleteInterp.interpret(
+                  buildDeloneMcleanCompletePrompt(courseName, analytics),
+                )
+              }
+              hidden={
+                analytics.totalSurveys === 0 ||
+                deloneMcleanCompleteInterp.isLoading
+              }
+            />
+          </div>
+          <p className="text-sm text-slate-600">
+            Rutas estandarizadas con bootstrap, fiabilidad de constructos,
+            validez discriminante y varianza explicada (R²).
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {DLM_R2_TARGETS.map((target) => {
+              const r2 = analytics.deloneMcleanModel.rSquared[target] ?? 0;
+              return (
+                <div
+                  key={target}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
+                >
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    R² {DIMENSIONS_MAP[target]}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-900">
+                    {r2.toFixed(3)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Rutas estructurales
+              </h3>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-left text-slate-700">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Ruta</th>
+                      <th className="px-3 py-2 font-medium">β</th>
+                      <th className="px-3 py-2 font-medium">IC 95%</th>
+                      <th className="px-3 py-2 font-medium">Signif.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedStructuralPaths.map((path) => (
+                      <tr key={path.key} className="border-t border-slate-200">
+                        <td className="px-3 py-2 text-slate-800">{path.name}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-900">
+                          {path.coefficient.toFixed(3)}
+                        </td>
+                        <td className="px-3 py-2 text-slate-700">
+                          [{path.ciLow.toFixed(3)}, {path.ciHigh.toFixed(3)}]
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                              path.significant
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {path.significant ? "Sí" : "No"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Fiabilidad por constructo
+              </h3>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-100 text-left text-slate-700">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Constructo</th>
+                      <th className="px-3 py-2 font-medium">Ítems</th>
+                      <th className="px-3 py-2 font-medium">α</th>
+                      <th className="px-3 py-2 font-medium">CR</th>
+                      <th className="px-3 py-2 font-medium">AVE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.deloneMcleanModel.constructReliability.map(
+                      (item) => (
+                        <tr
+                          key={item.dimension}
+                          className="border-t border-slate-200"
+                        >
+                          <td className="px-3 py-2 text-slate-800">{item.name}</td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {item.itemCount}
+                          </td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {item.cronbachAlpha.toFixed(3)}
+                          </td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {item.compositeReliability.toFixed(3)}
+                          </td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {item.ave.toFixed(3)}
+                          </td>
+                        </tr>
+                      ),
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-sm font-medium text-slate-800">
+              Validez discriminante (Fornell-Larcker)
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Pares evaluados:{" "}
+              {analytics.deloneMcleanModel.discriminantValidity.length}. Incumplen
+              criterio: {discriminantFailures.length}.
+            </p>
+            {discriminantFailures.length > 0 ? (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">
+                {discriminantFailures.slice(0, 5).map((item) => (
+                  <li key={`${item.left}-${item.right}`}>
+                    {item.leftName} vs {item.rightName} (corr=
+                    {item.correlation.toFixed(3)})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-emerald-700">
+                Todos los pares cumplen Fornell-Larcker.
+              </p>
+            )}
+          </div>
+          <InterpretationPanel
+            text={deloneMcleanCompleteInterp.text}
+            isLoading={deloneMcleanCompleteInterp.isLoading}
+            error={deloneMcleanCompleteInterp.error}
+            onClose={deloneMcleanCompleteInterp.reset}
+          />
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">
         <CardHeader className="space-y-2">

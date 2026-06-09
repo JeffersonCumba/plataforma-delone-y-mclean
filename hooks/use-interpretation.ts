@@ -55,11 +55,18 @@ function writePersistedText(
 export function useInterpretation(
   ctx: InterpretationContext,
 ): InterpretationHandle {
-  const { courseId, slot } = ctx;
-  const [text, setText] = useState(() => readPersistedText(courseId, slot));
+  const { courseId, courseName, analytics, slot } = ctx;
+  const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const persisted = readPersistedText(courseId, slot);
+    if (persisted) {
+      setText(persisted);
+    }
+  }, [courseId, slot]);
 
   useEffect(() => {
     writePersistedText(courseId, slot, text);
@@ -126,7 +133,9 @@ export function useInterpretation(
         if (err instanceof Error && err.name === "AbortError") {
           return "";
         }
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(
+          err instanceof Error ? err.message : "Error desconocido",
+        );
         throw err;
       } finally {
         if (abortRef.current === controller) {
