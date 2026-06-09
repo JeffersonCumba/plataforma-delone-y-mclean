@@ -8,7 +8,6 @@ import { pool } from "@/lib/db";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 import {
   DIMENSIONS_MAP,
-  type AnalyticsBarDatum,
   type AnalyticsBetaDatum,
   type AnalyticsData,
   type AnalyticsQuestionAlert,

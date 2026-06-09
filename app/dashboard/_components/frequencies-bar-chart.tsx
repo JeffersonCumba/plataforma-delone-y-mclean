@@ -10,11 +10,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
-import { useInterpretation } from "@/hooks/use-interpretation";
+import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import { buildFrequenciesPrompt } from "@/app/dashboard/_components/chart-ai-prompts";
 import {
   LIKERT_LABELS,
@@ -28,6 +27,7 @@ interface FrequenciesBarChartProps {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
+  interp: InterpretationHandle;
 }
 
 const LIKERT_COLORS: Record<(typeof LIKERT_LABELS)[number], string> = {
@@ -106,8 +106,8 @@ export function FrequenciesBarChart({
   courseId,
   courseName,
   analytics,
+  interp,
 }: FrequenciesBarChartProps) {
-  const interp = useInterpretation({ courseId, courseName, analytics });
   const isEmpty = data.length === 0;
 
   return (

@@ -90,7 +90,6 @@ export default async function DashboardLayout({
               <SidebarTrigger />
               <Separator orientation="vertical" className="h-6" />
               <div>
-                <p className="text-sm text-slate-500">Dashboard principal</p>
                 <p className="text-sm font-medium text-slate-900">{userName}</p>
               </div>
             </div>

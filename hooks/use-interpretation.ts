@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type AnalyticsData } from "@/types/analytics";
 
@@ -8,26 +8,62 @@ interface InterpretationContext {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
+  slot: string;
 }
 
-interface InterpretationState {
+export interface InterpretationHandle {
   text: string;
   isLoading: boolean;
   error: string | null;
+  interpret: (prompt: string) => Promise<string>;
+  reset: () => void;
 }
 
-interface InterpretationActions {
-  interpret: (prompt: string) => Promise<void>;
-  reset: () => void;
+const STORAGE_PREFIX = "dm-interpretation:";
+
+function buildStorageKey(courseId: number, slot: string): string {
+  return `${STORAGE_PREFIX}${courseId}:${slot}`;
+}
+
+function readPersistedText(courseId: number, slot: string): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.sessionStorage.getItem(buildStorageKey(courseId, slot)) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writePersistedText(
+  courseId: number,
+  slot: string,
+  text: string,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = buildStorageKey(courseId, slot);
+    if (text) {
+      window.sessionStorage.setItem(key, text);
+    } else {
+      window.sessionStorage.removeItem(key);
+    }
+  } catch {
+    // ignore quota or disabled storage
+  }
 }
 
 export function useInterpretation(
   ctx: InterpretationContext,
-): InterpretationState & InterpretationActions {
-  const [text, setText] = useState("");
+): InterpretationHandle {
+  const { courseId, slot } = ctx;
+  const [text, setText] = useState(() => readPersistedText(courseId, slot));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    writePersistedText(courseId, slot, text);
+  }, [text, courseId, slot]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -38,10 +74,10 @@ export function useInterpretation(
   }, []);
 
   const interpret = useCallback(
-    async (prompt: string) => {
+    async (prompt: string): Promise<string> => {
       const trimmed = prompt.trim();
       if (!trimmed) {
-        return;
+        return "";
       }
 
       abortRef.current?.abort();
@@ -85,13 +121,13 @@ export function useInterpretation(
         }
         accumulated += decoder.decode();
         if (accumulated) setText(accumulated);
+        return accumulated;
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          return;
+          return "";
         }
-        setError(
-          err instanceof Error ? err.message : "Error desconocido",
-        );
+        setError(err instanceof Error ? err.message : "Error desconocido");
+        throw err;
       } finally {
         if (abortRef.current === controller) {
           abortRef.current = null;

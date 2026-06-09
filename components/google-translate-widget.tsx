@@ -210,20 +210,20 @@ function GoogleTranslateWidget() {
           <ul
             role="listbox"
             aria-label="Idiomas disponibles"
-            className="absolute right-0 z-50 mt-1 w-45 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
+            className="absolute right-0 z-50 mt-1 w-45 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg pt-1"
           >
             {languageConfig.languages.map((ld) => {
               const Flag = FLAG_COMPONENT[ld.name];
               const isActive = currentLanguage === ld.name;
               return (
-                <li key={ld.name} role="option">
+                <li key={ld.name} role="option" className="mb-1">
                   <button
                     type="button"
                     onClick={() => switchLanguage(ld.name)}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:cursor-pointer ${
                       isActive
-                        ? "bg-slate-100 font-semibold text-slate-900"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-slate-200/50 font-semibold text-slate-900"
+                        : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:h-5 [&_svg]:w-5">

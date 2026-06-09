@@ -52,7 +52,7 @@ export function ExportColabButton({ courseId }: { courseId: number }) {
   return (
     <Button onClick={handleClick} disabled={isExporting}>
       <Download className="mr-2 h-4 w-4" />
-      {isExporting ? "Exportando..." : "Exportar datos (CSV)"}
+      {isExporting ? "Exportando..." : "Exportar resultados (CSV)"}
     </Button>
   );
 }

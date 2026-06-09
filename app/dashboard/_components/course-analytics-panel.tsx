@@ -29,6 +29,7 @@ import {
   type AnalyticsQuestionAlert,
 } from "@/types/analytics";
 import { ExportColabButton } from "@/app/dashboard/_components/export-colab-button";
+import { ExportOdtButton } from "@/app/dashboard/_components/export-odt-button";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
 import { SatisfactionPieChart } from "@/app/dashboard/_components/satisfaction-pie-chart";
@@ -137,9 +138,26 @@ function CourseAnalyticsContent({
   analytics: AnalyticsData;
 }) {
   const interpretationContext = { courseId, courseName, analytics };
-  const descriptiveInterp = useInterpretation(interpretationContext);
-  const betasInterp = useInterpretation(interpretationContext);
-  const criticalInterp = useInterpretation(interpretationContext);
+  const satisfactionInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "satisfaction",
+  });
+  const descriptiveInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "descriptive",
+  });
+  const betasInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "betas",
+  });
+  const frequenciesInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "frequencies",
+  });
+  const criticalInterp = useInterpretation({
+    ...interpretationContext,
+    slot: "critical",
+  });
 
   const betaDomain = useMemo(() => {
     const values = analytics.betaCoefficients.map((entry) => entry.value);
@@ -183,6 +201,17 @@ function CourseAnalyticsContent({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <ExportColabButton courseId={courseId} />
+            <ExportOdtButton
+              courseId={courseId}
+              courseName={courseName}
+              analytics={analytics}
+              satisfactionInterp={satisfactionInterp}
+              descriptiveInterp={descriptiveInterp}
+              betasInterp={betasInterp}
+              frequenciesInterp={frequenciesInterp}
+              criticalInterp={criticalInterp}
+              hidden={analytics.totalSurveys === 0}
+            />
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Imprimir PDF
@@ -261,6 +290,7 @@ function CourseAnalyticsContent({
         courseId={courseId}
         courseName={courseName}
         analytics={analytics}
+        interp={satisfactionInterp}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -387,6 +417,7 @@ function CourseAnalyticsContent({
         courseId={courseId}
         courseName={courseName}
         analytics={analytics}
+        interp={frequenciesInterp}
       />
 
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">

@@ -5,7 +5,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
-import { useInterpretation } from "@/hooks/use-interpretation";
+import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import {
   type AnalyticsData,
   type SatisfactionPieDatum,
@@ -18,6 +18,7 @@ interface SatisfactionPieChartProps {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
+  interp: InterpretationHandle;
 }
 
 interface CustomTooltipPayload {
@@ -52,8 +53,8 @@ export function SatisfactionPieChart({
   courseId,
   courseName,
   analytics,
+  interp,
 }: SatisfactionPieChartProps) {
-  const interp = useInterpretation({ courseId, courseName, analytics });
   const total = data.reduce((acc, item) => acc + item.value, 0);
   const isEmpty = total === 0;
 
