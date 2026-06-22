@@ -34,6 +34,7 @@ export interface CourseCardCourse {
   fullname: string;
   shortname: string;
   summary: string;
+  idnumber: string;
 }
 
 export function CourseCard({ course }: { course: CourseCardCourse }) {

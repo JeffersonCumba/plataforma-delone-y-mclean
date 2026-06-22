@@ -3,10 +3,12 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Percent,
   Printer,
+  RotateCw,
   ShieldCheck,
   Smile,
   Users,
@@ -143,6 +145,7 @@ function CourseAnalyticsContent({
   courseName: string;
   analytics: AnalyticsData;
 }) {
+  const router = useRouter();
   const interpretationContext = { courseId, courseName, analytics };
   const satisfactionInterp = useInterpretation({
     ...interpretationContext,
@@ -236,6 +239,10 @@ function CourseAnalyticsContent({
               criticalInterp={criticalInterp}
               hidden={analytics.totalSurveys === 0}
             />
+            <Button variant="outline" onClick={() => router.refresh()}>
+              <RotateCw className="mr-2 h-4 w-4" />
+              Sincronizar Datos
+            </Button>
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Imprimir PDF

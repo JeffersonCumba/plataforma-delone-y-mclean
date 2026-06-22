@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CourseAnalyticsPanel } from "@/app/dashboard/_components/course-analytics-panel";
 import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { obtenerCursosProfesor } from "@/services/courseService";
+import { obtenerTodosLosCursos } from "@/services/adminService";
 
 export default async function CourseOverviewPage({
   params,
@@ -13,6 +14,7 @@ export default async function CourseOverviewPage({
   const cookieStore = await cookies();
   const userIdCookie = cookieStore.get("user_id")?.value;
   const userId = Number(userIdCookie);
+  const role = cookieStore.get("user_role")?.value;
 
   if (!Number.isInteger(userId) || userId <= 0) {
     redirect("/login");
@@ -25,11 +27,22 @@ export default async function CourseOverviewPage({
     redirect("/dashboard/cursos");
   }
 
-  const courses = await obtenerCursosProfesor(userId);
-  const currentCourse = courses.find((course) => course.id === courseId);
+  let courseName: string;
 
-  if (!currentCourse) {
-    redirect("/dashboard/cursos");
+  if (role === "ADMIN") {
+    const allCourses = await obtenerTodosLosCursos();
+    const found = allCourses.find((c) => c.id === courseId);
+    if (!found) {
+      redirect("/dashboard/cursos");
+    }
+    courseName = found.fullname;
+  } else {
+    const courses = await obtenerCursosProfesor(userId);
+    const currentCourse = courses.find((course) => course.id === courseId);
+    if (!currentCourse) {
+      redirect("/dashboard/cursos");
+    }
+    courseName = currentCourse.fullname;
   }
 
   const analytics = await getCourseAnalyticsData(courseId);
@@ -37,7 +50,7 @@ export default async function CourseOverviewPage({
   return (
     <CourseAnalyticsPanel
       courseId={courseId}
-      courseName={currentCourse.fullname}
+      courseName={courseName}
       analytics={analytics}
     />
   );

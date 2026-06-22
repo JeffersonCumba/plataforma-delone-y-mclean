@@ -41,7 +41,11 @@ interface CreateCourseFormState {
   summary: string;
 }
 
-export function CreateCourseForm() {
+export function CreateCourseForm({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+} = {}) {
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [generatedDefaults] = useState(() => generateDefaultValues());
@@ -71,6 +75,7 @@ export function CreateCourseForm() {
       setForm({ fullname: "", shortname: "", summary: "" });
       toast.success(result.message);
       setOpen(false);
+      onSuccess?.();
     });
   };
 

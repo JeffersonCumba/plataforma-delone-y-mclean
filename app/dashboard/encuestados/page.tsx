@@ -12,6 +12,8 @@ import {
 import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
+import { obtenerTodosLosCursos, obtenerIdsProfesoresDeCursos } from "@/services/adminService";
+import type { MoodleCourse } from "@/services/courseService";
 
 export default async function DashboardEncuestadosPage() {
   const cookieStore = await cookies();
@@ -22,7 +24,7 @@ export default async function DashboardEncuestadosPage() {
     redirect("/login");
   }
 
-  const courses = await obtenerCursosProfesor(userId);
+  const courses: MoodleCourse[] = await obtenerCursosProfesor(userId);
 
   const respondentsByCourse = await Promise.all(
     courses.map(async (course) => {
@@ -41,6 +43,10 @@ export default async function DashboardEncuestadosPage() {
 
   const respondents = respondentsByCourse.flat();
 
+  const teacherMap = courses.length > 0
+    ? await obtenerIdsProfesoresDeCursos(courses.map((c) => c.id))
+    : new Map<number, Set<number>>();
+
   return (
     <section className="space-y-6">
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
@@ -48,7 +54,7 @@ export default async function DashboardEncuestadosPage() {
           <div>
             <CardTitle className="text-2xl">Encuestados</CardTitle>
             <p className="text-sm text-slate-600">
-              Tabla general de usuarios matriculados en tus cursos.
+              Tabla general de usuarios matriculados en los cursos.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -76,7 +82,7 @@ export default async function DashboardEncuestadosPage() {
               No hay encuestados matriculados por el momento.
             </div>
           ) : (
-            <EncuestadosTable rows={respondents} courses={courses} />
+            <EncuestadosTable rows={respondents} courses={courses} teacherMap={teacherMap} />
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { FolderClosed, GraduationCap, UsersRound } from "lucide-react";
+import { BookOpen, FolderClosed, GraduationCap, LayoutDashboard, UserCheck, UsersRound } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -78,6 +78,48 @@ export default async function DashboardLayout({
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          {role === "ADMIN" ? (
+            <SidebarGroup>
+              <SidebarGroupLabel>Administración</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/dashboard/admin">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>Panel General</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/dashboard/admin/profesores">
+                        <GraduationCap className="h-4 w-4" />
+                        <span>Profesores</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/dashboard/admin/alumnos">
+                        <UserCheck className="h-4 w-4" />
+                        <span>Alumnos</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/dashboard/admin/cursos">
+                        <BookOpen className="h-4 w-4" />
+                        <span>Cursos</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null}
         </SidebarContent>
 
         <SidebarUserFooter userName={userName} />
