@@ -33,6 +33,7 @@ import {
 } from "@/types/analytics";
 import { ExportColabButton } from "@/app/dashboard/_components/export-colab-button";
 import { ExportOdtButton } from "@/app/dashboard/_components/export-odt-button";
+import { ExportPdfButton } from "@/app/dashboard/_components/export-pdf-button";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
 import { SatisfactionPieChart } from "@/app/dashboard/_components/satisfaction-pie-chart";
@@ -227,7 +228,11 @@ function CourseAnalyticsContent({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ExportColabButton courseId={courseId} />
+            <ExportColabButton
+              courseId={courseId}
+              courseName={courseName}
+              analytics={analytics}
+            />
             <ExportOdtButton
               courseId={courseId}
               courseName={courseName}
@@ -239,13 +244,19 @@ function CourseAnalyticsContent({
               criticalInterp={criticalInterp}
               hidden={analytics.totalSurveys === 0}
             />
+            <ExportPdfButton
+              courseId={courseId}
+              courseName={courseName}
+              analytics={analytics}
+              satisfactionInterp={satisfactionInterp}
+              descriptiveInterp={descriptiveInterp}
+              betasInterp={betasInterp}
+              frequenciesInterp={frequenciesInterp}
+              criticalInterp={criticalInterp}
+            />
             <Button variant="outline" onClick={() => router.refresh()}>
               <RotateCw className="mr-2 h-4 w-4" />
               Sincronizar Datos
-            </Button>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              Imprimir PDF
             </Button>
           </div>
         </CardContent>
