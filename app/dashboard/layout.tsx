@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { BookOpen, FolderClosed, GraduationCap, LayoutDashboard, UserCheck, UsersRound } from "lucide-react";
+import { BookOpen, FolderClosed, GraduationCap, LayoutDashboard, UserCheck, UsersRound, UserRound } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -27,7 +27,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
+  const role = cookieStore.get("user_role")?.value as "ADMIN" | "EVALUADOR";
   const userNameCookie = cookieStore.get("user_name")?.value;
   const userIdCookie = cookieStore.get("user_id")?.value;
 
@@ -59,6 +59,16 @@ export default async function DashboardLayout({
             <SidebarGroupLabel>Navegacion</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {role !== "ADMIN" && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/dashboard/profesor">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>Resumen</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href="/dashboard/cursos">
@@ -122,7 +132,7 @@ export default async function DashboardLayout({
           ) : null}
         </SidebarContent>
 
-        <SidebarUserFooter userName={userName} />
+        <SidebarUserFooter userName={userName} role={role} userId={userId} />
       </Sidebar>
 
       <SidebarInset>

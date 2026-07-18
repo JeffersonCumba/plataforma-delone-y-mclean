@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, UserPlus } from "lucide-react";
+import { Pencil, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { EditarProfesorDialog } from "@/app/dashboard/_components/editar-profesor-dialog";
 import { CrearProfesorDialog } from "@/app/dashboard/_components/crear-profesor-dialog";
-import { eliminarProfesorAction } from "@/app/dashboard/admin/actions";
 import type { ProfesorRow } from "@/types/admin";
 
 interface AdminAlumnosTableProps {
@@ -26,25 +25,6 @@ interface AdminAlumnosTableProps {
 export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
   const router = useRouter();
   const [editTarget, setEditTarget] = useState<ProfesorRow | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ProfesorRow | null>(null);
-  const [isDeleting, startDelete] = useTransition();
-
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-
-    startDelete(async () => {
-      const result = await eliminarProfesorAction(deleteTarget.id);
-
-      if (!result.ok) {
-        toast.error(result.message);
-        return;
-      }
-
-      toast.success(result.message);
-      setDeleteTarget(null);
-      router.refresh();
-    });
-  };
 
   return (
     <div className="space-y-4">
@@ -103,15 +83,6 @@ export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
                         <Pencil className="mr-1 h-3.5 w-3.5" />
                         Editar
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                        onClick={() => setDeleteTarget(alumno)}
-                      >
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Eliminar
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -134,40 +105,6 @@ export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
           }}
         />
       ) : null}
-
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Eliminar alumno</DialogTitle>
-            <DialogDescription>
-              Esta acción eliminará permanentemente a{" "}
-              <strong>{deleteTarget?.fullname}</strong> (
-              {deleteTarget?.username}) de Moodle. No se podrá deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar alumno"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

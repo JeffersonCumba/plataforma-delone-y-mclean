@@ -6,6 +6,7 @@ import { pool } from "@/lib/db";
 import { fetchMoodle } from "@/lib/moodle";
 import type { MoodleCourse } from "@/services/courseService";
 import type { AdminStats, AdminCursoRow, ProfesorRow } from "@/types/admin";
+import { getAllTeachersTrialInfo, getTrialDays } from "@/services/trialService";
 
 const MOODLE_TEACHER_ROLE_ID = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
 const MOODLE_STUDENT_ROLE_ID = Number(process.env.MOODLE_STUDENT_ROLE_ID ?? 5);
@@ -157,18 +158,58 @@ export async function obtenerTodosLosProfesores(): Promise<ProfesorRow[]> {
     countRows.map((r) => [r.userid, r.courseCount]),
   );
 
-  return profesorRows.map((user) => ({
-    id: user.id,
-    username: user.username,
-    firstname: user.firstname,
-    lastname: user.lastname,
-    fullname: `${user.firstname} ${user.lastname}`.trim(),
-    email: user.email,
-    courseCount: countMap.get(user.id) ?? 0,
-  }));
+  const [trialInfoMap, TRIAL_DAYS] = await Promise.all([
+    getAllTeachersTrialInfo(),
+    getTrialDays(),
+  ]);
+  const trialMap = new Map(trialInfoMap.map((t) => [t.userId, t]));
+
+  return profesorRows.map((user) => {
+    const trialInfo = trialMap.get(user.id);
+    const isAdmin = user.username.toLowerCase() === "admin" || 
+      (process.env.MOODLE_ADMIN_EMAIL && user.email.toLowerCase() === process.env.MOODLE_ADMIN_EMAIL!.toLowerCase());
+    
+    if (isAdmin) {
+      return {
+        id: user.id,
+        username: user.username,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        fullname: `${user.firstname} ${user.lastname}`.trim(),
+        email: user.email,
+        courseCount: countMap.get(user.id) ?? 0,
+        trialStartDate: null,
+        trialEndsAt: null,
+        trialDaysRemaining: 0,
+        trialTotalDays: TRIAL_DAYS,
+        trialIsExpired: false,
+        trialIsWarningPeriod: false,
+        trialWarningSent: false,
+      };
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      fullname: `${user.firstname} ${user.lastname}`.trim(),
+      email: user.email,
+      courseCount: countMap.get(user.id) ?? 0,
+      trialStartDate: trialInfo?.trialStartDate ?? null,
+      trialEndsAt: trialInfo?.trialEndsAt ?? null,
+      trialDaysRemaining: trialInfo?.daysRemaining ?? TRIAL_DAYS,
+      trialTotalDays: TRIAL_DAYS,
+      trialIsExpired: trialInfo?.isExpired ?? false,
+      trialIsWarningPeriod: trialInfo?.isWarningPeriod ?? false,
+      trialWarningSent: trialInfo?.warningSent ?? false,
+    };
+  });
 }
 
 export async function obtenerTodosLosAlumnos(): Promise<ProfesorRow[]> {
+  const TRIAL_DAYS = await getTrialDays();
+
   const [alumnoRows] = await pool.execute<ProfesorBaseRow[]>(
     `SELECT DISTINCT u.id, u.username, u.firstname, u.lastname, u.email
        FROM mdl_role_assignments ra
@@ -209,6 +250,13 @@ export async function obtenerTodosLosAlumnos(): Promise<ProfesorRow[]> {
     fullname: `${user.firstname} ${user.lastname}`.trim(),
     email: user.email,
     courseCount: countMap.get(user.id) ?? 0,
+    trialStartDate: null,
+    trialEndsAt: null,
+    trialDaysRemaining: 0,
+    trialTotalDays: TRIAL_DAYS,
+    trialIsExpired: false,
+    trialIsWarningPeriod: false,
+    trialWarningSent: false,
   }));
 }
 
@@ -360,8 +408,6 @@ export async function desmatricularUsuarioCurso(
   userId: number,
   courseId: number,
 ): Promise<void> {
-  console.log("🚀 ~ desmatricularUsuarioCurso ~ courseId:", courseId)
-  console.log("🚀 ~ desmatricularUsuarioCurso ~ userId:", userId)
   const studentRoleId = Number(process.env.MOODLE_STUDENT_ROLE_ID ?? 5);
 
   const result = await fetchMoodle<unknown>("enrol_manual_unenrol_users", {
@@ -369,5 +415,4 @@ export async function desmatricularUsuarioCurso(
     "unenrolments[0][userid]": String(userId),
     "unenrolments[0][courseid]": String(courseId),
   });
-  console.log("🚀 ~ desmatricularUsuarioCurso ~ result:", result)
 }

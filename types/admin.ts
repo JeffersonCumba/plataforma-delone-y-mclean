@@ -6,6 +6,13 @@ export interface ProfesorRow {
   fullname: string;
   email: string;
   courseCount: number;
+  trialStartDate: Date | null;
+  trialEndsAt: Date | null;
+  trialDaysRemaining: number;
+  trialTotalDays: number;
+  trialIsExpired: boolean;
+  trialIsWarningPeriod: boolean;
+  trialWarningSent: boolean;
 }
 
 export interface AdminStats {

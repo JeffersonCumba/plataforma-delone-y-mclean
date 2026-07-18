@@ -7,6 +7,7 @@ import { fetchMoodle } from "@/lib/moodle";
 import { registerUserSchema } from "@/lib/validations/user";
 import { crearCursoProfesor, obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
+import { initializeTrialForTeacher, markTeacherDeleted, getTrialDays } from "@/services/trialService";
 import {
   eliminarUsuarioMoodle,
   actualizarUsuarioMoodle,
@@ -41,6 +42,7 @@ export async function eliminarProfesorAction(
 
   try {
     await eliminarUsuarioMoodle(userId);
+    await markTeacherDeleted(userId);
 
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
@@ -112,12 +114,23 @@ export async function crearProfesorAction(
   try {
     await registrarUsuario(parsed.data);
 
+    const user = await fetchMoodle<{ users: Array<{ id: number }> }>("core_user_get_users", {
+      "criteria[0][key]": "username",
+      "criteria[0][value]": parsed.data.username,
+    });
+
+    const createdUser = user?.users?.[0];
+    if (createdUser) {
+      await initializeTrialForTeacher(createdUser.id);
+    }
+
+    const trialDays = await getTrialDays();
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
 
     return {
       ok: true,
-      message: `Profesor ${parsed.data.username} creado correctamente.`,
+      message: `Profesor ${parsed.data.username} creado correctamente con período de prueba de ${trialDays} días.`,
     };
   } catch (error) {
     return {
@@ -158,6 +171,53 @@ export async function actualizarProfesorAction(
         error instanceof Error
           ? error.message
           : "No se pudo actualizar el profesor.",
+    };
+  }
+}
+
+export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, message: "No tienes permisos de administrador." };
+  }
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const secret = process.env.TRIAL_CRON_SECRET;
+
+    const res = await fetch(`${baseUrl}/api/cron/trial-expiration`, {
+      method: "GET",
+      headers: secret ? { "x-cron-secret": secret } : {},
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: `El cron respondio con estado ${res.status}.`,
+      };
+    }
+
+    const data = (await res.json()) as {
+      warningsSent?: number;
+      expiredDeleted?: number;
+    };
+
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard/admin/profesores");
+
+    return {
+      ok: true,
+      message: `Cron ejecutado: ${data.warningsSent ?? 0} avisos y ${data.expiredDeleted ?? 0} cuentas eliminadas.`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "No se pudo ejecutar el cron de expiracion.",
     };
   }
 }

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/trial-expiration",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

@@ -1,22 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { ExternalLink, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
-import { eliminarCursoAction } from "@/app/dashboard/admin/actions";
 import type { AdminCursoRow } from "@/types/admin";
 
 interface AdminCursosTableProps {
@@ -26,25 +16,6 @@ interface AdminCursosTableProps {
 export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<AdminCursoRow | null>(null);
-  const [isDeleting, startDelete] = useTransition();
-
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-
-    startDelete(async () => {
-      const result = await eliminarCursoAction(deleteTarget.id);
-
-      if (!result.ok) {
-        toast.error(result.message);
-        return;
-      }
-
-      toast.success(result.message);
-      setDeleteTarget(null);
-      router.refresh();
-    });
-  };
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
@@ -135,15 +106,6 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
                           Analítica
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                        onClick={() => setDeleteTarget(curso)}
-                      >
-                        <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        Eliminar
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -152,40 +114,6 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
           </table>
         </div>
       )}
-
-      <Dialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Eliminar curso</DialogTitle>
-            <DialogDescription>
-              Esta acción eliminará permanentemente el curso{" "}
-              <strong>{deleteTarget?.fullname}</strong> de Moodle, incluyendo
-              todas sus encuestas y datos asociados. No se podrá deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteTarget(null)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar curso"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

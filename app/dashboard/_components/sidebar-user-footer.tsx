@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LogOut, UserRound } from "lucide-react";
 
 import {
@@ -10,7 +11,13 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function SidebarUserFooter({ userName }: { userName: string }) {
+interface SidebarUserFooterProps {
+  userName: string;
+  role: "ADMIN" | "EVALUADOR";
+  userId: number;
+}
+
+export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterProps) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -20,25 +27,28 @@ export function SidebarUserFooter({ userName }: { userName: string }) {
     router.push("/logout");
   };
 
+  const profileHref = role === "ADMIN" 
+    ? `/dashboard/admin/profesores/${userId}`
+    : "/dashboard/profesor";
+
   return (
     <SidebarFooter>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            tooltip={userName}
-            className="h-auto items-center justify-start gap-3 px-3 py-2"
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
-              <UserRound className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
-              <span className="block truncate text-sm font-medium text-sidebar-foreground">
-                {userName}
+          <SidebarMenuButton asChild tooltip={userName} className="h-auto items-center justify-start gap-3 px-3 py-2">
+            <Link href={profileHref}>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
+                <UserRound className="h-5 w-5" />
               </span>
-              <span className="block text-xs text-sidebar-foreground/70">
-                Perfil activo
+              <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
+                <span className="block truncate text-sm font-medium text-sidebar-foreground">
+                  {userName}
+                </span>
+                <span className="block text-xs text-sidebar-foreground/70">
+                  Perfil
+                </span>
               </span>
-            </span>
+            </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
 
@@ -46,7 +56,7 @@ export function SidebarUserFooter({ userName }: { userName: string }) {
           <SidebarMenuButton
             tooltip="Cerrar sesion"
             variant="outline"
-            className="h-auto items-center justify-start gap-3 px-3 py-2"
+            className="h-auto items-center justify-start gap-3 px-3 py-2 cursor-pointer"
             onClick={handleLogout}
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-background text-sidebar-foreground">
