@@ -8,9 +8,10 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { Loader2, Search, UserPlus, UserRound } from "lucide-react";
+import { Search, UserPlus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,7 +36,7 @@ import {
   buscarUsuariosAction,
   matricularUsuarioAction,
 } from "@/app/dashboard/encuestados/actions";
-import type { MoodleUserSummary } from "@/services/userService";
+import type { MoodleUserSummary } from "@/types/encuestado";
 
 interface MatricularUsuarioDialogProps {
   courses: MoodleCourse[];
@@ -326,7 +327,7 @@ export function MatricularUsuarioDialog({
                       disabled={searching || submitting}
                     />
                     {searching ? (
-                      <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400" />
+                      <Spinner className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     ) : null}
                   </div>
                   <Button
@@ -338,7 +339,7 @@ export function MatricularUsuarioDialog({
                     className="h-11"
                   >
                     {searching ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Spinner className="mr-2" />
                     ) : (
                       <Search className="mr-2 h-4 w-4" />
                     )}
@@ -523,7 +524,7 @@ export function MatricularUsuarioDialog({
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
             {submitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner className="mr-2" />
             ) : (
               <UserRound className="mr-2 h-4 w-4" />
             )}

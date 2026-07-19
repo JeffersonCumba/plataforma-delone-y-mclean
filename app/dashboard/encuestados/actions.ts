@@ -7,28 +7,18 @@ import { studentInputSchema, type StudentInput } from "@/lib/validations/user";
 import {
   buscarUsuariosMoodle,
   matricularUsuarioIndividual,
-  type IndividualEnrollmentResult,
-  type MoodleUserSummary,
+  registrarEstudiantesCvs,
+  type BatchRegistrationResult,
 } from "@/services/userService";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import {
   desmatricularUsuarioCurso,
   esProfesorEnCurso,
 } from "@/services/adminService";
-import { MoodleApiError } from "@/lib/moodle";
-
-export interface MatricularUsuarioActionResult {
-  ok: boolean;
-  message: string;
-  status?: IndividualEnrollmentResult["status"];
-  user?: MoodleUserSummary;
-}
-
-export interface BuscarUsuariosActionResult {
-  ok: boolean;
-  message: string;
-  users: MoodleUserSummary[];
-}
+import type {
+  MatricularUsuarioActionResult,
+  BuscarUsuariosActionResult,
+} from "@/types/encuestado";
 
 async function requireUserId(): Promise<number> {
   const cookieStore = await cookies();
@@ -228,24 +218,30 @@ export async function desmatricularUsuarioAction(
   }
 }
 
-export interface VerificarOwnershipResult {
-  ok: boolean;
-  courseId: number;
-  courseName: string;
-}
-
-export async function verificarOwnershipCursoAction(
+export async function registrarEstudiantesCsvAction(
   courseId: number,
-): Promise<VerificarOwnershipResult> {
+  users: StudentInput[],
+): Promise<{ ok: boolean; message: string; result?: BatchRegistrationResult }> {
   try {
     const userId = await requireUserId();
-    const courses = await obtenerCursosProfesor(userId);
-    const found = courses.find((course) => course.id === courseId);
-    if (!found) {
-      return { ok: false, courseId, courseName: "" };
-    }
-    return { ok: true, courseId, courseName: found.fullname };
-  } catch {
-    return { ok: false, courseId, courseName: "" };
+    await ensureCourseOwnership(userId, courseId);
+
+    const result = await registrarEstudiantesCvs(users, courseId);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/encuestados");
+    revalidatePath("/dashboard/encuestados/matricular");
+    revalidatePath(`/dashboard/cursos/${courseId}`);
+
+    return { ok: true, message: "Matriculacion masiva completada.", result };
+  } catch (error) {
+    console.error("[registrarEstudiantesCsvAction]", error);
+    return {
+      ok: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "No se pudo completar la matriculacion masiva.",
+    };
   }
 }

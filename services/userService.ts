@@ -12,6 +12,7 @@ import {
   type StudentInput,
   type RegisterUserInput,
 } from "@/lib/validations/user";
+import type { MoodleUserSummary } from "@/types/encuestado";
 
 interface CreateUsersResponse {
   id: number;
@@ -31,15 +32,6 @@ export interface StudentRegistrationResult {
   created: boolean;
   enrolled: boolean;
   skipped?: string;
-}
-
-export interface MoodleUserSummary {
-  id: number;
-  username: string;
-  firstname: string;
-  lastname: string;
-  fullname: string;
-  email: string;
 }
 
 export type IndividualEnrollmentStatus =
@@ -306,6 +298,7 @@ export async function registrarEstudiantesCvs(
       }
     } catch (error) {
       processed += 1;
+      console.error("[registrarEstudianteCsv]", error);
       const message =
         error instanceof Error ? error.message : "Error inesperado";
       errors.push({
@@ -495,16 +488,18 @@ export async function matricularUsuarioIndividual(input: {
     throw new Error("El courseId no es valido para matricular");
   }
 
-  if (!input.existingUserId) {
-    throw new Error("El existingUserId es obligatorio para el modo 'existing'");
-  }
-
   if (input.mode === "existing") {
-    if (!Number.isInteger(input.existingUserId) || input.existingUserId <= 0) {
+    if (!input.existingUserId) {
+      throw new Error("El existingUserId es obligatorio para el modo 'existing'");
+    }
+
+    const existingUserId: number = input.existingUserId;
+
+    if (!Number.isInteger(existingUserId) || existingUserId <= 0) {
       throw new Error("Selecciona un usuario existente para matricular");
     }
 
-    const user = await getMoodleUserById(input.existingUserId);
+    const user = await getMoodleUserById(existingUserId);
     if (!user) {
       throw new Error("El usuario seleccionado no existe o fue eliminado");
     }

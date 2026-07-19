@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Papa from "papaparse";
-import { CloudUpload, FileText, Loader2, Upload } from "lucide-react";
+import { CloudUpload, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
 
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,10 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MoodleCourse } from "@/types/course";
-import {
-  registrarEstudianteCsv,
-  type StudentRegistrationResult,
-} from "@/services/userService";
+import { registrarEstudiantesCsvAction } from "@/app/dashboard/encuestados/actions";
+import type { BatchRegistrationResult } from "@/services/userService";
 import type { StudentInput } from "@/lib/validations/user";
 
 type CsvRow = Record<string, unknown>;
@@ -80,19 +79,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [students, setStudents] = useState<StudentInput[]>([]);
   const [processing, setProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [lastResult, setLastResult] = useState<
-    StudentRegistrationResult[] | null
-  >(null);
-
-  const totalStudents = students.length;
-  const progress = useMemo(() => {
-    if (totalStudents === 0) {
-      return 0;
-    }
-
-    return Math.round((currentStep / totalStudents) * 100);
-  }, [currentStep, totalStudents]);
+  const [lastBatchResult, setLastBatchResult] = useState<BatchRegistrationResult | null>(null);
 
   const parseFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -118,8 +105,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
 
         setFileName(file.name);
         setStudents(mappedStudents);
-        setCurrentStep(0);
-        setLastResult(null);
+        setLastBatchResult(null);
         toast.success(
           `Archivo cargado: ${mappedStudents.length} usuarios detectados`,
         );
@@ -159,44 +145,33 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
     }
 
     setProcessing(true);
-    setCurrentStep(0);
-    const results: StudentRegistrationResult[] = [];
-    const failures: Array<{ email: string; message: string }> = [];
 
     try {
-      for (let index = 0; index < students.length; index += 1) {
-        const student = students[index];
-        try {
-          const result = await registrarEstudianteCsv(
-            student,
-            Number(selectedCourseId),
-          );
-          results.push(result);
-        } catch (error) {
-          failures.push({
-            email: student.email,
-            message:
-              error instanceof Error ? error.message : "Error inesperado",
-          });
-        }
-        setCurrentStep(index + 1);
-      }
-
-      setLastResult(results);
-
-      const createdCount = results.filter((item) => item.created).length;
-      const enrolledCount = results.filter((item) => item.enrolled).length;
-      const skippedCount = results.filter((item) => item.skipped).length;
-
-      toast.success(
-        `Matriculación masiva completada: ${enrolledCount} matriculados, ${createdCount} creados, ${skippedCount} existentes${failures.length ? `, ${failures.length} con error` : ""}`,
+      const result = await registrarEstudiantesCsvAction(
+        Number(selectedCourseId),
+        students,
       );
 
-      if (failures.length > 0) {
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+
+      const batchResult = result.result!;
+      setLastBatchResult(batchResult);
+
+      toast.success(
+        `Matriculacion masiva completada: ${batchResult.enrolled} matriculados, ${batchResult.created} creados, ${batchResult.skipped} existentes${batchResult.failed ? `, ${batchResult.failed} con error` : ""}`,
+      );
+
+      if (batchResult.errors.length > 0) {
         toast.error(
-          `Se omitieron ${failures.length} estudiantes por error en el CSV o Moodle`,
+          `Se omitieron ${batchResult.failed} estudiantes por error en el CSV o Moodle`,
         );
       }
+
+      setStudents([]);
+      setFileName(null);
     } catch (error) {
       const message =
         error instanceof Error
@@ -299,24 +274,29 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-slate-900">
               {processing
-                ? `Registrando ${currentStep} de ${totalStudents}...`
-                : totalStudents > 0
-                  ? `${totalStudents} estudiantes listos para procesar`
-                  : "Esperando archivo CSV"}
+                ? "Procesando estudiantes..."
+                : lastBatchResult
+                  ? `${lastBatchResult.total} estudiantes procesados`
+                  : students.length > 0
+                    ? `${students.length} estudiantes listos para procesar`
+                    : "Esperando archivo CSV"}
             </span>
-            <span className="text-slate-500">{progress}%</span>
+            {processing ? (
+              <Spinner className="h-4 w-4" />
+            ) : lastBatchResult ? (
+              <span className="text-slate-500">100%</span>
+            ) : null}
           </div>
-          <progress
-            value={currentStep}
-            max={totalStudents || 1}
-            aria-label="Progreso de matriculacion masiva"
-            className="h-2 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-slate-900 [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-slate-900"
-          />
-          {lastResult ? (
-            <div className="text-sm text-slate-600">
-              Procesados: {currentStep} de {totalStudents}. Creados:{" "}
-              {lastResult.filter((item) => item.created).length}. Matriculados:{" "}
-              {lastResult.filter((item) => item.enrolled).length}.
+          {processing ? (
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full w-full animate-pulse rounded-full bg-slate-900" />
+            </div>
+          ) : null}
+          {lastBatchResult ? (
+            <div className="mt-1 text-sm text-slate-600">
+              Procesados: {lastBatchResult.total}. Creados:{" "}
+              {lastBatchResult.created}. Matriculados:{" "}
+              {lastBatchResult.enrolled}. Fallos: {lastBatchResult.failed}.
             </div>
           ) : null}
         </div>
@@ -335,7 +315,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
             size="lg"
           >
             {processing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner className="mr-2" />
             ) : null}
             {processing ? "Procesando..." : "Registrar estudiantes"}
           </Button>
