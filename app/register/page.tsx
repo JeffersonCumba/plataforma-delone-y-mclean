@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { registerUserSchema } from "@/lib/validations/user";
 import { registrarUsuario } from "@/services/userService";
 
@@ -94,12 +95,10 @@ export default function RegisterPage() {
         password: "",
       });
 
-      toast.success("Usuario registrado exitosamente", {
-        action: {
-          label: "Login",
-          onClick: () => router.push("/login"),
-        },
-      });
+      toast.success("Usuario registrado exitosamente");
+
+      const emailParam = encodeURIComponent(parsed.data.email);
+      setTimeout(() => router.push(`/login?email=${emailParam}`), 1200);
     } catch (error) {
       const message =
         error instanceof Error
@@ -248,7 +247,11 @@ export default function RegisterPage() {
                     type="submit"
                     disabled={loading}
                   >
-                    <UserRoundPlus className="mr-2 h-4 w-4" />
+                    {loading ? (
+                      <Spinner className="mr-2 h-4 w-4" />
+                    ) : (
+                      <UserRoundPlus className="mr-2 h-4 w-4" />
+                    )}
                     {loading ? "Registrando..." : "Crear cuenta"}
                   </Button>
                   <Button

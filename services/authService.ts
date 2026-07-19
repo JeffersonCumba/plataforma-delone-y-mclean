@@ -241,46 +241,60 @@ export async function login(
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!normalizedEmail) {
-    throw new Error("El email es obligatorio para iniciar sesion");
+    throw new Error("El correo electrónico es obligatorio para iniciar sesión");
   }
 
   if (!password.trim()) {
-    throw new Error("La contraseña es obligatoria para iniciar sesion");
+    throw new Error("La contraseña es obligatoria para iniciar sesión");
   }
 
-  const [rows] = await pool.execute<MoodleUserRow[]>(
-    "SELECT id, username, password, firstname, lastname, email FROM mdl_user WHERE email = ? AND deleted = 0 LIMIT 1",
-    [normalizedEmail],
-  );
+  try {
+    const [rows] = await pool.execute<MoodleUserRow[]>(
+      "SELECT id, username, password, firstname, lastname, email FROM mdl_user WHERE email = ? AND deleted = 0 LIMIT 1",
+      [normalizedEmail],
+    );
 
-  const user = rows[0];
+    const user = rows[0];
 
-  if (!user) {
-    throw new Error("No se encontro un usuario en Moodle con ese email");
+    if (!user) {
+      throw new Error("No se encontró un usuario con ese correo electrónico");
+    }
+
+    const isValidPassword = verifySha512CryptPassword(password, user.password);
+
+    if (!isValidPassword) {
+      throw new Error("Credenciales incorrectas");
+    }
+
+    const fullname = `${user.firstname ?? ""} ${user.lastname ?? ""}`.trim();
+    const isAdminByUsername = user.username.toLowerCase() === "admin";
+    const isAdminByEmail = Boolean(
+      MOODLE_ADMIN_EMAIL && user.email.toLowerCase() === MOODLE_ADMIN_EMAIL,
+    );
+
+    const role: UserRole =
+      isAdminByUsername || isAdminByEmail ? "ADMIN" : "EVALUADOR";
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        fullname: fullname || user.username,
+        email: user.email,
+      },
+      role,
+    };
+  } catch (error) {
+    console.error("[login] Error:", error);
+
+    if (error instanceof Error && (
+      error.message.includes("No se encontró") ||
+      error.message.includes("Credenciales incorrectas") ||
+      error.message.includes("obligatorio")
+    )) {
+      throw error;
+    }
+
+    throw new Error("Error al iniciar sesión. Intentalo de nuevo más tarde.");
   }
-
-  const isValidPassword = verifySha512CryptPassword(password, user.password);
-
-  if (!isValidPassword) {
-    throw new Error("Credenciales incorrectas");
-  }
-
-  const fullname = `${user.firstname ?? ""} ${user.lastname ?? ""}`.trim();
-  const isAdminByUsername = user.username.toLowerCase() === "admin";
-  const isAdminByEmail = Boolean(
-    MOODLE_ADMIN_EMAIL && user.email.toLowerCase() === MOODLE_ADMIN_EMAIL,
-  );
-
-  const role: UserRole =
-    isAdminByUsername || isAdminByEmail ? "ADMIN" : "EVALUADOR";
-
-  return {
-    user: {
-      id: user.id,
-      username: user.username,
-      fullname: fullname || user.username,
-      email: user.email,
-    },
-    role,
-  };
 }

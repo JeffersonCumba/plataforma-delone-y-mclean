@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,39 +17,54 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { login } from "@/services/authService";
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Ingresa un correo electrónico válido")
+    .email("Ingresa un correo electrónico válido"),
+  password: z.string().min(1, "Ingresa una contraseña válida"),
+});
+
+type FieldErrors = Partial<Record<"email" | "password", string>>;
 
 const surveyBaseUrl = process.env.NEXT_PUBLIC_MOODLE_BASE_URL?.trim() ?? "";
 const passwordUrl = `${surveyBaseUrl}/login/forgot_password.php`;
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
   const router = useRouter();
+  const { email: emailParam } = use(searchParams);
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailParam ?? "");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
+    setErrors({});
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedEmail) {
-      setError("Ingresa un correo electronico valido");
-      return;
-    }
-
-    if (!password.trim()) {
-      setError("Ingresa una contraseña valida");
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = issue.path[0] as keyof FieldErrors;
+      setErrors({ [field]: issue.message });
+      toast.error(issue.message);
       return;
     }
 
     setLoading(true);
 
     try {
-      const result = await login(normalizedEmail, password);
+      const result = await login(parsed.data.email, parsed.data.password);
 
       localStorage.setItem("user_role", result.role);
       localStorage.setItem("user_name", result.user.fullname);
@@ -60,12 +77,22 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (rawError) {
       const message =
-        rawError instanceof Error ? rawError.message : "Error inesperado";
+        rawError instanceof Error
+          ? rawError.message
+          : "Error al iniciar sesión. Intentalo de nuevo más tarde.";
 
-      if (message.includes("No se encontro un usuario")) {
-        setError("Usuario no encontrado en el sistema");
+      const field = message.toLowerCase().includes("correo")
+        ? "email"
+        : message.toLowerCase().includes("contraseña")
+          ? "password"
+          : null;
+
+      toast.error(message);
+
+      if (field) {
+        setErrors({ [field]: message });
       } else {
-        setError(message);
+        setErrors({ email: message, password: message });
       }
     } finally {
       setLoading(false);
@@ -116,16 +143,26 @@ export default function LoginPage() {
             <CardContent className="px-8 pb-8 sm:px-10 sm:pb-10">
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electronico</Label>
+                  <Label htmlFor="email">Correo electrónico</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.email;
+                          return next;
+                        });
+                      }
+                    }}
                     autoComplete="email"
                     placeholder="nombre@dominio.com"
                     disabled={loading}
                     required
+                    aria-invalid={!!errors.email}
                   />
                 </div>
 
@@ -135,12 +172,26 @@ export default function LoginPage() {
                     id="password"
                     type="password"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) {
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next.password;
+                          return next;
+                        });
+                      }
+                    }}
                     autoComplete="current-password"
                     placeholder="Tu contraseña"
                     disabled={loading}
                     required
+                    aria-invalid={!!errors.password}
+                    autoFocus={!!emailParam}
                   />
+                  {errors.password && (
+                    <p className="text-xs text-destructive">{errors.password}</p>
+                  )}
                 </div>
 
                 {surveyBaseUrl ? (
@@ -156,18 +207,14 @@ export default function LoginPage() {
                   </div>
                 ) : null}
 
-                {error ? (
-                  <p className="border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                    {error}
-                  </p>
-                ) : null}
-
                 <Button asChild className="w-full mb-3" size="lg">
                   <button type="submit" disabled={loading}>
-                    {loading ? "Validando..." : "Ingresar"}
-                    {!loading ? (
-                      <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-300 group-hover/button:translate-x-1" />
-                    ) : null}
+                    {loading ? (
+                      <Spinner className="mr-2 h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="mr-2 h-4 w-4 transition-transform duration-300 group-hover/button:translate-x-1" />
+                    )}
+                    {loading ? "Ingresando..." : "Ingresar"}
                   </button>
                 </Button>
 
