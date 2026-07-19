@@ -6,6 +6,18 @@ export interface MoodleError {
   message: string;
 }
 
+export class MoodleApiError extends Error {
+  constructor(
+    public readonly wsFunction: string,
+    public readonly exception: string,
+    public readonly errorcode: string | undefined,
+    message: string,
+  ) {
+    super(message);
+    this.name = "MoodleApiError";
+  }
+}
+
 const MOODLE_URL = process.env.NEXT_PUBLIC_MOODLE_BASE_URL;
 const MOODLE_TOKEN = process.env.MOODLE_TOKEN;
 
@@ -67,11 +79,11 @@ export async function fetchMoodle<T>(
   }
 
   if (isMoodleError(payload)) {
-    const detail = payload.errorcode
-      ? `${payload.exception} (${payload.errorcode}): ${payload.message}`
-      : `${payload.exception}: ${payload.message}`;
-    throw new Error(
-      `Moodle API error for wsfunction "${wsFunction}": ${detail}`,
+    throw new MoodleApiError(
+      wsFunction,
+      payload.exception,
+      payload.errorcode,
+      payload.message,
     );
   }
 

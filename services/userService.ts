@@ -4,7 +4,8 @@ import { type RowDataPacket } from "mysql2";
 import { z } from "zod";
 
 import { pool } from "@/lib/db";
-import { fetchMoodle } from "@/lib/moodle";
+import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import { initializeTrialForTeacher } from "@/services/trialService";
 import {
   registerUserSchema,
   studentInputSchema,
@@ -83,7 +84,7 @@ function normalizeStudentInput(input: StudentInput): StudentInput {
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        error.issues[0]?.message ?? "Datos del estudiante invalidos",
+        error.issues[0]?.message ?? "Datos del estudiante inválidos",
       );
     }
 
@@ -97,7 +98,7 @@ function validateRegisterInput(input: RegisterUserInput): RegisterUserInput {
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        error.issues[0]?.message ?? "Datos de registro invalidos",
+        error.issues[0]?.message ?? "Datos de registro inválidos",
       );
     }
 
@@ -112,6 +113,103 @@ async function findUserByEmail(email: string): Promise<MoodleUserRow | null> {
   );
 
   return rows[0] ?? null;
+}
+
+async function findUserByUsername(
+  username: string,
+): Promise<MoodleUserRow | null> {
+  const [rows] = await pool.execute<MoodleUserRow[]>(
+    "SELECT id, email, username FROM mdl_user WHERE username = ? AND deleted = 0 LIMIT 1",
+    [username],
+  );
+
+  return rows[0] ?? null;
+}
+
+async function checkUserExistsByField(
+  field: "username" | "email",
+  value: string,
+): Promise<boolean> {
+  try {
+    const result = await fetchMoodle<{ users?: Array<{ id: number }> }>(
+      "core_user_get_users",
+      {
+        "criteria[0][key]": field,
+        "criteria[0][value]": value,
+      },
+    );
+    if (result?.users && result.users.length > 0) {
+      return true;
+    }
+  } catch (err) {
+    console.error(
+      `[checkUserExistsByField] WS falló para ${field}=${value}:`,
+      err,
+    );
+  }
+
+  try {
+    const column = field === "username" ? "username" : "email";
+    const [rows] = await pool.execute<MoodleUserRow[]>(
+      `SELECT id FROM mdl_user WHERE ${column} = ? AND deleted = 0 LIMIT 1`,
+      [value],
+    );
+    return rows.length > 0;
+  } catch (err) {
+    console.error(
+      `[checkUserExistsByField] DB falló para ${field}=${value}:`,
+      err,
+    );
+    return false;
+  }
+}
+
+async function deleteMoodleUser(userId: number): Promise<void> {
+  try {
+    await fetchMoodle<unknown>("core_user_update_users", {
+      "users[0][id]": String(userId),
+      "users[0][suspended]": "1",
+    });
+  } catch (err) {
+    console.error(
+      `[deleteMoodleUser] No se pudo suspender al usuario ${userId}:`,
+      err,
+    );
+  }
+}
+
+function parseRegistroError(error: unknown): string | null {
+  if (!(error instanceof MoodleApiError)) {
+    return null;
+  }
+
+  const msg = error.message.toLowerCase();
+  const isCreateUser = error.wsFunction === "core_user_create_users";
+
+  if (isCreateUser) {
+    if (
+      msg.includes("username already exists") ||
+      msg.includes("nombre de usuario ya existe") ||
+      msg.includes("ya existe") ||
+      msg.includes("already exists") ||
+      msg.includes("duplicado") ||
+      msg.includes("duplicate")
+    ) {
+      return "Ese nombre de usuario ya está en uso. Elige otro.";
+    }
+
+    if (
+      msg.includes("email already exists") ||
+      msg.includes("correo ya existe") ||
+      msg.includes("correo electrónico ya existe") ||
+      msg.includes("email already registered") ||
+      msg.includes("mail ya existe")
+    ) {
+      return "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.";
+    }
+  }
+
+  return null;
 }
 
 async function createMoodleUser(input: StudentInput): Promise<number> {
@@ -231,9 +329,73 @@ export async function registrarEstudiantesCvs(
 
 export async function registrarUsuario(
   input: RegisterUserInput,
-): Promise<void> {
+): Promise<number> {
   const data = validateRegisterInput(input);
-  await createMoodleUser(data);
+
+  const usernameExists = await checkUserExistsByField(
+    "username",
+    data.username,
+  );
+
+  if (usernameExists) {
+    throw new Error("Ese nombre de usuario ya está en uso. Elige otro.");
+  }
+
+  const emailExists = await checkUserExistsByField("email", data.email);
+  
+  if (emailExists) {
+    throw new Error(
+      "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.",
+    );
+  }
+
+  let userId = 0;
+
+  try {
+    userId = await createMoodleUser(data);
+
+    await initializeTrialForTeacher(userId);
+
+    return userId;
+  } catch (error) {
+    console.error("[registrarUsuario] Error:", error);
+
+    if (error instanceof MoodleApiError) {
+      console.error(
+        `[registrarUsuario] Moodle ws="${error.wsFunction}" code="${error.errorcode}" msg="${error.message}"`,
+      );
+    }
+
+    if (userId > 0) {
+      await deleteMoodleUser(userId);
+    }
+
+    const friendly = parseRegistroError(error);
+    if (friendly) {
+      throw new Error(friendly);
+    }
+
+    if (userId === 0) {
+      try {
+        const usernameInDb = await findUserByUsername(data.username);
+        if (usernameInDb) {
+          throw new Error("Ese nombre de usuario ya está en uso. Elige otro.");
+        }
+        const emailInDb = await findUserByEmail(data.email);
+        if (emailInDb) {
+          throw new Error(
+            "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.",
+          );
+        }
+      } catch (err) {
+        if (err instanceof Error) throw err;
+      }
+    }
+
+    throw new Error(
+      "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo.",
+    );
+  }
 }
 
 export async function buscarUsuariosMoodle(

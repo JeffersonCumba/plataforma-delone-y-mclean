@@ -7,7 +7,7 @@ import { fetchMoodle } from "@/lib/moodle";
 import { registerUserSchema } from "@/lib/validations/user";
 import { crearCursoProfesor, obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
-import { initializeTrialForTeacher, markTeacherDeleted, getTrialDays } from "@/services/trialService";
+import { markTeacherDeleted, getTrialDays } from "@/services/trialService";
 import {
   eliminarUsuarioMoodle,
   actualizarUsuarioMoodle,
@@ -107,22 +107,12 @@ export async function crearProfesorAction(
     return {
       ok: false,
       message:
-        parsed.error.issues[0]?.message ?? "Datos de registro invalidos.",
+        parsed.error.issues[0]?.message ?? "Datos de registro inválidos.",
     };
   }
 
   try {
     await registrarUsuario(parsed.data);
-
-    const user = await fetchMoodle<{ users: Array<{ id: number }> }>("core_user_get_users", {
-      "criteria[0][key]": "username",
-      "criteria[0][value]": parsed.data.username,
-    });
-
-    const createdUser = user?.users?.[0];
-    if (createdUser) {
-      await initializeTrialForTeacher(createdUser.id);
-    }
 
     const trialDays = await getTrialDays();
     revalidatePath("/dashboard/admin");

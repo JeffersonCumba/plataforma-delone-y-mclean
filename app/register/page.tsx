@@ -20,12 +20,26 @@ import { Label } from "@/components/ui/label";
 import { registerUserSchema } from "@/lib/validations/user";
 import { registrarUsuario } from "@/services/userService";
 
+type FieldErrors = Partial<Record<"username" | "firstname" | "lastname" | "email" | "password", string>>;
+
 interface RegisterFormState {
   username: string;
   firstname: string;
   lastname: string;
   email: string;
   password: string;
+}
+
+function fieldKeyFromIssuePath(path: (string | number | symbol)[]): keyof FieldErrors {
+  return String(path[0]) as keyof FieldErrors;
+}
+
+function fieldKeyFromMessage(msg: string): keyof FieldErrors | null {
+  const lower = msg.toLowerCase();
+  if (lower.includes("usuario")) return "username";
+  if (lower.includes("correo")) return "email";
+  if (lower.includes("contrase")) return "password";
+  return null;
 }
 
 export default function RegisterPage() {
@@ -38,22 +52,32 @@ export default function RegisterPage() {
     email: "",
     password: "",
   });
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
   const handleChange =
     (field: keyof RegisterFormState) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((current) => ({ ...current, [field]: event.target.value }));
+      if (errors[field]) {
+        setErrors((current) => {
+          const next = { ...current };
+          delete next[field];
+          return next;
+        });
+      }
     };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrors({});
 
     const parsed = registerUserSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(
-        parsed.error.issues[0]?.message ?? "Datos de registro invalidos",
-      );
+      const issue = parsed.error.issues[0];
+      const field = fieldKeyFromIssuePath(issue.path);
+      setErrors({ [field]: issue.message });
+      toast.error(issue.message);
       return;
     }
 
@@ -70,22 +94,22 @@ export default function RegisterPage() {
         password: "",
       });
 
-      toast.success("Usuario regstrado exitosamente", {
+      toast.success("Usuario registrado exitosamente", {
         action: {
           label: "Login",
           onClick: () => router.push("/login"),
         },
       });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.issues[0]?.message ?? "Datos de registro invalidos");
-        return;
-      }
-
       const message =
         error instanceof Error
           ? error.message
-          : "No fue posible completar el registro";
+          : "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo.";
+
+      const field = fieldKeyFromMessage(message);
+      if (field) {
+        setErrors({ [field]: message });
+      }
 
       toast.error(message);
     } finally {
@@ -140,7 +164,11 @@ export default function RegisterPage() {
                     onChange={handleChange("username")}
                     disabled={loading}
                     required
+                    aria-invalid={!!errors.username}
                   />
+                  {errors.username && (
+                    <p className="text-xs text-destructive">{errors.username}</p>
+                  )}
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
@@ -154,7 +182,11 @@ export default function RegisterPage() {
                       onChange={handleChange("firstname")}
                       disabled={loading}
                       required
+                      aria-invalid={!!errors.firstname}
                     />
+                    {errors.firstname && (
+                      <p className="text-xs text-destructive">{errors.firstname}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -167,7 +199,11 @@ export default function RegisterPage() {
                       onChange={handleChange("lastname")}
                       disabled={loading}
                       required
+                      aria-invalid={!!errors.lastname}
                     />
+                    {errors.lastname && (
+                      <p className="text-xs text-destructive">{errors.lastname}</p>
+                    )}
                   </div>
                 </div>
 
@@ -181,7 +217,11 @@ export default function RegisterPage() {
                     onChange={handleChange("email")}
                     disabled={loading}
                     required
+                    aria-invalid={!!errors.email}
                   />
+                  {errors.email && (
+                    <p className="text-xs text-destructive">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -194,7 +234,11 @@ export default function RegisterPage() {
                     onChange={handleChange("password")}
                     disabled={loading}
                     required
+                    aria-invalid={!!errors.password}
                   />
+                  {errors.password && (
+                    <p className="text-xs text-destructive">{errors.password}</p>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-3 pt-2">
