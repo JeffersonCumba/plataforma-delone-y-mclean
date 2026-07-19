@@ -9,7 +9,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 interface SidebarUserFooterProps {
   userName: string;
@@ -27,7 +29,7 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
     router.push("/logout");
   };
 
-  const profileHref = role === "ADMIN" 
+  const profileHref = role === "ADMIN"
     ? `/dashboard/admin/profesores/${userId}`
     : "/dashboard/profesor";
 
@@ -35,21 +37,25 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
     <SidebarFooter>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip={userName} className="h-auto items-center justify-start gap-3 px-3 py-2">
-            <Link href={profileHref}>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
-                <UserRound className="h-5 w-5" />
+          <Link
+            href={profileHref}
+            className={cn(
+              sidebarMenuButtonVariants(),
+              "h-auto items-center justify-start gap-3 px-3 py-2",
+            )}
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
+              <UserRound className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
+              <span className="block truncate text-sm font-medium text-sidebar-foreground">
+                {userName}
               </span>
-              <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
-                <span className="block truncate text-sm font-medium text-sidebar-foreground">
-                  {userName}
-                </span>
-                <span className="block text-xs text-sidebar-foreground/70">
-                  Perfil
-                </span>
+              <span className="block text-xs text-sidebar-foreground/70">
+                Perfil
               </span>
-            </Link>
-          </SidebarMenuButton>
+            </span>
+          </Link>
         </SidebarMenuItem>
 
         <SidebarMenuItem>

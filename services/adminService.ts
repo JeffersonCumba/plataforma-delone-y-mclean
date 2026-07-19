@@ -416,3 +416,39 @@ export async function desmatricularUsuarioCurso(
     "unenrolments[0][courseid]": String(courseId),
   });
 }
+
+export async function obtenerEstudiantesDeProfesor(
+  teacherId: number,
+): Promise<number> {
+  const [rows] = await pool.execute<CountRow[]>(
+    `SELECT COUNT(DISTINCT ue.userid) AS total
+       FROM mdl_user_enrolments ue
+       JOIN mdl_enrol e ON e.id = ue.enrolid
+       JOIN mdl_course c ON c.id = e.courseid AND c.id != 1
+       JOIN mdl_context ctx ON ctx.contextlevel = 50 AND ctx.instanceid = c.id
+       JOIN mdl_role_assignments ra ON ra.contextid = ctx.id
+      WHERE ra.roleid = ?
+        AND ra.userid = ?`,
+    [MOODLE_TEACHER_ROLE_ID, teacherId],
+  );
+
+  return rows[0]?.total ?? 0;
+}
+
+export async function obtenerEncuestasDeProfesor(
+  teacherId: number,
+): Promise<number> {
+  const [rows] = await pool.execute<CountRow[]>(
+    `SELECT COUNT(fc.id) AS total
+       FROM mdl_feedback_completed fc
+       JOIN mdl_feedback f ON f.id = fc.feedback
+       JOIN mdl_course c ON c.id = f.course AND c.id != 1
+       JOIN mdl_context ctx ON ctx.contextlevel = 50 AND ctx.instanceid = c.id
+       JOIN mdl_role_assignments ra ON ra.contextid = ctx.id
+      WHERE ra.roleid = ?
+        AND ra.userid = ?`,
+    [MOODLE_TEACHER_ROLE_ID, teacherId],
+  );
+
+  return rows[0]?.total ?? 0;
+}

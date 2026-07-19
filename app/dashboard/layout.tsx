@@ -1,24 +1,14 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { BookOpen, FolderClosed, GraduationCap, LayoutDashboard, UserCheck, UsersRound, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { SidebarUserFooter } from "@/app/dashboard/_components/sidebar-user-footer";
+import { DashboardSidebar } from "@/app/dashboard/_components/dashboard-sidebar";
 import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 
 export default async function DashboardLayout({
@@ -46,94 +36,7 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent px-2 py-2">
-            <GraduationCap className="h-4 w-4" />
-            <span className="text-sm font-medium">Dashboard</span>
-          </div>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Navegacion</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {role !== "ADMIN" && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/dashboard/profesor">
-                        <LayoutDashboard className="h-4 w-4" />
-                        <span>Resumen</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/dashboard/cursos">
-                      <FolderClosed className="h-4 w-4" />
-                      <span>Cursos</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/dashboard/encuestados">
-                      <UsersRound className="h-4 w-4" />
-                      <span>Encuestados</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {role === "ADMIN" ? (
-            <SidebarGroup>
-              <SidebarGroupLabel>Administración</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/dashboard/admin">
-                        <LayoutDashboard className="h-4 w-4" />
-                        <span>Panel General</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/dashboard/admin/profesores">
-                        <GraduationCap className="h-4 w-4" />
-                        <span>Profesores</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/dashboard/admin/alumnos">
-                        <UserCheck className="h-4 w-4" />
-                        <span>Alumnos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/dashboard/admin/cursos">
-                        <BookOpen className="h-4 w-4" />
-                        <span>Cursos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null}
-        </SidebarContent>
-
-        <SidebarUserFooter userName={userName} role={role} userId={userId} />
-      </Sidebar>
+      <DashboardSidebar role={role} userName={userName} userId={userId} />
 
       <SidebarInset>
         <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/90 backdrop-blur">
