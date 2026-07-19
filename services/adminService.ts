@@ -7,9 +7,7 @@ import { fetchMoodle } from "@/lib/moodle";
 import type { MoodleCourse } from "@/types/course";
 import type { AdminStats, AdminCursoRow, ProfesorRow } from "@/types/admin";
 import { getAllTeachersTrialInfo, getTrialDays } from "@/services/trialService";
-
-const MOODLE_TEACHER_ROLE_ID = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
-const MOODLE_STUDENT_ROLE_ID = Number(process.env.MOODLE_STUDENT_ROLE_ID ?? 5);
+import { MOODLE_TEACHER_ROLE_ID, MOODLE_STUDENT_ROLE_ID } from "@/lib/constants";
 
 interface CourseRow extends RowDataPacket {
   id: number;
@@ -408,10 +406,8 @@ export async function desmatricularUsuarioCurso(
   userId: number,
   courseId: number,
 ): Promise<void> {
-  const studentRoleId = Number(process.env.MOODLE_STUDENT_ROLE_ID ?? 5);
-
   const result = await fetchMoodle<unknown>("enrol_manual_unenrol_users", {
-    "unenrolments[0][roleid]": String(studentRoleId),
+    "unenrolments[0][roleid]": String(MOODLE_STUDENT_ROLE_ID),
     "unenrolments[0][userid]": String(userId),
     "unenrolments[0][courseid]": String(courseId),
   });

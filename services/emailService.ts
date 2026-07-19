@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { TRIAL_DAYS } from "@/lib/constants";
 
 interface EmailOptions {
   to: string;
@@ -243,4 +244,3 @@ Equipo DeLone & McLean
   });
 }
 
-const TRIAL_DAYS = Number(process.env.TRIAL_DAYS ?? 30);

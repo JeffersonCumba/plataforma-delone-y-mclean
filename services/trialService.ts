@@ -2,6 +2,7 @@
 
 import { type RowDataPacket, type ResultSetHeader } from "mysql2";
 import { pool } from "@/lib/db";
+import { TRIAL_DAYS, TRIAL_WARNING_DAYS } from "@/lib/constants";
 
 interface TrialRow extends RowDataPacket {
   user_id: number;
@@ -25,8 +26,7 @@ export interface TeacherTrialInfo {
   status: string;
 }
 
-const TRIAL_DAYS = Number(process.env.TRIAL_DAYS ?? 30);
-const WARNING_DAYS = Number(process.env.TRIAL_WARNING_DAYS ?? 3);
+
 
 async function isAdminUser(userId: number): Promise<boolean> {
   const [rows] = await pool.execute<RowDataPacket[]>(
@@ -100,7 +100,7 @@ export async function getTeacherTrialInfo(userId: number): Promise<TeacherTrialI
   const diffMs = trialEndsAt.getTime() - now.getTime();
   const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
   const isExpired = daysRemaining === 0;
-  const isWarningPeriod = daysRemaining <= WARNING_DAYS && daysRemaining > 0;
+  const isWarningPeriod = daysRemaining <= TRIAL_WARNING_DAYS && daysRemaining > 0;
 
   return {
     userId: row.user_id,
@@ -131,7 +131,7 @@ export async function getAllTeachersTrialInfo(): Promise<TeacherTrialInfo[]> {
     const diffMs = trialEndsAt.getTime() - now.getTime();
     const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     const isExpired = daysRemaining === 0;
-    const isWarningPeriod = daysRemaining <= WARNING_DAYS && daysRemaining > 0;
+    const isWarningPeriod = daysRemaining <= TRIAL_WARNING_DAYS && daysRemaining > 0;
 
     results.push({
       userId: row.user_id,
@@ -187,5 +187,5 @@ export async function getTrialDays(): Promise<number> {
 }
 
 export async function getWarningDays(): Promise<number> {
-  return WARNING_DAYS;
+  return TRIAL_WARNING_DAYS;
 }

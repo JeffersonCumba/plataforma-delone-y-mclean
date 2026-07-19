@@ -4,33 +4,15 @@ import { fetchMoodle } from "@/lib/moodle";
 import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/services/emailService";
 import { markTeacherExpired } from "@/services/trialService";
-import type { AnalyticsData, DimensionKey } from "@/types/analytics";
+import { buildEmptyAnalyticsData } from "@/lib/analytics-helpers";
+import { TRIAL_WARNING_DAYS, MOODLE_TEACHER_ROLE_ID } from "@/lib/constants";
+import type { AnalyticsData } from "@/types/analytics";
+import type { TrialInfo, TeacherInfo } from "@/types/trial";
 import type { PoolConnection } from "mysql2/promise";
 
-const MOODLE_TEACHER_ROLE_ID = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
-const MOODLE_STUDENT_ROLE_ID = Number(process.env.MOODLE_STUDENT_ROLE_ID ?? 5);
-
-const TRIAL_DAYS = Number(process.env.TRIAL_DAYS ?? 30);
-const TRIAL_WARNING_DAYS = Number(process.env.TRIAL_WARNING_DAYS ?? 3);
 const TRIAL_CRON_SECRET = process.env.TRIAL_CRON_SECRET;
 const PYTHON_API_URL =
   process.env.NEXT_PUBLIC_PYTHON_API_URL ?? "http://localhost:8000";
-
-interface TrialInfo {
-  user_id: number;
-  trial_start_date: Date;
-  trial_ends_at: Date;
-  warning_sent: boolean;
-  deleted_at: Date | null;
-}
-
-interface TeacherInfo {
-  user_id: number;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-}
 
 function isAdminTeacher(teacher: TeacherInfo): boolean {
   const username = teacher.username.trim().toLowerCase();
@@ -40,38 +22,6 @@ function isAdminTeacher(teacher: TeacherInfo): boolean {
     username === "admin" ||
     Boolean(adminEmail && teacher.email.trim().toLowerCase() === adminEmail)
   );
-}
-
-function buildEmptyAnalyticsData(): AnalyticsData {
-  const emptyR2 = {} as Partial<Record<DimensionKey, number>>;
-
-  return {
-    totalSurveys: 0,
-    totalRespondents: 0,
-    responseRate: 0,
-    cronbachAlpha: 0,
-    promediosDimensiones: {
-      calidad_sys: 0,
-      calidad_info: 0,
-      calidad_serv: 0,
-      uso_sistema: 0,
-      satis_user: 0,
-      benef_netos: 0,
-    },
-    dimensionChartData: [],
-    betaCoefficients: [],
-    criticalQuestions: [],
-    satisfactionDistribution: [],
-    questionFrequencies: [],
-    deloneMcleanModel: {
-      sampleSize: 0,
-      bootstrapSamples: 0,
-      structuralPaths: [],
-      constructReliability: [],
-      discriminantValidity: [],
-      rSquared: emptyR2,
-    },
-  };
 }
 
 async function getTeachersNeedingWarning(
@@ -132,21 +82,6 @@ async function getTeacherCourses(
   return (rows as { courseid: number }[]).map((r) => r.courseid);
 }
 
-async function getCourseStudents(
-  conn: PoolConnection,
-  courseId: number,
-): Promise<number[]> {
-  const [rows] = await conn.execute(
-    `SELECT DISTINCT ue.userid AS userid
-        FROM mdl_user_enrolments ue
-        JOIN mdl_enrol e ON e.id = ue.enrolid
-       WHERE e.courseid = ?`,
-    [courseId],
-  );
-
-  return (rows as { userid: number }[]).map((r) => r.userid);
-}
-
 async function getCourseName(
   conn: PoolConnection,
   courseId: number,
@@ -163,16 +98,23 @@ async function fetchReport(
   endpoint: string,
   payload: Record<string, unknown>,
 ): Promise<Buffer | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
     const res = await fetch(`${PYTHON_API_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     return Buffer.from(await res.arrayBuffer());
-  } catch {
+  } catch (error) {
+    console.error(`Error en fetchReport ${endpoint}:`, error);
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -183,33 +125,31 @@ async function generateReportsForTeacher(
 ): Promise<{ excel: Buffer; pdf: Buffer } | null> {
   try {
     const courseIds = await getTeacherCourses(conn, teacherId);
-    const courseNames: Record<number, string> = {};
 
     const analyticsCandidates = await Promise.allSettled(
       courseIds.map(async (courseId) => {
         const courseName = await getCourseName(conn, courseId);
-        courseNames[courseId] = courseName;
-        return getCourseAnalyticsData(courseId);
+        const data = await getCourseAnalyticsData(courseId);
+        return { courseId, courseName, data };
       }),
     );
 
     const analyticsList = analyticsCandidates
       .filter(
-        (result): result is PromiseFulfilledResult<AnalyticsData> =>
+        (result): result is PromiseFulfilledResult<{ courseId: number; courseName: string; data: AnalyticsData }> =>
           result.status === "fulfilled",
       )
-      .map((result, index) => ({
-        courseId: courseIds[index],
-        courseName: courseNames[courseIds[index]] ?? `Curso ${courseIds[index]}`,
-        analytics: result.value,
+      .map((result) => ({
+        courseId: result.value.courseId,
+        courseName: result.value.courseName,
+        analytics: result.value.data,
       }));
 
     if (analyticsList.length === 0) {
-      const empty = buildEmptyAnalyticsData();
       analyticsList.push({
         courseId: 0,
         courseName: `${teacherName} - Backup Completo`,
-        analytics: empty,
+        analytics: buildEmptyAnalyticsData(),
       });
     }
 
@@ -239,7 +179,8 @@ async function generateReportsForTeacher(
 
     if (!excel || !pdf) return null;
     return { excel, pdf };
-  } catch {
+  } catch (error) {
+    console.error(`Error generando reportes para profesor ${teacherId}:`, error);
     return null;
   }
 }
@@ -257,27 +198,8 @@ async function deleteTeacherAndData(
         "courseids[0]": String(courseId),
       });
       console.log(`Curso ${courseId} eliminado`);
-    } catch {
-      console.log(`Error eliminando curso ${courseId} del profesor ${userId}`);
-    }
-  }
-
-  for (const courseId of courses) {
-    try {
-      const students = await getCourseStudents(conn, courseId);
-      for (const studentId of students) {
-        try {
-          await fetchMoodle<unknown>("enrol_manual_unenrol_users", {
-            "unenrolments[0][roleid]": String(MOODLE_STUDENT_ROLE_ID),
-            "unenrolments[0][userid]": String(studentId),
-            "unenrolments[0][courseid]": String(courseId),
-          });
-        } catch {
-          console.log(`Error desmatriculando alumno ${studentId} del curso ${courseId}`);
-        }
-      }
-    } catch {
-      console.log(`Error obteniendo alumnos del curso ${courseId}`);
+    } catch (error) {
+      console.error(`Error eliminando curso ${courseId} del profesor ${userId}:`, error);
     }
   }
 
@@ -286,22 +208,12 @@ async function deleteTeacherAndData(
       "userids[0]": String(userId),
     });
     console.log(`Usuario ${userId} eliminado de Moodle`);
-  } catch {
-    console.log(`Error eliminando usuario ${userId} de Moodle`);
+  } catch (error) {
+    console.error(`Error eliminando usuario ${userId} de Moodle:`, error);
   }
 
   await markTeacherExpired(userId);
   console.log(`Trial marcado como expirado para el profesor ${userId}`);
-}
-
-async function markWarningSent(
-  conn: PoolConnection,
-  userId: number,
-): Promise<void> {
-  await conn.execute(
-    `UPDATE mdl_user_trial SET warning_sent = TRUE, status = 'WARNING', warning_sent_at = NOW() WHERE user_id = ?`,
-    [userId],
-  );
 }
 
 export async function GET(request: NextRequest) {
@@ -343,7 +255,10 @@ export async function GET(request: NextRequest) {
           );
 
           if (result.ok) {
-            await markWarningSent(conn, teacher.user_id);
+            await conn.execute(
+              `UPDATE mdl_user_trial SET warning_sent = TRUE, status = 'WARNING', warning_sent_at = NOW() WHERE user_id = ?`,
+              [teacher.user_id],
+            );
             await conn.execute(
               `INSERT INTO mdl_trial_audit_log (user_id, action, details) VALUES (?, 'WARNING_SENT', ?)`,
               [teacher.user_id, JSON.stringify({ daysRemaining })],
@@ -363,11 +278,9 @@ export async function GET(request: NextRequest) {
 
       for (const teacher of expiredTeachers) {
         try {
-          await deleteTeacherAndData(conn, teacher.user_id);
-
           const safeName = `${teacher.firstname} ${teacher.lastname}`.trim();
-          let reports: { excel: Buffer; pdf: Buffer } | null = null;
 
+          let reports: { excel: Buffer; pdf: Buffer } | null = null;
           for (let attempt = 1; attempt <= 3; attempt++) {
             reports = await generateReportsForTeacher(conn, teacher.user_id, safeName);
             if (reports) break;
@@ -383,14 +296,16 @@ export async function GET(request: NextRequest) {
             reports?.pdf,
           );
 
-          if (result.ok) {
-            expiredDeleted++;
-            console.log(`Correo de expiracion enviado al profesor ${teacher.user_id}`);
-          } else {
-            console.log(`Fallo envio de expiracion al profesor ${teacher.user_id}: ${result.message}`);
+          if (!result.ok) {
+            console.log(`Fallo envio de expiracion al profesor ${teacher.user_id}: ${result.message}. No se eliminaron datos, se reintentara en el proximo cron.`);
+            continue;
           }
+
+          await deleteTeacherAndData(conn, teacher.user_id);
+          expiredDeleted++;
+          console.log(`Correo de expiracion enviado al profesor ${teacher.user_id}`);
         } catch (error) {
-          console.log(`Error procesando profesor expirado ${teacher.user_id}:`, error);
+          console.error(`Error procesando profesor expirado ${teacher.user_id}:`, error);
         }
       }
 
