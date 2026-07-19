@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +47,13 @@ export default function LoginPage({
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\s*)user_id=(\d+)/);
+    if (match && Number.isInteger(Number(match[1])) && Number(match[1]) > 0) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
