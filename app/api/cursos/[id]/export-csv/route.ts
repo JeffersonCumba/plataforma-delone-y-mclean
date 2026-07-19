@@ -82,7 +82,7 @@ export async function GET(
     ].join(","),
   );
 
-  const csv = `\ufeff${[header, ...csvRows].join("\n")}`;
+  const csv = `\uFEFF${[header, ...csvRows].join("\n")}`;
 
   return new NextResponse(csv, {
     status: 200,

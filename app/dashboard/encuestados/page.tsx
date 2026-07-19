@@ -5,15 +5,13 @@ import { Upload, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  EncuestadosTable,
-  type EncuestadoRow,
-} from "@/app/dashboard/_components/encuestados-table";
+import { EncuestadosTable } from "@/app/dashboard/_components/encuestados-table";
+import type { EncuestadoRow } from "@/types/encuestado";
 import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 import { obtenerTodosLosCursos, obtenerIdsProfesoresDeCursos } from "@/services/adminService";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 
 export default async function DashboardEncuestadosPage() {
   const cookieStore = await cookies();

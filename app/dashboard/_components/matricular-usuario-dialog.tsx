@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 import {
   buscarUsuariosAction,
   matricularUsuarioAction,

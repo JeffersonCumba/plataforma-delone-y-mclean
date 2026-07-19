@@ -15,6 +15,7 @@ import {
   desmatricularUsuarioCurso,
   esProfesorEnCurso,
 } from "@/services/adminService";
+import { MoodleApiError } from "@/lib/moodle";
 
 export interface MatricularUsuarioActionResult {
   ok: boolean;
@@ -66,12 +67,10 @@ export async function buscarUsuariosAction(
     const users = await buscarUsuariosMoodle(query);
     return { ok: true, message: "OK", users };
   } catch (error) {
+    console.error("[buscarUsuariosAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No fue posible buscar usuarios",
+      message: "No fue posible buscar usuarios.",
       users: [],
     };
   }
@@ -90,13 +89,10 @@ export async function matricularUsuarioAction(
   let userId: number;
   try {
     userId = await requireUserId();
-  } catch (error) {
+  } catch {
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Sesion invalida. Vuelve a iniciar sesion.",
+      message: "Sesion invalida. Vuelve a iniciar sesion.",
     };
   }
 
@@ -158,12 +154,10 @@ export async function matricularUsuarioAction(
       user: result.user,
     };
   } catch (error) {
+    console.error("[matricularUsuarioAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo matricular al usuario",
+      message: "No se pudo matricular al usuario. Verifica los datos e intenta de nuevo.",
     };
   }
 }
@@ -175,13 +169,10 @@ export async function desmatricularUsuarioAction(
   let userId: number;
   try {
     userId = await requireUserId();
-  } catch (error) {
+  } catch {
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Sesion invalida. Vuelve a iniciar sesion.",
+      message: "Sesion invalida. Vuelve a iniciar sesion.",
     };
   }
 
@@ -229,12 +220,10 @@ export async function desmatricularUsuarioAction(
       message: "Usuario desmatriculado correctamente.",
     };
   } catch (error) {
+    console.error("[desmatricularUsuarioAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo desmatricular al usuario.",
+      message: "No se pudo desmatricular al usuario. Intenta de nuevo mas tarde.",
     };
   }
 }

@@ -4,7 +4,7 @@ import { type RowDataPacket } from "mysql2";
 
 import { pool } from "@/lib/db";
 import { fetchMoodle } from "@/lib/moodle";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 import type { AdminStats, AdminCursoRow, ProfesorRow } from "@/types/admin";
 import { getAllTeachersTrialInfo, getTrialDays } from "@/services/trialService";
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Link2, MoreVertical, Trash2, UserPlus } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { copyMoodleLoginLink } from "@/lib/survey-link";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderClosed } from "lucide-react";
+import type { MoodleCourse } from "@/types/course";
 
 function cleanSummary(summary?: string): string {
   if (!summary) {
@@ -29,15 +31,7 @@ function cleanSummary(summary?: string): string {
   return summary.replace(/<[^>]*>/g, "").trim() || "Sin descripcion disponible";
 }
 
-export interface CourseCardCourse {
-  id: number;
-  fullname: string;
-  shortname: string;
-  summary: string;
-  idnumber: string;
-}
-
-export function CourseCard({ course }: { course: CourseCardCourse }) {
+export function CourseCard({ course }: { course: MoodleCourse }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -174,7 +168,14 @@ export function CourseCard({ course }: { course: CourseCardCourse }) {
               onClick={handleDeleteCourse}
               disabled={isDeleting}
             >
-              {isDeleting ? "Eliminando..." : "Eliminar curso"}
+              {isDeleting ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar curso"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

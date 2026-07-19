@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 import { CourseCard } from "@/app/dashboard/_components/course-card";
 
 export function CoursesGrid({

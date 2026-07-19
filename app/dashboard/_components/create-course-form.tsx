@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { createCourseAction } from "@/app/dashboard/cursos/actions";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -144,7 +145,14 @@ export function CreateCourseForm({
 
             <div className="flex justify-end">
               <Button type="submit" size="lg" disabled={isPending}>
-                {isPending ? "Creando curso..." : "Crear curso"}
+                {isPending ? (
+                  <>
+                    <Spinner className="mr-2" />
+                    Creando curso...
+                  </>
+                ) : (
+                  "Crear curso"
+                )}
               </Button>
             </div>
           </form>

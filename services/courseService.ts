@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { z } from "zod";
 import { type PoolConnection } from "mysql2/promise";
 import { type ResultSetHeader, type RowDataPacket } from "mysql2";
@@ -9,15 +10,9 @@ import {
   createCourseSchema,
   type CreateCourseInput,
 } from "@/lib/validations/course";
-import { fetchMoodle } from "@/lib/moodle";
-
-export interface MoodleCourse {
-  id: number;
-  fullname: string;
-  shortname: string;
-  summary: string;
-  idnumber: string;
-}
+import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import type { MoodleCourse } from "@/types/course";
+import type { DimensionKey } from "@/types/analytics";
 
 interface CreatedCourseResponse {
   id: number;
@@ -51,14 +46,6 @@ interface DefaultQuestion {
   dimension: DimensionKey;
   text: string;
 }
-
-type DimensionKey =
-  | "calidad_sys"
-  | "calidad_info"
-  | "calidad_serv"
-  | "uso_sistema"
-  | "satis_user"
-  | "benef_netos";
 
 const LIKERT_PRESENTATION =
   "r>>>>>1>>Totalmente en desacuerdo\r|2>>En desacuerdo\r|3>>Ni de acuerdo ni en desacuerdo\r|4>>De acuerdo\r|5>>Totalmente de acuerdo";
@@ -337,53 +324,62 @@ export async function crearCursoProfesor(
     throw new Error("MOODLE_TEACHER_ROLE_ID no esta configurado correctamente");
   }
 
-  const createdCourses = await fetchMoodle<CreatedCourseResponse[]>(
-    "core_course_create_courses",
-    {
-      "courses[0][fullname]": data.fullname,
-      "courses[0][shortname]": data.shortname,
-      "courses[0][categoryid]": String(categoryId),
-      "courses[0][summary]": data.summary,
-      "courses[0][summaryformat]": "1",
-      "courses[0][visible]": "1",
-      "courses[0][format]": "topics",
-    },
-  );
+  try {
+    const createdCourses = await fetchMoodle<CreatedCourseResponse[]>(
+      "core_course_create_courses",
+      {
+        "courses[0][fullname]": data.fullname,
+        "courses[0][shortname]": data.shortname,
+        "courses[0][categoryid]": String(categoryId),
+        "courses[0][summary]": data.summary,
+        "courses[0][summaryformat]": "1",
+        "courses[0][visible]": "1",
+        "courses[0][format]": "topics",
+      },
+    );
 
-  const createdCourse = createdCourses?.[0];
-  if (!createdCourse?.id) {
-    throw new Error("Moodle no devolvio el curso creado");
+    const createdCourse = createdCourses?.[0];
+    if (!createdCourse?.id) {
+      throw new Error("Moodle no devolvio el curso creado");
+    }
+    console.log("[crearCursoProfesor] Moodle response:", JSON.stringify(createdCourse));
+
+    await fetchMoodle<unknown>("enrol_manual_enrol_users", {
+      "enrolments[0][roleid]": String(teacherRoleId),
+      "enrolments[0][userid]": String(userId),
+      "enrolments[0][courseid]": String(createdCourse.id),
+    });
+
+    const courseContextId = await getCourseContextId(createdCourse.id);
+
+    await fetchMoodle<unknown>("core_role_assign_roles", {
+      "assignments[0][roleid]": String(teacherRoleId),
+      "assignments[0][userid]": String(userId),
+      "assignments[0][contextid]": String(courseContextId),
+    });
+
+    await createDefaultFeedbackInCourse(
+      createdCourse.id,
+      createdCourse.shortname,
+    );
+
+    return {
+      id: createdCourse.id,
+      fullname: createdCourse.fullname ?? data.fullname,
+      shortname: createdCourse.shortname ?? data.shortname,
+      summary: createdCourse.summary ?? data.summary,
+      idnumber: createdCourse.idnumber ?? "",
+    };
+  } catch (error) {
+    console.error("[crearCursoProfesor]", error);
+    if (error instanceof MoodleApiError) {
+      throw new Error("Error al crear el curso en Moodle. Verifica los datos e intenta de nuevo.");
+    }
+    throw error;
   }
-
-  await fetchMoodle<unknown>("enrol_manual_enrol_users", {
-    "enrolments[0][roleid]": String(teacherRoleId),
-    "enrolments[0][userid]": String(userId),
-    "enrolments[0][courseid]": String(createdCourse.id),
-  });
-
-  const courseContextId = await getCourseContextId(createdCourse.id);
-
-  await fetchMoodle<unknown>("core_role_assign_roles", {
-    "assignments[0][roleid]": String(teacherRoleId),
-    "assignments[0][userid]": String(userId),
-    "assignments[0][contextid]": String(courseContextId),
-  });
-
-  await createDefaultFeedbackInCourse(
-    createdCourse.id,
-    createdCourse.shortname,
-  );
-
-  return {
-    id: createdCourse.id,
-    fullname: createdCourse.fullname,
-    shortname: createdCourse.shortname,
-    summary: createdCourse.summary ?? data.summary,
-    idnumber: createdCourse.idnumber ?? "",
-  };
 }
 
-export async function obtenerCursosProfesor(
+export const obtenerCursosProfesor = cache(async function obtenerCursosProfesor(
   userId: number,
 ): Promise<MoodleCourse[]> {
   if (!Number.isInteger(userId) || userId <= 0) {
@@ -398,4 +394,4 @@ export async function obtenerCursosProfesor(
   );
 
   return Array.isArray(courses) ? courses : [];
-}
+});

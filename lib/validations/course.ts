@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const createCourseSchema = z.object({
-  fullname: z.string().trim().min(5, "El nombre del curso es obligatorio"),
+  fullname: z
+    .string()
+    .trim()
+    .min(5, "El nombre del curso debe tener al menos 5 caracteres")
+    .max(100, "El nombre del curso es demasiado largo"),
   shortname: z
     .string()
     .trim()

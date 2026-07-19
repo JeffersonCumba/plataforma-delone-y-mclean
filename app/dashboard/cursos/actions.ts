@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-import { fetchMoodle } from "@/lib/moodle";
+import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
 import { createCourseSchema } from "@/lib/validations/course";
 import { crearCursoProfesor } from "@/services/courseService";
 import { obtenerCursosProfesor } from "@/services/courseService";
@@ -51,15 +51,13 @@ export async function createCourseAction(
 
     return {
       ok: true,
-      message: `Curso ${course.fullname} creado con encuesta base.`,
+      message: `Curso ${course.fullname ?? parsed.data.fullname} creado con encuesta base.`,
     };
   } catch (error) {
+    console.error("[createCourseAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear el curso en Moodle",
+      message: "No se pudo crear el curso. Verifica los datos e intenta de nuevo.",
     };
   }
 }
@@ -110,12 +108,10 @@ export async function deleteCourseAction(
       message: `Curso ${allowedCourse.fullname} eliminado correctamente.`,
     };
   } catch (error) {
+    console.error("[deleteCourseAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el curso en Moodle.",
+      message: "No se pudo eliminar el curso. Intenta de nuevo mas tarde.",
     };
   }
 }

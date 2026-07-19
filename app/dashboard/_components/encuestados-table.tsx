@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -21,17 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
+import type { EncuestadoRow, UnenrollTarget } from "@/types/encuestado";
 import { desmatricularUsuarioAction } from "@/app/dashboard/encuestados/actions";
-
-export interface EncuestadoRow {
-  id: number;
-  username: string;
-  fullname: string;
-  email: string;
-  courseId: number;
-  courseName: string;
-}
 
 interface EncuestadosTableProps {
   rows: EncuestadoRow[];
@@ -39,16 +32,13 @@ interface EncuestadosTableProps {
   teacherMap?: Map<number, Set<number>>;
 }
 
-interface UnenrollTarget {
-  userId: number;
-  courseId: number;
-  fullname: string;
-  courseName: string;
-}
-
 const ALL_COURSES = "all";
 
-export function EncuestadosTable({ rows, courses, teacherMap }: EncuestadosTableProps) {
+export function EncuestadosTable({
+  rows,
+  courses,
+  teacherMap,
+}: EncuestadosTableProps) {
   const router = useRouter();
   const [selectedCourse, setSelectedCourse] = useState<string>(ALL_COURSES);
   const [deleteTarget, setDeleteTarget] = useState<UnenrollTarget | null>(null);
@@ -197,7 +187,14 @@ export function EncuestadosTable({ rows, courses, teacherMap }: EncuestadosTable
               onClick={handleUnenroll}
               disabled={isDeleting}
             >
-              {isDeleting ? "Desmatriculando..." : "Eliminar matrícula"}
+              {isDeleting ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Desmatriculando...
+                </>
+              ) : (
+                "Eliminar matricula"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

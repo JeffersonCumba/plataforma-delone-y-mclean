@@ -3,7 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-import { fetchMoodle } from "@/lib/moodle";
+import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import { createCourseSchema } from "@/lib/validations/course";
 import { registerUserSchema } from "@/lib/validations/user";
 import { crearCursoProfesor, obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
@@ -49,12 +50,10 @@ export async function eliminarProfesorAction(
 
     return { ok: true, message: "Profesor eliminado correctamente de Moodle." };
   } catch (error) {
+    console.error("[eliminarProfesorAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el profesor.",
+      message: "No se pudo eliminar el profesor. Intenta de nuevo mas tarde.",
     };
   }
 }
@@ -83,12 +82,10 @@ export async function eliminarCursoAction(
 
     return { ok: true, message: "Curso eliminado correctamente de Moodle." };
   } catch (error) {
+    console.error("[eliminarCursoAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el curso.",
+      message: "No se pudo eliminar el curso. Intenta de nuevo mas tarde.",
     };
   }
 }
@@ -107,7 +104,7 @@ export async function crearProfesorAction(
     return {
       ok: false,
       message:
-        parsed.error.issues[0]?.message ?? "Datos de registro inválidos.",
+        parsed.error.issues[0]?.message ?? "Datos de registro invalidos.",
     };
   }
 
@@ -120,15 +117,13 @@ export async function crearProfesorAction(
 
     return {
       ok: true,
-      message: `Profesor ${parsed.data.username} creado correctamente con período de prueba de ${trialDays} días.`,
+      message: `Profesor ${parsed.data.username} creado correctamente con periodo de prueba de ${trialDays} dias.`,
     };
   } catch (error) {
+    console.error("[crearProfesorAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear el profesor.",
+      message: "No se pudo crear el profesor. Verifica los datos e intenta de nuevo.",
     };
   }
 }
@@ -155,12 +150,10 @@ export async function actualizarProfesorAction(
 
     return { ok: true, message: "Profesor actualizado correctamente." };
   } catch (error) {
+    console.error("[actualizarProfesorAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo actualizar el profesor.",
+      message: "No se pudo actualizar el profesor. Intenta de nuevo mas tarde.",
     };
   }
 }
@@ -202,12 +195,10 @@ export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult>
       message: `Cron ejecutado: ${data.warningsSent ?? 0} avisos y ${data.expiredDeleted ?? 0} cuentas eliminadas.`,
     };
   } catch (error) {
+    console.error("[ejecutarCronExpiracionAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo ejecutar el cron de expiracion.",
+      message: "No se pudo ejecutar el cron de expiracion. Intenta de nuevo mas tarde.",
     };
   }
 }
@@ -221,6 +212,14 @@ export async function crearCursoAction(
     return { ok: false, message: "No tienes permisos de administrador." };
   }
 
+  const parsed = createCourseSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Datos invalidos para crear el curso.",
+    };
+  }
+
   const cookieStore = await cookies();
   const userIdCookie = cookieStore.get("user_id")?.value;
   const userId = Number(userIdCookie);
@@ -230,7 +229,7 @@ export async function crearCursoAction(
   }
 
   try {
-    const course = await crearCursoProfesor(userId, input as any);
+    const course = await crearCursoProfesor(userId, parsed.data);
 
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/cursos");
@@ -238,15 +237,13 @@ export async function crearCursoAction(
 
     return {
       ok: true,
-      message: `Curso ${course.fullname} creado con encuesta base.`,
+      message: `Curso ${course.fullname ?? parsed.data.fullname} creado con encuesta base.`,
     };
   } catch (error) {
+    console.error("[admin crearCursoAction]", error);
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear el curso.",
+      message: "No se pudo crear el curso. Verifica los datos e intenta de nuevo.",
     };
   }
 }

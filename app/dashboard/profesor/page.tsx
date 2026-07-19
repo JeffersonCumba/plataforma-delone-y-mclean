@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { obtenerCursosDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
 
 export default async function ProfesorDashboardPage() {

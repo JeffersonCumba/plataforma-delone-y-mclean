@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
-import type { MoodleCourse } from "@/services/courseService";
+import type { MoodleCourse } from "@/types/course";
 
 interface ProfileClientProps {
   courses: MoodleCourse[];
