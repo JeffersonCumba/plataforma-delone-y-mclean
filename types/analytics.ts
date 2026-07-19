@@ -1,3 +1,13 @@
+import { type RowDataPacket } from "mysql2";
+
+export interface FeedbackAnalyticsRow extends RowDataPacket {
+  completedId: number;
+  itemId: number;
+  question: string;
+  dimension: string;
+  value: string;
+}
+
 export const DIMENSIONS_MAP = {
   calidad_sys: "Calidad del Sistema",
   calidad_info: "Calidad de la Información",

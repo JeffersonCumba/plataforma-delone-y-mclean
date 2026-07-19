@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  DIMENSIONS_MAP,
   type AnalyticsData,
   type AnalyticsQuestionAlert,
   type DimensionKey,
@@ -44,14 +45,6 @@ import {
 } from "@/app/dashboard/_components/chart-ai-prompts";
 import { useInterpretation } from "@/hooks/use-interpretation";
 
-const DIMENSIONS_MAP = {
-  calidad_sys: "Calidad del Sistema",
-  calidad_info: "Calidad de la Información",
-  calidad_serv: "Calidad del Servicio",
-  uso_sistema: "Uso del Sistema",
-  satis_user: "Satisfacción del Usuario",
-  benef_netos: "Beneficios Netos",
-};
 
 const DLM_R2_TARGETS: DimensionKey[] = [
   "uso_sistema",

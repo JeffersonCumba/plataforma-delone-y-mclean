@@ -6,6 +6,7 @@ import { type RowDataPacket } from "mysql2";
 
 import { pool } from "@/lib/db";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
+import { getCachedAnalytics, setCachedAnalytics } from "@/lib/analytics-cache";
 import {
   DIMENSIONS_MAP,
   type AnalyticsBetaDatum,
@@ -15,6 +16,7 @@ import {
   type DeloneMcleanModelResult,
   type DiscriminantValidityResult,
   type DimensionKey,
+  type FeedbackAnalyticsRow,
   type QuestionFrequency,
   type SatisfactionPieDatum,
   type StructuralPathResult,
@@ -174,14 +176,6 @@ function standardizedRegression(
   const standardizedTarget = zScore(target);
 
   return regressAndScore(standardizedPredictors, standardizedTarget);
-}
-
-interface FeedbackAnalyticsRow extends RowDataPacket {
-  completedId: number;
-  itemId: number;
-  question: string;
-  dimension: string;
-  value: string;
 }
 
 const DIMENSION_KEYWORDS: Record<DimensionKey, string[]> = {
@@ -991,11 +985,28 @@ function buildAnalyticsData(
   };
 }
 
+async function getCompletedCountForCourse(courseId: number): Promise<number> {
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT COUNT(DISTINCT fc.id) AS count
+     FROM mdl_feedback_completed fc
+     JOIN mdl_feedback f ON f.id = fc.feedback
+     WHERE f.course = ?`,
+    [courseId],
+  );
+  return (rows as { count: number }[])[0]?.count ?? 0;
+}
+
 export async function getCourseAnalyticsData(
   courseId: number,
 ): Promise<AnalyticsData> {
   if (!Number.isInteger(courseId) || courseId <= 0) {
     throw new Error("El courseId no es valido para consultar analitica");
+  }
+
+  const currentCount = await getCompletedCountForCourse(courseId);
+  const cached = getCachedAnalytics(courseId);
+  if (cached && cached.completedCount === currentCount) {
+    return cached.data;
   }
 
   const [rows] = await pool.execute<FeedbackAnalyticsRow[]>(
@@ -1027,9 +1038,12 @@ export async function getCourseAnalyticsData(
         )
       : 0;
 
-  return {
+  const result: AnalyticsData = {
     ...summary,
     totalRespondents,
     responseRate,
   };
+
+  setCachedAnalytics(courseId, result, currentCount);
+  return result;
 }

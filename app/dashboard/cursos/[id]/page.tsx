@@ -45,7 +45,14 @@ export default async function CourseOverviewPage({
     courseName = currentCourse.fullname;
   }
 
-  const analytics = await getCourseAnalyticsData(courseId);
+  let analytics: Awaited<ReturnType<typeof getCourseAnalyticsData>>;
+
+  try {
+    analytics = await getCourseAnalyticsData(courseId);
+  } catch (error) {
+    console.error("Error obteniendo analytics del curso:", error);
+    redirect("/dashboard/cursos?error=Error al cargar analytics");
+  }
 
   return (
     <CourseAnalyticsPanel
