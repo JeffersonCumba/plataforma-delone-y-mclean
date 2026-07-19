@@ -320,6 +320,43 @@ export async function registrarEstudiantesCvs(
   };
 }
 
+async function crearCursoInicialProfesor(
+  userId: number,
+  firstname: string,
+  lastname: string,
+): Promise<number> {
+  const categoryId = Number(process.env.MOODLE_DEFAULT_CATEGORY_ID ?? 1);
+  const teacherRoleId = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
+  const timestamp = Date.now().toString().slice(-6);
+  const shortname = `curso-${firstname.toLowerCase().replace(/\s+/g, "-")}-${timestamp}`;
+
+  const createdCourses = await fetchMoodle<Array<{ id: number }>>(
+    "core_course_create_courses",
+    {
+      "courses[0][fullname]": `Curso de ${firstname} ${lastname}`,
+      "courses[0][shortname]": shortname,
+      "courses[0][categoryid]": String(categoryId),
+      "courses[0][summary]": "Curso inicial creado automaticamente al registrarse en la plataforma.",
+      "courses[0][summaryformat]": "1",
+      "courses[0][visible]": "1",
+      "courses[0][format]": "topics",
+    },
+  );
+
+  const createdCourse = createdCourses?.[0];
+  if (!createdCourse?.id) {
+    throw new Error("No se pudo crear el curso inicial en Moodle");
+  }
+
+  await fetchMoodle<unknown>("enrol_manual_enrol_users", {
+    "enrolments[0][roleid]": String(teacherRoleId),
+    "enrolments[0][userid]": String(userId),
+    "enrolments[0][courseid]": String(createdCourse.id),
+  });
+
+  return createdCourse.id;
+}
+
 export async function registrarUsuario(
   input: RegisterUserInput,
 ): Promise<number> {
@@ -346,6 +383,8 @@ export async function registrarUsuario(
 
   try {
     userId = await createMoodleUser(data);
+
+    await crearCursoInicialProfesor(userId, data.firstname, data.lastname);
 
     await initializeTrialForTeacher(userId);
 
