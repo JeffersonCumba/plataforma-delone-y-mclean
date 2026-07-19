@@ -31,9 +31,7 @@ import {
   type AnalyticsQuestionAlert,
   type DimensionKey,
 } from "@/types/analytics";
-import { ExportColabButton } from "@/app/dashboard/_components/export-colab-button";
-import { ExportOdtButton } from "@/app/dashboard/_components/export-odt-button";
-import { ExportPdfButton } from "@/app/dashboard/_components/export-pdf-button";
+import { ExportDropdown } from "@/app/dashboard/_components/export-dropdown";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
 import { SatisfactionPieChart } from "@/app/dashboard/_components/satisfaction-pie-chart";
@@ -228,23 +226,7 @@ function CourseAnalyticsContent({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <ExportColabButton
-              courseId={courseId}
-              courseName={courseName}
-              analytics={analytics}
-            />
-            <ExportOdtButton
-              courseId={courseId}
-              courseName={courseName}
-              analytics={analytics}
-              satisfactionInterp={satisfactionInterp}
-              descriptiveInterp={descriptiveInterp}
-              betasInterp={betasInterp}
-              frequenciesInterp={frequenciesInterp}
-              criticalInterp={criticalInterp}
-              hidden={analytics.totalSurveys === 0}
-            />
-            <ExportPdfButton
+            <ExportDropdown
               courseId={courseId}
               courseName={courseName}
               analytics={analytics}

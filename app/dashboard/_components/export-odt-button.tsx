@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Loader2, Sparkles } from "lucide-react";
+import { forwardRef, useImperativeHandle, useState } from "react";
+import { FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AnalyticsData } from "@/types/analytics";
+import type { ExportVariant } from "@/types/export";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import {
   buildBetasPrompt,
@@ -32,7 +34,12 @@ interface ExportOdtButtonProps {
   betasInterp: InterpretationHandle;
   frequenciesInterp: InterpretationHandle;
   criticalInterp: InterpretationHandle;
-  hidden?: boolean;
+  variant?: ExportVariant;
+  onStatusChange?: (exporting: boolean) => void;
+}
+
+export interface ExportOdtHandle {
+  handleClick: () => void;
 }
 
 const MAX_TEXT_LENGTH = 5000;
@@ -43,13 +50,7 @@ function truncateForUrl(text: string, max = MAX_TEXT_LENGTH): string {
 
 function buildExportUrl(
   courseId: number,
-  texts: {
-    satisfaction: string;
-    descriptive: string;
-    betas: string;
-    frequencies: string;
-    critical: string;
-  },
+  texts: { satisfaction: string; descriptive: string; betas: string; frequencies: string; critical: string },
 ): string {
   const params = new URLSearchParams({
     satisfaction: truncateForUrl(texts.satisfaction),
@@ -61,24 +62,24 @@ function buildExportUrl(
   return `/api/cursos/${courseId}/export-odt?${params.toString()}`;
 }
 
-export function ExportOdtButton({
-  courseId,
-  courseName,
-  analytics,
-  satisfactionInterp,
-  descriptiveInterp,
-  betasInterp,
-  frequenciesInterp,
-  criticalInterp,
-  hidden = false,
-}: ExportOdtButtonProps) {
+export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>(function ExportOdtButton(
+  {
+    courseId,
+    courseName,
+    analytics,
+    satisfactionInterp,
+    descriptiveInterp,
+    betasInterp,
+    frequenciesInterp,
+    criticalInterp,
+    variant = "button",
+    onStatusChange,
+  },
+  ref,
+) {
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  if (hidden) {
-    return null;
-  }
 
   function snapshotTexts() {
     return {
@@ -92,15 +93,12 @@ export function ExportOdtButton({
 
   async function triggerDownload(url: string): Promise<void> {
     setIsExporting(true);
+    onStatusChange?.(true);
+
     try {
       const response = await fetch(url, { method: "GET" });
       if (!response.ok) {
-        const payload = (await response
-          .json()
-          .catch(() => ({}))) as { message?: string };
-        throw new Error(
-          payload.message ?? "No se pudo generar el reporte ODT",
-        );
+        throw new Error("No se pudo generar el reporte ODT");
       }
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -112,12 +110,11 @@ export function ExportOdtButton({
       document.body.removeChild(anchor);
       URL.revokeObjectURL(objectUrl);
       toast.success("Reporte ODT exportado");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error desconocido";
-      toast.error(message);
+    } catch {
+      toast.error("No se pudo generar el reporte ODT");
     } finally {
       setIsExporting(false);
+      onStatusChange?.(false);
     }
   }
 
@@ -129,35 +126,18 @@ export function ExportOdtButton({
   async function handleGenerateAndExport(): Promise<void> {
     setIsGenerating(true);
     try {
-      const [satisfaction, descriptive, betas, frequencies, critical] =
-        await Promise.all([
-          satisfactionInterp.interpret(
-            buildSatisfactionDistributionPrompt(courseName, analytics),
-          ),
-          descriptiveInterp.interpret(
-            buildDescriptivePrompt(courseName, analytics),
-          ),
-          betasInterp.interpret(buildBetasPrompt(courseName, analytics)),
-          frequenciesInterp.interpret(
-            buildFrequenciesPrompt(courseName, analytics),
-          ),
-          criticalInterp.interpret(
-            buildCriticalQuestionsPrompt(courseName, analytics),
-          ),
-        ]);
+      const [satisfaction, descriptive, betas, frequencies, critical] = await Promise.all([
+        satisfactionInterp.interpret(buildSatisfactionDistributionPrompt(courseName, analytics)),
+        descriptiveInterp.interpret(buildDescriptivePrompt(courseName, analytics)),
+        betasInterp.interpret(buildBetasPrompt(courseName, analytics)),
+        frequenciesInterp.interpret(buildFrequenciesPrompt(courseName, analytics)),
+        criticalInterp.interpret(buildCriticalQuestionsPrompt(courseName, analytics)),
+      ]);
       setShowConfirmDialog(false);
-      const url = buildExportUrl(courseId, {
-        satisfaction,
-        descriptive,
-        betas,
-        frequencies,
-        critical,
-      });
+      const url = buildExportUrl(courseId, { satisfaction, descriptive, betas, frequencies, critical });
       await triggerDownload(url);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al generar interpretaciones";
-      toast.error(message);
+    } catch {
+      toast.error("Error al generar interpretaciones");
     } finally {
       setIsGenerating(false);
     }
@@ -172,11 +152,7 @@ export function ExportOdtButton({
   function handleClick(): void {
     const texts = snapshotTexts();
     const allFilled = Boolean(
-      texts.satisfaction &&
-        texts.descriptive &&
-        texts.betas &&
-        texts.frequencies &&
-        texts.critical,
+      texts.satisfaction && texts.descriptive && texts.betas && texts.frequencies && texts.critical,
     );
     if (allFilled) {
       handleDirectClick();
@@ -185,34 +161,21 @@ export function ExportOdtButton({
     }
   }
 
-  const buttonLabel = isExporting
-    ? "Generando ODT..."
-    : isGenerating
-      ? "Generando interpretaciones..."
-      : "Exportar reporte (ODT)";
+  useImperativeHandle(ref, () => ({ handleClick }));
 
   return (
     <>
-      <Button
-        onClick={handleClick}
-        disabled={isExporting || isGenerating}
-      >
-        {isExporting || isGenerating ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <FileText className="mr-2 h-4 w-4" />
-        )}
-        {buttonLabel}
-      </Button>
-
-      <Dialog
-        open={showConfirmDialog}
-        onOpenChange={(open) => {
-          if (!isGenerating) {
-            setShowConfirmDialog(open);
-          }
-        }}
-      >
+      {variant !== "dropdown-item" && (
+        <Button onClick={handleClick} disabled={isExporting || isGenerating}>
+          {isExporting || isGenerating ? (
+            <Spinner className="mr-2 h-4 w-4" />
+          ) : (
+            <FileText className="mr-2 h-4 w-4" />
+          )}
+          {isExporting ? "Generando ODT..." : isGenerating ? "Generando interpretaciones..." : "Exportar reporte (ODT)"}
+        </Button>
+      )}
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!isGenerating) setShowConfirmDialog(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -220,41 +183,22 @@ export function ExportOdtButton({
               Faltan interpretaciones de IA
             </DialogTitle>
             <DialogDescription>
-              Aun no has generado las interpretaciones de IA para los 5
-              analisis de este curso. ¿Deseas generarlas ahora e incluirlas
-              en el reporte ODT?
+              Aun no has generado las interpretaciones de IA para los 5 analisis de este curso.
+              {" "}¿Deseas generarlas ahora e incluirlas en el reporte ODT?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="ghost"
-              onClick={() => setShowConfirmDialog(false)}
-              disabled={isGenerating}
-            >
+            <Button variant="ghost" onClick={() => setShowConfirmDialog(false)} disabled={isGenerating}>
               Cancelar
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportWithoutIA}
-              disabled={isGenerating}
-            >
+            <Button variant="outline" onClick={handleExportWithoutIA} disabled={isGenerating}>
               Exportar sin IA
             </Button>
-            <Button
-              onClick={handleGenerateAndExport}
-              disabled={isGenerating}
-              className="bg-cyan-600 text-white hover:bg-cyan-700"
-            >
+            <Button onClick={handleGenerateAndExport} disabled={isGenerating} className="bg-cyan-600 text-white hover:bg-cyan-700">
               {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando...
-                </>
+                <><Spinner className="mr-2 h-4 w-4" /> Generando...</>
               ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generar y exportar
-                </>
+                <><Sparkles className="mr-2 h-4 w-4" /> Generar y exportar</>
               )}
             </Button>
           </DialogFooter>
@@ -262,4 +206,4 @@ export function ExportOdtButton({
       </Dialog>
     </>
   );
-}
+});

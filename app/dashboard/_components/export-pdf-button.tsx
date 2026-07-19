@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Loader2, Sparkles } from "lucide-react";
+import { forwardRef, useImperativeHandle, useState } from "react";
+import { FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AnalyticsData } from "@/types/analytics";
+import type { ExportVariant } from "@/types/export";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import {
   buildBetasPrompt,
@@ -24,19 +26,7 @@ import {
 } from "@/app/dashboard/_components/chart-ai-prompts";
 
 const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL ?? "http://localhost:8000";
-
-interface ExportPdfRequest {
-  courseId: number;
-  courseName: string;
-  analytics: AnalyticsData;
-  aiInterpretations: {
-    satisfaction: string;
-    descriptive: string;
-    betas: string;
-    frequencies: string;
-    critical: string;
-  };
-}
+const EXPORT_TIMEOUT = 30000;
 
 interface ExportPdfButtonProps {
   courseId: number;
@@ -47,53 +37,41 @@ interface ExportPdfButtonProps {
   betasInterp: InterpretationHandle;
   frequenciesInterp: InterpretationHandle;
   criticalInterp: InterpretationHandle;
-  hidden?: boolean;
+  variant?: ExportVariant;
+  onStatusChange?: (exporting: boolean) => void;
 }
 
-const MAX_TEXT_LENGTH = 5000;
-
-function truncateForUrl(text: string, max = MAX_TEXT_LENGTH): string {
-  return text.length > max ? text.slice(0, max) : text;
+export interface ExportPdfHandle {
+  handleClick: () => void;
 }
 
 function buildExportPayload(
   courseId: number,
   courseName: string,
   analytics: AnalyticsData,
-  texts: {
-    satisfaction: string;
-    descriptive: string;
-    betas: string;
-    frequencies: string;
-    critical: string;
-  },
-): ExportPdfRequest {
-  return {
+  texts: { satisfaction: string; descriptive: string; betas: string; frequencies: string; critical: string },
+) {
+  return { courseId, courseName, analytics, aiInterpretations: texts };
+}
+
+export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>(function ExportPdfButton(
+  {
     courseId,
     courseName,
     analytics,
-    aiInterpretations: texts,
-  };
-}
-
-export function ExportPdfButton({
-  courseId,
-  courseName,
-  analytics,
-  satisfactionInterp,
-  descriptiveInterp,
-  betasInterp,
-  frequenciesInterp,
-  criticalInterp,
-  hidden = false,
-}: ExportPdfButtonProps) {
+    satisfactionInterp,
+    descriptiveInterp,
+    betasInterp,
+    frequenciesInterp,
+    criticalInterp,
+    variant = "button",
+    onStatusChange,
+  },
+  ref,
+) {
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  if (hidden) {
-    return null;
-  }
 
   function snapshotTexts() {
     return {
@@ -105,24 +83,23 @@ export function ExportPdfButton({
     };
   }
 
-  async function triggerDownload(payload: ExportPdfRequest): Promise<void> {
+  async function triggerDownload(payload: Record<string, unknown>): Promise<void> {
     setIsExporting(true);
+    onStatusChange?.(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), EXPORT_TIMEOUT);
+
     try {
       const response = await fetch(`${PYTHON_API_URL}/api/export/pdf`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
-        const payload = (await response
-          .json()
-          .catch(() => ({}))) as { detail?: string; message?: string };
-        throw new Error(
-          payload.detail ?? payload.message ?? "No se pudo generar el reporte PDF",
-        );
+        throw new Error("No se pudo generar el reporte PDF");
       }
 
       const blob = await response.blob();
@@ -136,12 +113,16 @@ export function ExportPdfButton({
       document.body.removeChild(anchor);
       URL.revokeObjectURL(objectUrl);
       toast.success("PDF exportado correctamente");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error desconocido";
-      toast.error(message);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast.error("La exportación tardó demasiado, intenta de nuevo");
+      } else {
+        toast.error("No se pudo generar el reporte PDF");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsExporting(false);
+      onStatusChange?.(false);
     }
   }
 
@@ -153,22 +134,13 @@ export function ExportPdfButton({
   async function handleGenerateAndExport(): Promise<void> {
     setIsGenerating(true);
     try {
-      const [satisfaction, descriptive, betas, frequencies, critical] =
-        await Promise.all([
-          satisfactionInterp.interpret(
-            buildSatisfactionDistributionPrompt(courseName, analytics),
-          ),
-          descriptiveInterp.interpret(
-            buildDescriptivePrompt(courseName, analytics),
-          ),
-          betasInterp.interpret(buildBetasPrompt(courseName, analytics)),
-          frequenciesInterp.interpret(
-            buildFrequenciesPrompt(courseName, analytics),
-          ),
-          criticalInterp.interpret(
-            buildCriticalQuestionsPrompt(courseName, analytics),
-          ),
-        ]);
+      const [satisfaction, descriptive, betas, frequencies, critical] = await Promise.all([
+        satisfactionInterp.interpret(buildSatisfactionDistributionPrompt(courseName, analytics)),
+        descriptiveInterp.interpret(buildDescriptivePrompt(courseName, analytics)),
+        betasInterp.interpret(buildBetasPrompt(courseName, analytics)),
+        frequenciesInterp.interpret(buildFrequenciesPrompt(courseName, analytics)),
+        criticalInterp.interpret(buildCriticalQuestionsPrompt(courseName, analytics)),
+      ]);
       setShowConfirmDialog(false);
       const payload = buildExportPayload(courseId, courseName, analytics, {
         satisfaction,
@@ -178,10 +150,8 @@ export function ExportPdfButton({
         critical,
       });
       await triggerDownload(payload);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al generar interpretaciones";
-      toast.error(message);
+    } catch {
+      toast.error("Error al generar interpretaciones");
     } finally {
       setIsGenerating(false);
     }
@@ -196,11 +166,7 @@ export function ExportPdfButton({
   function handleClick(): void {
     const texts = snapshotTexts();
     const allFilled = Boolean(
-      texts.satisfaction &&
-        texts.descriptive &&
-        texts.betas &&
-        texts.frequencies &&
-        texts.critical,
+      texts.satisfaction && texts.descriptive && texts.betas && texts.frequencies && texts.critical,
     );
     if (allFilled) {
       handleDirectClick();
@@ -209,34 +175,21 @@ export function ExportPdfButton({
     }
   }
 
-  const buttonLabel = isExporting
-    ? "Generando PDF..."
-    : isGenerating
-      ? "Generando interpretaciones..."
-      : "Descargar reporte (PDF)";
+  useImperativeHandle(ref, () => ({ handleClick }));
 
   return (
     <>
-      <Button
-        onClick={handleClick}
-        disabled={isExporting || isGenerating}
-      >
-        {isExporting || isGenerating ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <FileText className="mr-2 h-4 w-4" />
-        )}
-        {buttonLabel}
-      </Button>
-
-      <Dialog
-        open={showConfirmDialog}
-        onOpenChange={(open) => {
-          if (!isGenerating) {
-            setShowConfirmDialog(open);
-          }
-        }}
-      >
+      {variant !== "dropdown-item" && (
+        <Button onClick={handleClick} disabled={isExporting || isGenerating}>
+          {isExporting || isGenerating ? (
+            <Spinner className="mr-2 h-4 w-4" />
+          ) : (
+            <FileText className="mr-2 h-4 w-4" />
+          )}
+          {isExporting ? "Generando PDF..." : isGenerating ? "Generando interpretaciones..." : "Descargar reporte (PDF)"}
+        </Button>
+      )}
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!isGenerating) setShowConfirmDialog(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -244,41 +197,22 @@ export function ExportPdfButton({
               Faltan interpretaciones de IA
             </DialogTitle>
             <DialogDescription>
-              Aun no has generado las interpretaciones de IA para los 5
-              analisis de este curso. ¿Deseas generarlas ahora e incluirlas
-              en el reporte PDF?
+              Aun no has generado las interpretaciones de IA para los 5 analisis de este curso.
+              {" "}¿Deseas generarlas ahora e incluirlas en el reporte PDF?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="ghost"
-              onClick={() => setShowConfirmDialog(false)}
-              disabled={isGenerating}
-            >
+            <Button variant="ghost" onClick={() => setShowConfirmDialog(false)} disabled={isGenerating}>
               Cancelar
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportWithoutIA}
-              disabled={isGenerating}
-            >
+            <Button variant="outline" onClick={handleExportWithoutIA} disabled={isGenerating}>
               Exportar sin IA
             </Button>
-            <Button
-              onClick={handleGenerateAndExport}
-              disabled={isGenerating}
-              className="bg-cyan-600 text-white hover:bg-cyan-700"
-            >
+            <Button onClick={handleGenerateAndExport} disabled={isGenerating} className="bg-cyan-600 text-white hover:bg-cyan-700">
               {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando...
-                </>
+                <><Spinner className="mr-2 h-4 w-4" /> Generando...</>
               ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generar y exportar
-                </>
+                <><Sparkles className="mr-2 h-4 w-4" /> Generar y exportar</>
               )}
             </Button>
           </DialogFooter>
@@ -286,4 +220,4 @@ export function ExportPdfButton({
       </Dialog>
     </>
   );
-}
+});
