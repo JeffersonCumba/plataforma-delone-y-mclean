@@ -1,21 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Pencil, UserPlus } from "lucide-react";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { EditarProfesorDialog } from "@/app/dashboard/_components/editar-profesor-dialog";
-import { CrearProfesorDialog } from "@/app/dashboard/_components/crear-profesor-dialog";
 import type { ProfesorRow } from "@/types/admin";
 
 interface AdminAlumnosTableProps {
@@ -23,24 +7,11 @@ interface AdminAlumnosTableProps {
 }
 
 export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
-  const router = useRouter();
-  const [editTarget, setEditTarget] = useState<ProfesorRow | null>(null);
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
-          Total de alumnos registrados: {alumnos.length}
-        </p>
-        <CrearProfesorDialog
-          trigger={
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Crear Alumno
-            </Button>
-          }
-        />
-      </div>
+      <p className="text-sm text-slate-600">
+        Total de alumnos registrados: {alumnos.length}
+      </p>
 
       {alumnos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
@@ -55,7 +26,6 @@ export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
                 <th className="px-4 py-3 font-medium">Nombre</th>
                 <th className="px-4 py-3 font-medium">Correo</th>
                 <th className="px-4 py-3 font-medium">Cursos</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -72,39 +42,12 @@ export function AdminAlumnosTable({ alumnos }: AdminAlumnosTableProps) {
                       {alumno.courseCount}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-slate-600 hover:bg-slate-100"
-                        onClick={() => setEditTarget(alumno)}
-                      >
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        Editar
-                      </Button>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-
-      {editTarget ? (
-        <EditarProfesorDialog
-          profesor={editTarget}
-          title="Editar Alumno"
-          open={editTarget !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditTarget(null);
-              router.refresh();
-            }
-          }}
-        />
-      ) : null}
     </div>
   );
 }

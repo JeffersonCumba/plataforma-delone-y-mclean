@@ -29,9 +29,7 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
     router.push("/logout");
   };
 
-  const profileHref = role === "ADMIN"
-    ? `/dashboard/admin/profesores/${userId}`
-    : "/dashboard/profesor";
+  const profileHref = "/dashboard/perfil";
 
   return (
     <SidebarFooter>

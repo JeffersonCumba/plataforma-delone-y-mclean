@@ -156,15 +156,14 @@ async function checkUserExistsByField(
   }
 }
 
-async function deleteMoodleUser(userId: number): Promise<void> {
+async function eliminarUsuarioMoodle(userId: number): Promise<void> {
   try {
-    await fetchMoodle<unknown>("core_user_update_users", {
-      "users[0][id]": String(userId),
-      "users[0][suspended]": "1",
+    await fetchMoodle<unknown>("core_user_delete_users", {
+      "userids[0]": String(userId),
     });
   } catch (err) {
     console.error(
-      `[deleteMoodleUser] No se pudo suspender al usuario ${userId}:`,
+      `[eliminarUsuarioMoodle] No se pudo eliminar al usuario ${userId}:`,
       err,
     );
   }
@@ -266,7 +265,7 @@ export async function registrarEstudianteCsv(
   };
 }
 
-export async function registrarEstudiantesCvs(
+export async function registrarEstudiantesCsv(
   users: StudentInput[],
   courseId: number,
 ): Promise<BatchRegistrationResult> {
@@ -399,7 +398,7 @@ export async function registrarUsuario(
     }
 
     if (userId > 0) {
-      await deleteMoodleUser(userId);
+      await eliminarUsuarioMoodle(userId);
     }
 
     const friendly = parseRegistroError(error);

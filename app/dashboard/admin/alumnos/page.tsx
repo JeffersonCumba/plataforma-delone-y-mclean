@@ -20,7 +20,7 @@ export default async function AdminAlumnosPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Alumnos</h1>
         <p className="text-sm text-slate-600">
-          Gestión de alumnos registrados en Moodle con rol de estudiante.
+          Listado de alumnos registrados en Moodle con rol de estudiante. Para matricular alumnos, usa la sección Encuestados.
         </p>
       </div>
 

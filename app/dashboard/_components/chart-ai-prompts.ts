@@ -1,12 +1,4 @@
-import { type AnalyticsData } from "@/types/analytics";
-const DIMENSION_LABELS = {
-  calidad_sys: "Calidad del Sistema",
-  calidad_info: "Calidad de la Información",
-  calidad_serv: "Calidad del Servicio",
-  uso_sistema: "Uso del Sistema",
-  satis_user: "Satisfacción del Usuario",
-  benef_netos: "Beneficios Netos",
-} as const;
+import { DIMENSIONS_MAP, type AnalyticsData } from "@/types/analytics";
 
 export function buildDescriptivePrompt(
   courseName: string,
@@ -40,7 +32,7 @@ export function buildDeloneMcleanCompletePrompt(
     Object.entries(model.rSquared)
       .map(([dimension, value]) => {
         const label =
-          DIMENSION_LABELS[dimension as keyof typeof DIMENSION_LABELS] ??
+          DIMENSIONS_MAP[dimension as keyof typeof DIMENSIONS_MAP] ??
           dimension;
         return `- ${label}: R² = ${(value ?? 0).toFixed(3)}`;
       })

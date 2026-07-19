@@ -7,7 +7,7 @@ import { studentInputSchema, type StudentInput } from "@/lib/validations/user";
 import {
   buscarUsuariosMoodle,
   matricularUsuarioIndividual,
-  registrarEstudiantesCvs,
+  registrarEstudiantesCsv,
   type BatchRegistrationResult,
 } from "@/services/userService";
 import { obtenerCursosProfesor } from "@/services/courseService";
@@ -226,7 +226,7 @@ export async function registrarEstudiantesCsvAction(
     const userId = await requireUserId();
     await ensureCourseOwnership(userId, courseId);
 
-    const result = await registrarEstudiantesCvs(users, courseId);
+    const result = await registrarEstudiantesCsv(users, courseId);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/encuestados");

@@ -79,7 +79,7 @@ function parseStream(reader: ReadableStreamDefaultReader<Uint8Array>) {
         }
         const text = decoder.decode(value, { stream: true });
         accumulated += text;
-        onChunk(accumulated);
+        onChunk(text);
       }
       return accumulated;
     })();

@@ -259,32 +259,32 @@ export async function obtenerTodosLosAlumnos(): Promise<ProfesorRow[]> {
 }
 
 export async function obtenerEstadisticasGenerales(): Promise<AdminStats> {
-  const [profesorCount] = await pool.execute<CountRow[]>(
-    `SELECT COUNT(DISTINCT ra.userid) AS total
-       FROM mdl_role_assignments ra
-       JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
-      WHERE ra.roleid = ?`,
-    [MOODLE_TEACHER_ROLE_ID],
-  );
-
-  const [cursoCount] = await pool.execute<CountRow[]>(
-    "SELECT COUNT(*) AS total FROM mdl_course WHERE id != 1",
-  );
-
-  const [studentCount] = await pool.execute<CountRow[]>(
-    `SELECT COUNT(DISTINCT ra.userid) AS total
-       FROM mdl_role_assignments ra
-       JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
-      WHERE ra.roleid = ?`,
-    [MOODLE_STUDENT_ROLE_ID],
-  );
-
-  const [surveyCount] = await pool.execute<CountRow[]>(
-    `SELECT COUNT(*) AS total
-       FROM mdl_feedback_completed fc
-       JOIN mdl_feedback f ON f.id = fc.feedback
-      WHERE f.course != 0`,
-  );
+  const [[profesorCount], [cursoCount], [studentCount], [surveyCount]] =
+    await Promise.all([
+      pool.execute<CountRow[]>(
+        `SELECT COUNT(DISTINCT ra.userid) AS total
+           FROM mdl_role_assignments ra
+           JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+          WHERE ra.roleid = ?`,
+        [MOODLE_TEACHER_ROLE_ID],
+      ),
+      pool.execute<CountRow[]>(
+        "SELECT COUNT(*) AS total FROM mdl_course WHERE id != 1",
+      ),
+      pool.execute<CountRow[]>(
+        `SELECT COUNT(DISTINCT ra.userid) AS total
+           FROM mdl_role_assignments ra
+           JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+          WHERE ra.roleid = ?`,
+        [MOODLE_STUDENT_ROLE_ID],
+      ),
+      pool.execute<CountRow[]>(
+        `SELECT COUNT(*) AS total
+           FROM mdl_feedback_completed fc
+           JOIN mdl_feedback f ON f.id = fc.feedback
+          WHERE f.course != 0`,
+      ),
+    ]);
 
   return {
     totalProfesores: profesorCount[0]?.total ?? 0,

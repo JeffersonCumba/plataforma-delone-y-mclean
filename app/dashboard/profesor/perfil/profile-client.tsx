@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { actualizarPerfilAction } from "@/app/dashboard/profesor/perfil/actions";
 import type { MoodleCourse } from "@/types/course";
 
 interface ProfileClientProps {
@@ -57,9 +58,12 @@ export function ProfileClient({
     setIsSaving(true);
     setSaveMessage(null);
     try {
-      // TODO: Implement actual save to Moodle via API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setSaveMessage({ type: "success", text: "Perfil actualizado correctamente" });
+      const result = await actualizarPerfilAction(profesorData);
+      if (result.ok) {
+        setSaveMessage({ type: "success", text: result.message });
+      } else {
+        setSaveMessage({ type: "error", text: result.message });
+      }
     } catch {
       setSaveMessage({ type: "error", text: "Error al guardar los cambios" });
     } finally {

@@ -51,8 +51,11 @@ export default async function AdminProfesorDetailPage({
     redirect("/dashboard/admin/profesores");
   }
 
-  const isAdminUser = profesor.username.toLowerCase() === "admin" || 
-    (process.env.MOODLE_ADMIN_EMAIL && profesor.email.toLowerCase() === process.env.MOODLE_ADMIN_EMAIL!.toLowerCase());
+  const isAdminUser =
+    profesor.username.toLowerCase() === "admin" ||
+    (process.env.MOODLE_ADMIN_EMAIL &&
+      profesor.email.toLowerCase() ===
+        process.env.MOODLE_ADMIN_EMAIL!.toLowerCase());
 
   const [trialInfo, cursos, TRIAL_DAYS] = await Promise.all([
     isAdminUser ? Promise.resolve(null) : getTeacherTrialInfo(teacherId),
@@ -80,7 +83,9 @@ export default async function AdminProfesorDetailPage({
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Profesor: {profesor.firstname} {profesor.lastname}</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Profesor: {profesor.firstname} {profesor.lastname}
+          </h1>
           <p className="text-sm text-slate-600">@{profesor.username}</p>
         </div>
 
@@ -100,9 +105,12 @@ export default async function AdminProfesorDetailPage({
 
       {trialInfo && isExpired && (
         <div className="rounded-xl border-2 border-rose-200 bg-rose-50/80 p-6 text-center">
-          <h2 className="text-xl font-semibold text-rose-800">Período de prueba expirado</h2>
+          <h2 className="text-xl font-semibold text-rose-800">
+            Período de prueba expirado
+          </h2>
           <p className="mt-1 text-rose-700">
-            La cuenta de este profesor ha expirado y sus datos han sido eliminados.
+            La cuenta de este profesor ha expirado y sus datos han sido
+            eliminados.
           </p>
         </div>
       )}
@@ -112,10 +120,13 @@ export default async function AdminProfesorDetailPage({
           <div className="flex items-center gap-3">
             <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 animate-pulse" />
             <div>
-              <h2 className="font-semibold text-amber-800">¡Atención! Prueba por expirar</h2>
+              <h2 className="font-semibold text-amber-800">
+                ¡Atención! Prueba por expirar
+              </h2>
               <p className="text-amber-700 mt-1">
-                Quedan <strong>{daysRemaining} día(s)</strong> para que finalice la prueba de 30 días.
-                Contacta al profesor para renovar su suscripción.
+                Quedan <strong>{daysRemaining} día(s)</strong> para que finalice
+                la prueba de 30 días. Contacta al profesor para renovar su
+                suscripción.
               </p>
             </div>
           </div>
@@ -148,17 +159,13 @@ export default async function AdminProfesorDetailPage({
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Correo
               </dt>
-              <dd className="mt-1 text-sm text-slate-600">
-                {profesor.email}
-              </dd>
+              <dd className="mt-1 text-sm text-slate-600">{profesor.email}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 Cursos asignados
               </dt>
-              <dd className="mt-1 text-sm text-slate-900">
-                {cursos.length}
-              </dd>
+              <dd className="mt-1 text-sm text-slate-900">{cursos.length}</dd>
             </div>
             {trialInfo && (
               <div className="sm:col-span-2">
@@ -198,15 +205,21 @@ export default async function AdminProfesorDetailPage({
                   href={`/dashboard/cursos/${curso.id}`}
                   className="group block rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300"
                 >
-                  <p className="text-sm font-semibold text-slate-900 group-hover:text-cyan-700">
+                  <p className="text-sm font-semibold text-slate-900">
                     {curso.fullname}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {curso.shortname}
                   </p>
-                  <div className="mt-3 flex items-center gap-1 text-xs font-medium text-cyan-700 opacity-0 transition-opacity group-hover:opacity-100">
-                    <BookOpen className="h-3 w-3" />
-                    Ver analítica
+                  <div className="mt-3 flex items-center text-xs font-medium text-cyan-700">
+                    <span className="group relative inline-block cursor-pointer py-0.5">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        Ver analítica
+                      </span>
+
+                      <span className="absolute bottom-0 left-0 h-px w-0 bg-cyan-700 transition-all duration-300 ease-out group-hover:w-full"></span>
+                    </span>
                   </div>
                 </Link>
               ))}
