@@ -2,17 +2,12 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 import { AnimatedHeading } from "@/components/animated-heading";
 
 export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(2,6,23,0.08),transparent_34%),radial-gradient(circle_at_80%_10%,rgba(15,23,42,0.08),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] text-slate-950">
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-size-[72px_72px]" />
-      <div className="absolute right-4 top-4 z-50">
-        <GoogleTranslateWidget hideLabel />
-      </div>
-
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-10 lg:px-8">
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">

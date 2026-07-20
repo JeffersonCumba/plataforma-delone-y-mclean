@@ -18,7 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 import { AnimatedHeading } from "@/components/animated-heading";
 import { login } from "@/services/authService";
 
@@ -115,9 +114,6 @@ export default function LoginPage({
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-size-[72px_72px]" />
       <section className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="max-w-2xl text-slate-950">
-          <div className="mb-6">
-            <GoogleTranslateWidget hideLabel />
-          </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
             Acceso seguro a la plataforma de evaluación
