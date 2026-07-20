@@ -132,7 +132,7 @@ export default function LoginPage({
 
         <div className="relative animate-form-enter-right">
           <div className="absolute -inset-6 rounded-[2rem] bg-slate-950/10 blur-3xl" />
-          <Card className="relative overflow-hidden border-slate-200/80 bg-white/90 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+          <Card className="relative overflow-hidden border-slate-200/80 bg-white/90 shadow-[0_5px_15px_rgba(15,23,42,0.16)] backdrop-blur-xl">
             <CardHeader className="mb-2 px-8 pt-8 sm:px-10 sm:pt-10">
               <div className="mb-8 flex items-start justify-between gap-4">
                 <div>
