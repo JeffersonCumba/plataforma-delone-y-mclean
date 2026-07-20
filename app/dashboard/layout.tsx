@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/app/dashboard/_components/dashboard-sidebar";
 import { GoogleTranslateWidget } from "@/components/google-translate-widget";
+import { DashboardEntrance } from "@/components/dashboard-entrance";
 
 export default async function DashboardLayout({
   children,
@@ -37,7 +38,9 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main className="flex-1 bg-slate-100/70 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 bg-slate-100/70 p-4 lg:p-6">
+          <DashboardEntrance>{children}</DashboardEntrance>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

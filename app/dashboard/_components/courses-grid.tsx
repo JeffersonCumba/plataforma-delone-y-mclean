@@ -23,7 +23,7 @@ export function CoursesGrid({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 animate-fade-up-stagger">
       {visibleCourses.map((curso) => (
         <CourseCard key={curso.id} course={curso} />
       ))}

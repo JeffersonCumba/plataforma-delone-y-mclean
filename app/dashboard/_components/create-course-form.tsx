@@ -81,7 +81,7 @@ export function CreateCourseForm({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3 animate-fade-up">
       <Dialog open={open} onOpenChange={(newOpen) => {
         if (newOpen) {
           const defaults = generateDefaultValues();

@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { GoogleTranslateWidget } from "@/components/google-translate-widget";
+import { AnimatedHeading } from "@/components/animated-heading";
 
 export default function Home() {
   return (
@@ -19,10 +20,10 @@ export default function Home() {
             Plataforma de evaluación basada en DeLone y McLean
           </div>
 
-          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          <AnimatedHeading className="mt-6 text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-[55px]">
             Mide la calidad del software con una experiencia clara, seria y
             lista para análisis.
-          </h1>
+          </AnimatedHeading>
 
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-slate-600 sm:text-xl">
             Una plataforma académica para responder encuestas de calidad,

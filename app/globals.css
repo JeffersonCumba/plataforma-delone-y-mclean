@@ -146,8 +146,48 @@
     will-change: transform, opacity;
   }
 
+  @keyframes dashboard-entrance {
+    from {
+      opacity: .4;
+      transform: translate3d(0, 16px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .animate-dashboard-entrance > :first-child > *:not(:first-child) {
+    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .animate-fade-up {
+    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .animate-fade-up-stagger > * {
+    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .animate-fade-up-stagger > *:nth-child(1) { animation-delay: 0s; }
+  .animate-fade-up-stagger > *:nth-child(2) { animation-delay: 0.06s; }
+  .animate-fade-up-stagger > *:nth-child(3) { animation-delay: 0.12s; }
+  .animate-fade-up-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+  .animate-fade-up-stagger > *:nth-child(5) { animation-delay: 0.24s; }
+  .animate-fade-up-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+  .animate-fade-up-stagger > *:nth-child(7) { animation-delay: 0.36s; }
+  .animate-fade-up-stagger > *:nth-child(8) { animation-delay: 0.42s; }
+  .animate-fade-up-stagger > *:nth-child(9) { animation-delay: 0.48s; }
+  .animate-fade-up-stagger > *:nth-child(10) { animation-delay: 0.54s; }
+
   @media (prefers-reduced-motion: reduce) {
-    .animate-form-enter-right {
+    .animate-form-enter-right,
+    .animate-dashboard-entrance > :first-child > *:not(:first-child),
+    .animate-fade-up,
+    .animate-fade-up-stagger > * {
       animation: none;
     }
   }
