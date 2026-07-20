@@ -4,5 +4,6 @@ function TranslateInit() {
   }
   new google.translate.TranslateElement({
     pageLanguage: "es",
+    includedLanguages: "es,en,pt",
   });
 }

@@ -161,7 +161,7 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
 
   const switchLanguage = (lang: string) => {
     setIsOpen(false);
-    setCookie(null, COOKIE_NAME, "/auto/" + lang);
+    setCookie(null, COOKIE_NAME, "/auto/" + lang, { path: "/", sameSite: "lax" });
     if (typeof window !== "undefined") window.location.reload();
   };
 
