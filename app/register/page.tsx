@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 import { registerUserSchema } from "@/lib/validations/user";
 import { registrarUsuario } from "@/services/userService";
 
@@ -126,6 +127,9 @@ export default function RegisterPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(2,6,23,0.08),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(15,23,42,0.08),transparent_26%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] px-4 py-8 text-slate-950">
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-size-[72px_72px]" />
+      <div className="absolute left-4 top-4 z-50">
+        <GoogleTranslateWidget hideLabel />
+      </div>
 
       <section className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="max-w-xl text-slate-950">
@@ -134,8 +138,9 @@ export default function RegisterPage() {
             Registro visual de acceso
           </div>
 
-          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
-            Crea tu cuenta para entrar al sistema.
+
+          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
+            Crea tu cuenta para entrar al sistema de evaluación.
           </h1>
         </div>
 
@@ -214,7 +219,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electronico</Label>
+                  <Label htmlFor="email">Correo electrónico</Label>
                   <Input
                     id="email"
                     type="email"

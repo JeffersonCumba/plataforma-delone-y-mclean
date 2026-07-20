@@ -265,9 +265,25 @@ async function runCleanup() {
     console.log("\n✅ DB cleaned successfully. Only admin user remains.");
 
     // Reset auto_increment outside transaction (DDL auto-commits)
-    const nextId = adminId + 1;
-    await conn.execute(`ALTER TABLE mdl_user AUTO_INCREMENT = ${nextId}`);
-    console.log(`Auto_increment reset to ${nextId}`);
+    const tables = [
+      { name: "mdl_user", value: adminId + 1 },
+      { name: "mdl_course", value: 2 },
+      { name: "mdl_feedback", value: 1 },
+      { name: "mdl_feedback_item", value: 1 },
+      { name: "mdl_feedback_completed", value: 1 },
+      { name: "mdl_feedback_value", value: 1 },
+      { name: "mdl_course_modules", value: 1 },
+      { name: "mdl_course_sections", value: 1 },
+      { name: "mdl_enrol", value: 1 },
+      { name: "mdl_user_trial", value: 1 },
+      { name: "mdl_user_email_verification", value: 1 },
+      { name: "mdl_trial_audit_log", value: 1 },
+      { name: "mdl_role_assignments", value: 1 },
+    ];
+    for (const t of tables) {
+      await conn.execute(`ALTER TABLE ${t.name} AUTO_INCREMENT = ${t.value}`);
+      console.log(`  ${t.name} → auto_increment = ${t.value}`);
+    }
   } catch (error) {
     await conn.rollback();
     console.error("Cleanup failed:", error);

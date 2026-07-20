@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-function GoogleTranslateWidget() {
+function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
   const [currentLanguage, setCurrentLanguage] = useState<string | undefined>(
     undefined,
   );
@@ -172,9 +172,11 @@ function GoogleTranslateWidget() {
 
   return (
     <div className="notranslate flex items-center gap-3">
-      <span className="hidden text-xs font-medium uppercase tracking-[0.18em] text-slate-500 sm:inline">
-        Idioma
-      </span>
+      {!hideLabel && (
+        <span className="hidden text-xs font-medium uppercase tracking-[0.18em] text-slate-500 sm:inline">
+          Idioma
+        </span>
+      )}
 
       <div ref={containerRef} className="relative">
         <button

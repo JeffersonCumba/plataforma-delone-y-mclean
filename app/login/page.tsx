@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 import { login } from "@/services/authService";
 
 const loginSchema = z.object({
@@ -111,22 +112,25 @@ export default function LoginPage({
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(2,6,23,0.08),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(15,23,42,0.08),transparent_26%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] px-4 py-8 text-slate-950">
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-size-[72px_72px]" />
+      <div className="absolute right-4 top-4 z-50">
+        <GoogleTranslateWidget />
+      </div>
 
       <section className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="max-w-2xl text-slate-950">
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
-            Acceso seguro a la plataforma de evaluacion
+            Acceso seguro a la plataforma de evaluación
           </div>
 
-          <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
-            Inicia sesion para continuar con tu evaluacion o revisar los datos
+          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
+            Inicia sesión para continuar con tu evaluación o revisar los datos
             del estudio.
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-slate-600 sm:text-xl">
             Usa tus credenciales para entrar al entorno de encuestas,
-            dashboards y analisis del modelo DeLone y McLean.
+            dashboards y análisis del modelo DeLone y McLean.
           </p>
         </div>
 

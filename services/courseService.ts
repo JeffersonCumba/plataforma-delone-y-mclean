@@ -193,7 +193,7 @@ async function ensureSectionZero(
   return { id: sectionId, sequence: "" };
 }
 
-async function createDefaultFeedbackInCourse(
+export async function createDefaultFeedbackInCourse(
   courseId: number,
   courseShortname: string,
 ): Promise<void> {

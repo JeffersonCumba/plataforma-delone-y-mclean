@@ -7,6 +7,7 @@ import { pool } from "@/lib/db";
 import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
 import { initializeTrialForTeacher } from "@/services/trialService";
 import { initializeEmailVerification } from "@/services/emailVerificationService";
+import { createDefaultFeedbackInCourse } from "@/services/courseService";
 import {
   registerUserSchema,
   studentInputSchema,
@@ -353,6 +354,8 @@ async function crearCursoInicialProfesor(
     "enrolments[0][userid]": String(userId),
     "enrolments[0][courseid]": String(createdCourse.id),
   });
+
+  await createDefaultFeedbackInCourse(createdCourse.id, shortname);
 
   return createdCourse.id;
 }
