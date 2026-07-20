@@ -120,7 +120,7 @@ async function run() {
     // ignore — role is assigned during course creation
   }
 
-  // 3. Create trial record
+  // 3. Create trial record and email verification
   const TRIAL_DAYS = Number(process.env.TRIAL_DAYS ?? 30);
   const conn = await getDBConnection();
   try {
@@ -137,6 +137,17 @@ async function run() {
         [userId, start, end],
       );
       console.log(`Trial created: ${TRIAL_DAYS} days`);
+    }
+
+    const [verifRows] = await conn.execute(
+      `SELECT user_id FROM mdl_user_email_verification WHERE user_id = ?`, [userId]
+    );
+    if (verifRows.length === 0) {
+      await conn.execute(
+        `INSERT INTO mdl_user_email_verification (user_id, email) VALUES (?, ?)`,
+        [userId, TEACHER_EMAIL],
+      );
+      console.log(`Email verification initialized for ${TEACHER_EMAIL}`);
     }
   } finally {
     await conn.end();
