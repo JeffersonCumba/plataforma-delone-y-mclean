@@ -88,49 +88,128 @@ Equipo DeLone & McLean
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
-    .content { background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; }
-    .warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0; }
-    .attachments { background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0; }
-    .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
-    .timer { font-size: 24px; font-weight: bold; color: #dc2626; }
-    .no-reports { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0; color: #92400e; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 560px; margin: 0 auto; padding: 24px; background: #f1f5f9; }
+    .card { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04); }
+    .header { background: #f8fafc; padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    .body { padding: 28px 32px 32px; }
+    .badge { display: inline-block; background: #fef3c7; color: #92400e; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px; }
+    .timer-block { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .attachments { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .warning { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px 32px; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }
+    h1 { color: #0f172a; font-size: 20px; margin: 12px 0 0; font-weight: 600; letter-spacing: -0.01em; }
+    p { margin: 0 0 12px; font-size: 15px; }
+    ul { margin: 8px 0 0; padding: 0 0 0 20px; }
+    li { margin-bottom: 6px; font-size: 14px; color: #475569; }
+    .strong { font-weight: 600; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1 style="margin: 0; font-size: 24px;">⏳ Tu prueba está por expirar</h1>
-  </div>
-  <div class="content">
-    <p>Estimado/a <strong>${teacherName}</strong>,</p>
-    <p>Tu período de prueba de <strong>${TRIAL_DAYS} días</strong> en la plataforma DeLone & McLean expira en <strong class="timer">${daysRemaining} día(s)</strong>.</p>
-    
-    <div class="warning">
-      <strong>⚠️ Acción requerida:</strong> Para no perder acceso a tus cursos, estudiantes y datos analíticos, por favor contacta al administrador para renovar tu suscripción.
+  <div class="card">
+    <div class="header">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <h1>Tu prueba est&aacute; por expirar</h1>
     </div>
+    <div class="body">
+      <p>Estimado/a <strong>${teacherName}</strong>,</p>
+      <p>Tu per&iacute;odo de prueba de <strong>${TRIAL_DAYS} d&iacute;as</strong> en la plataforma DeLone &amp; McLean expira en:</p>
 
-    ${
-      hasAttachments
-        ? `
-    <div class="attachments">
-      <strong>📎 Archivos adjuntos (respaldos):</strong>
-      <ul>
-        <li><strong>backup_${teacherName.replace(/\s+/g, "_")}.xlsx</strong> - Cursos, estudiantes y métricas en Excel</li>
-        <li><strong>reporte_${teacherName.replace(/\s+/g, "_")}.pdf</strong> - Reporte completo de analíticas DeLone & McLean</li>
-      </ul>
-    </div>`
-        : `
-    <div class="no-reports">
-      ⚠️ Los reportes de respaldo no estuvieron disponibles en este momento. Serán generados en la próxima ejecución automática.
-    </div>`
-    }
+      <div class="timer-block">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td valign="middle" style="padding-right: 12px; width: 28px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v4"/>
+                <path d="M12 18v4"/>
+                <path d="M4.93 4.93l2.83 2.83"/>
+                <path d="M16.24 16.24l2.83 2.83"/>
+                <path d="M2 12h4"/>
+                <path d="M18 12h4"/>
+                <path d="M4.93 19.07l2.83-2.83"/>
+                <path d="M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </td>
+            <td>
+              <p style="margin: 0; font-size: 24px; font-weight: 700; color: #dc2626; letter-spacing: -0.02em;">${daysRemaining} d&iacute;a(s) restantes</p>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-    <p>Si ya has renovado tu acceso, puedes ignorar este mensaje.</p>
-    <p>Saludos cordiales,<br>Equipo DeLone & McLean</p>
-  </div>
-  <div class="footer">
-    Este es un mensaje automático, por favor no respondas a este correo.
+      <div class="warning">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="padding-right: 10px; padding-top: 1px; width: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.5;">
+                <strong>Acci&oacute;n requerida:</strong> Para no perder acceso a tus cursos, estudiantes y datos anal&iacute;ticos, contacta al administrador para renovar tu suscripci&oacute;n.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      ${
+        hasAttachments
+          ? `
+      <div class="attachments">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="padding-right: 10px; padding-top: 1px; width: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 6px;">Archivos adjuntos (respaldos)</p>
+              <ul style="margin: 0;">
+                <li><strong>backup_${teacherName.replace(/\s+/g, "_")}.xlsx</strong> — Cursos, estudiantes y m&eacute;tricas en Excel</li>
+                <li><strong>reporte_${teacherName.replace(/\s+/g, "_")}.pdf</strong> — Reporte completo de anal&iacute;ticas DeLone &amp; McLean</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+      </div>`
+          : `
+      <div class="warning">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="padding-right: 10px; padding-top: 1px; width: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.5;">
+                Los reportes de respaldo no estuvieron disponibles en este momento. Ser&aacute;n generados en la pr&oacute;xima ejecuci&oacute;n autom&aacute;tica.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>`
+      }
+
+      <p>Si ya has renovado tu acceso, puedes ignorar este mensaje.</p>
+      <p style="margin-bottom: 0;">Saludos cordiales,<br>Equipo DeLone &amp; McLean</p>
+    </div>
+    <div class="footer">
+      Este es un mensaje autom&aacute;tico, por favor no respondas a este correo.
+    </div>
   </div>
 </body>
 </html>
@@ -190,43 +269,108 @@ Equipo DeLone & McLean
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
-    .content { background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; }
-    .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
-    .attachments { background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0; }
-    .error { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 20px 0; color: #dc2626; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 560px; margin: 0 auto; padding: 24px; background: #f1f5f9; }
+    .card { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04); }
+    .header { background: #fef2f2; padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid #fecaca; }
+    .body { padding: 28px 32px 32px; }
+    .badge { display: inline-block; background: #fef3c7; color: #92400e; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px; }
+    .expired-block { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .attachments { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px 32px; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }
+    h1 { color: #991b1b; font-size: 20px; margin: 12px 0 0; font-weight: 600; letter-spacing: -0.01em; }
+    p { margin: 0 0 12px; font-size: 15px; }
+    ul { margin: 8px 0 0; padding: 0 0 0 20px; }
+    li { margin-bottom: 6px; font-size: 14px; color: #475569; }
+    .strong { font-weight: 600; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1 style="margin: 0; font-size: 24px;">❌ Tu cuenta ha expirado</h1>
-  </div>
-  <div class="content">
-    <p>Estimado/a <strong>${teacherName}</strong>,</p>
-    <p>Tu período de prueba de <strong>${TRIAL_DAYS} días</strong> en la plataforma DeLone & McLean ha expirado.</p>
-    <p>Tu cuenta y todos los datos asociados (cursos, estudiantes, encuestas, reportes) han sido <strong>eliminados permanentemente</strong> del sistema.</p>
-    ${
-      hasAttachments
-        ? `
-    <div class="attachments">
-      <strong>📎 Archivos adjuntos (respaldos finales):</strong>
-      <ul>
-        <li><strong>backup_${teacherName.replace(/\s+/g, "_")}.xlsx</strong> - Cursos, estudiantes y métricas en Excel</li>
-        <li><strong>reporte_${teacherName.replace(/\s+/g, "_")}.pdf</strong> - Reporte completo de analíticas DeLone & McLean</li>
-      </ul>
-    </div>`
-        : `
-    <div class="error">
-      ⚠️ No se pudieron generar los reportes de respaldo automáticamente. Contacta al administrador para solicitar una copia manual de tus datos.
+  <div class="card">
+    <div class="header">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      <h1>Tu cuenta ha expirado</h1>
     </div>
-    `
-    }
-    <p>Si deseas recuperar el acceso, por favor contacta al administrador.</p>
-    <p>Saludos cordiales,<br>Equipo DeLone & McLean</p>
-  </div>
-  <div class="footer">
-    Este es un mensaje automático, por favor no respondas a este correo.
+    <div class="body">
+      <p>Estimado/a <strong>${teacherName}</strong>,</p>
+      <p>Tu per&iacute;odo de prueba de <strong>${TRIAL_DAYS} d&iacute;as</strong> en la plataforma DeLone &amp; McLean ha expirado.</p>
+
+      <div class="expired-block">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td valign="top" style="padding-right: 12px; width: 24px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #991b1b; font-size: 14px; font-weight: 600; margin: 0 0 2px;">Cuenta eliminada permanentemente</p>
+              <p style="color: #b91c1c; font-size: 14px; margin: 0; line-height: 1.5;">
+                Todos los datos asociados (cursos, estudiantes, encuestas, reportes) han sido eliminados del sistema.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      ${
+        hasAttachments
+          ? `
+      <div class="attachments">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="padding-right: 10px; padding-top: 1px; width: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 6px;">Respaldos finales adjuntos</p>
+              <ul style="margin: 0;">
+                <li><strong>backup_${teacherName.replace(/\s+/g, "_")}.xlsx</strong> &mdash; Cursos, estudiantes y m&eacute;tricas en Excel</li>
+                <li><strong>reporte_${teacherName.replace(/\s+/g, "_")}.pdf</strong> &mdash; Reporte completo de anal&iacute;ticas DeLone &amp; McLean</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+      </div>`
+          : `
+      <div class="error">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="top" style="padding-right: 10px; padding-top: 1px; width: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </td>
+            <td>
+              <p style="color: #991b1b; font-size: 14px; margin: 0; line-height: 1.5;">
+                No se pudieron generar los reportes de respaldo autom&aacute;ticamente. Contacta al administrador para solicitar una copia manual de tus datos.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>`
+      }
+
+      <p>Si deseas recuperar el acceso, contacta al administrador.</p>
+      <p style="margin-bottom: 0;">Saludos cordiales,<br>Equipo DeLone &amp; McLean</p>
+    </div>
+    <div class="footer">
+      Este es un mensaje autom&aacute;tico, por favor no respondas a este correo.
+    </div>
   </div>
 </body>
 </html>

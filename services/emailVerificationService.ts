@@ -63,25 +63,45 @@ export async function sendVerificationCode(
       subject: "Código de verificación — Plataforma DeLone y McLean",
       text: `Tu código de verificación es: ${code}\n\nEste código expira en 10 minutos.\n\nSi no solicitaste este código, ignora este mensaje.`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #f9fafb; border-radius: 12px;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #1e293b; font-size: 20px; margin: 0;">Verificación de Correo</h1>
-          </div>
-          <div style="background: white; border-radius: 8px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-            <p style="color: #475569; font-size: 15px; line-height: 1.5; margin: 0 0 20px;">
-              Usa el siguiente código para verificar tu correo electrónico en la plataforma:
-            </p>
-            <div style="text-align: center; margin: 24px 0;">
-              <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #2563eb; background: #eff6ff; padding: 12px 24px; border-radius: 8px; font-family: monospace;">
-                ${code}
-              </span>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);">
+            <div style="background: #f8fafc; padding: 32px 32px 20px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M22 4L12 13 2 4"/>
+              </svg>
+              <h1 style="color: #0f172a; font-size: 18px; margin: 14px 0 0; font-weight: 600; letter-spacing: -0.01em;">Verifica tu correo electrónico</h1>
             </div>
-            <p style="color: #94a3b8; font-size: 13px; margin: 0;">
-              Este código expira en <strong>10 minutos</strong>. Si no solicitaste esta verificación, ignora este correo.
-            </p>
+            <div style="padding: 24px 32px 32px;">
+              <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+                Usa el siguiente código para verificar tu cuenta en la plataforma:
+              </p>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0f172a; font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;">
+                  ${code}
+                </span>
+              </div>
+              <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px 14px; margin-top: 16px;">
+                <table cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td valign="top" style="padding-right: 8px; padding-top: 1px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                    </td>
+                    <td>
+                      <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.4;">
+                        Este c&oacute;digo expira en <strong>10 minutos</strong>. Si no solicitaste esta verificaci&oacute;n, ignora este correo.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
           </div>
-          <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 20px;">
-            Plataforma DeLone y McLean &mdash; Evaluación de Calidad de Software
+          <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">
+            Plataforma DeLone y McLean &mdash; Evaluaci&oacute;n de Calidad de Software
           </p>
         </div>
       `,
