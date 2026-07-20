@@ -51,16 +51,17 @@ async function ensureCourseOwnership(
 export async function buscarUsuariosAction(
   query: string,
 ): Promise<BuscarUsuariosActionResult> {
-  await requireUserId();
-
   try {
+    await requireUserId();
     const users = await buscarUsuariosMoodle(query);
     return { ok: true, message: "OK", users };
   } catch (error) {
     console.error("[buscarUsuariosAction]", error);
     return {
       ok: false,
-      message: "No fue posible buscar usuarios.",
+      message: error instanceof Error && error.message.includes("Sesion")
+        ? "Sesion invalida. Vuelve a iniciar sesion."
+        : "No fue posible buscar usuarios.",
       users: [],
     };
   }

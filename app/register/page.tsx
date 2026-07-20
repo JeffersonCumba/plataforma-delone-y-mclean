@@ -92,36 +92,32 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    try {
-      await registrarUsuario(parsed.data);
+    const result = await registrarUsuario(parsed.data);
 
-      setForm({
-        username: "",
-        firstname: "",
-        lastname: "",
-        email: "",
-        password: "",
-      });
-
-      toast.success("Usuario registrado exitosamente");
-
-      const emailParam = encodeURIComponent(parsed.data.email);
-      setTimeout(() => router.push(`/login?email=${emailParam}`), 1200);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo.";
-
-      const field = fieldKeyFromMessage(message);
+    if (!result.ok) {
+      const field = fieldKeyFromMessage(result.message);
       if (field) {
-        setErrors({ [field]: message });
+        setErrors({ [field]: result.message });
       }
 
-      toast.error(message);
-    } finally {
+      toast.error(result.message);
       setLoading(false);
+      return;
     }
+
+    setForm({
+      username: "",
+      firstname: "",
+      lastname: "",
+      email: "",
+      password: "",
+    });
+
+    toast.success("Usuario registrado exitosamente");
+
+    const emailParam = encodeURIComponent(parsed.data.email);
+    setTimeout(() => router.push(`/login?email=${emailParam}`), 1200);
+    setLoading(false);
   };
 
   return (

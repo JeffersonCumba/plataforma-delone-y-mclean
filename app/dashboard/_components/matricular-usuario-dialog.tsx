@@ -144,6 +144,11 @@ export function MatricularUsuarioDialog({
           toast.error(response.message);
         }
       }
+    } catch {
+      if (!controller.signal.aborted) {
+        setResults([]);
+        toast.error("Error inesperado al buscar usuarios");
+      }
     } finally {
       if (!controller.signal.aborted) {
         setSearching(false);

@@ -362,8 +362,16 @@ async function crearCursoInicialProfesor(
 
 export async function registrarUsuario(
   input: RegisterUserInput,
-): Promise<number> {
-  const data = validateRegisterInput(input);
+): Promise<{ ok: true; userId: number } | { ok: false; message: string }> {
+  let data: RegisterUserInput;
+  try {
+    data = validateRegisterInput(input);
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Datos de registro inválidos",
+    };
+  }
 
   const usernameExists = await checkUserExistsByField(
     "username",
@@ -371,15 +379,13 @@ export async function registrarUsuario(
   );
 
   if (usernameExists) {
-    throw new Error("Ese nombre de usuario ya está en uso. Elige otro.");
+    return { ok: false, message: "Ese nombre de usuario ya está en uso. Elige otro." };
   }
 
   const emailExists = await checkUserExistsByField("email", data.email);
   
   if (emailExists) {
-    throw new Error(
-      "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.",
-    );
+    return { ok: false, message: "Ese correo electrónico ya está registrado. Usa otro o inicia sesión." };
   }
 
   let userId = 0;
@@ -392,7 +398,7 @@ export async function registrarUsuario(
     await initializeTrialForTeacher(userId);
     await initializeEmailVerification(userId, data.email);
 
-    return userId;
+    return { ok: true, userId };
   } catch (error) {
     console.error("[registrarUsuario] Error:", error);
 
@@ -408,29 +414,21 @@ export async function registrarUsuario(
 
     const friendly = parseRegistroError(error);
     if (friendly) {
-      throw new Error(friendly);
+      return { ok: false, message: friendly };
     }
 
     if (userId === 0) {
-      try {
-        const usernameInDb = await findUserByUsername(data.username);
-        if (usernameInDb) {
-          throw new Error("Ese nombre de usuario ya está en uso. Elige otro.");
-        }
-        const emailInDb = await findUserByEmail(data.email);
-        if (emailInDb) {
-          throw new Error(
-            "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.",
-          );
-        }
-      } catch (err) {
-        if (err instanceof Error) throw err;
+      const usernameInDb = await findUserByUsername(data.username);
+      if (usernameInDb) {
+        return { ok: false, message: "Ese nombre de usuario ya está en uso. Elige otro." };
+      }
+      const emailInDb = await findUserByEmail(data.email);
+      if (emailInDb) {
+        return { ok: false, message: "Ese correo electrónico ya está registrado. Usa otro o inicia sesión." };
       }
     }
 
-    throw new Error(
-      "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo.",
-    );
+    return { ok: false, message: "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo." };
   }
 }
 

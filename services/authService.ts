@@ -237,15 +237,15 @@ const MOODLE_ADMIN_EMAIL = process.env.MOODLE_ADMIN_EMAIL?.trim().toLowerCase();
 export async function login(
   email: string,
   password: string,
-): Promise<LoginResult> {
+): Promise<{ ok: true; user: LoginResult["user"]; role: UserRole } | { ok: false; message: string }> {
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!normalizedEmail) {
-    throw new Error("El correo electrónico es obligatorio para iniciar sesión");
+    return { ok: false, message: "El correo electrónico es obligatorio para iniciar sesión" };
   }
 
   if (!password.trim()) {
-    throw new Error("La contraseña es obligatoria para iniciar sesión");
+    return { ok: false, message: "La contraseña es obligatoria para iniciar sesión" };
   }
 
   try {
@@ -257,13 +257,13 @@ export async function login(
     const user = rows[0];
 
     if (!user) {
-      throw new Error("No se encontró un usuario con ese correo electrónico");
+      return { ok: false, message: "No se encontró un usuario con ese correo electrónico" };
     }
 
     const isValidPassword = verifySha512CryptPassword(password, user.password);
 
     if (!isValidPassword) {
-      throw new Error("Credenciales incorrectas");
+      return { ok: false, message: "Credenciales incorrectas" };
     }
 
     const fullname = `${user.firstname ?? ""} ${user.lastname ?? ""}`.trim();
@@ -276,6 +276,7 @@ export async function login(
       isAdminByUsername || isAdminByEmail ? "ADMIN" : "EVALUADOR";
 
     return {
+      ok: true,
       user: {
         id: user.id,
         username: user.username,
@@ -286,15 +287,6 @@ export async function login(
     };
   } catch (error) {
     console.error("[login] Error:", error);
-
-    if (error instanceof Error && (
-      error.message.includes("No se encontró") ||
-      error.message.includes("Credenciales incorrectas") ||
-      error.message.includes("obligatorio")
-    )) {
-      throw error;
-    }
-
-    throw new Error("Error al iniciar sesión. Intentalo de nuevo más tarde.");
+    return { ok: false, message: "Error al iniciar sesión. Intentalo de nuevo más tarde." };
   }
 }
