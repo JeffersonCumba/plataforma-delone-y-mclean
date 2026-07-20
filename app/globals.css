@@ -158,17 +158,17 @@
   }
 
   .animate-dashboard-entrance > :first-child > *:not(:first-child) {
-    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    animation: dashboard-entrance .8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
     will-change: transform, opacity;
   }
 
   .animate-fade-up {
-    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    animation: dashboard-entrance .8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
     will-change: transform, opacity;
   }
 
   .animate-fade-up-stagger > * {
-    animation: dashboard-entrance .5s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+    animation: dashboard-entrance .8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
     will-change: transform, opacity;
   }
 
