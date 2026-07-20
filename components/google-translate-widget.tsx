@@ -8,7 +8,8 @@ const COOKIE_NAME = "googtrans";
 function readLanguageFromCookie(rawCookieValue?: string): string | undefined {
   if (!rawCookieValue) return undefined;
 
-  const decoded = decodeURIComponent(rawCookieValue).replace(/^"|"$/g, "");
+  const cleaned = rawCookieValue.replace(/^"|"$/g, "");
+  const decoded = cleaned.includes("%") ? decodeURIComponent(cleaned) : cleaned;
   const parts = decoded.split("/").filter(Boolean);
   const language = parts[parts.length - 1];
 
@@ -17,22 +18,9 @@ function readLanguageFromCookie(rawCookieValue?: string): string | undefined {
 
 function persistGoogleTranslateCookie(lang: string) {
   const cookieValue = `/es/${lang}`;
-  const options = { path: "/", sameSite: "lax" as const };
-
-  setCookie(null, COOKIE_NAME, cookieValue, options);
-
-  if (typeof document === "undefined") return;
-
-  const host = window.location.hostname;
   const maxAge = 60 * 60 * 24 * 365;
-  const base = `${COOKIE_NAME}=${encodeURIComponent(cookieValue)}; path=/; max-age=${maxAge}; samesite=lax`;
 
-  document.cookie = base;
-
-  if (host && host !== "localhost") {
-    document.cookie = `${base}; domain=${host}`;
-    document.cookie = `${base}; domain=.${host}`;
-  }
+  document.cookie = `${COOKIE_NAME}=${cookieValue}; path=/; max-age=${maxAge}; samesite=lax`;
 }
 
 interface LanguageDescriptor {
