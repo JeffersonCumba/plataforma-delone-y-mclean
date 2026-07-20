@@ -21,6 +21,13 @@ function persistGoogleTranslateCookie(lang: string) {
   const maxAge = 60 * 60 * 24 * 365;
 
   document.cookie = `${COOKIE_NAME}=${cookieValue}; path=/; max-age=${maxAge}; samesite=lax`;
+
+  const { hostname } = window.location;
+  const firstDot = hostname.indexOf(".");
+  if (firstDot > 0 && hostname.split(".").length >= 3) {
+    const parentDomain = hostname.slice(firstDot);
+    document.cookie = `${COOKIE_NAME}=${cookieValue}; path=/; domain=${parentDomain}; max-age=${maxAge}; samesite=lax`;
+  }
 }
 
 interface LanguageDescriptor {
