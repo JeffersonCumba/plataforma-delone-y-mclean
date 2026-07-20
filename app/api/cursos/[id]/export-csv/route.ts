@@ -1,9 +1,9 @@
 import { type RowDataPacket } from "mysql2";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { pool } from "@/lib/db";
 import { obtenerCursosProfesor } from "@/services/courseService";
+import { requireSession } from "@/lib/auth";
 
 interface ExportRow extends RowDataPacket {
   completedId: number;
@@ -31,12 +31,9 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const cookieStore = await cookies();
-  const userId = Number(cookieStore.get("user_id")?.value);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return NextResponse.json({ message: "No autenticado" }, { status: 401 });
-  }
+  const session = await requireSession();
+  if (session instanceof Response) return session;
+  const userId = session.userId;
 
   const { id } = await context.params;
   const courseId = Number(id);

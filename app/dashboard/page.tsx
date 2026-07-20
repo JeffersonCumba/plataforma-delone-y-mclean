@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import {
   Activity,
   BookOpen,
@@ -22,15 +20,10 @@ import { obtenerCursosDeProfesor, obtenerEstadisticasGenerales, obtenerEstudiant
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
 
-export default async function DashboardIndexPage() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value as "ADMIN" | "EVALUADOR" | undefined;
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
+import { requireAuth } from "@/lib/auth";
 
-  if (!role || !Number.isInteger(userId) || userId <= 0) {
-    return redirect("/login");
-  }
+export default async function DashboardIndexPage() {
+  const { userId, role } = await requireAuth();
 
   if (role === "ADMIN") {
     const stats = await obtenerEstadisticasGenerales();

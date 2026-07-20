@@ -1,50 +1,18 @@
 import OpenAI from "openai";
-import { cookies } from "next/headers";
 
 import { type AnalyticsData } from "@/types/analytics";
 import { obtenerCursosProfesor } from "@/services/courseService";
+import {
+  unauthorized,
+  badRequest,
+  forbidden,
+  serverError,
+} from "@/lib/auth";
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const APP_REFERER =
   process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const APP_TITLE = "Plataforma DeLone y McLean";
-
-export function unauthorized(message: string): Response {
-  return new Response(JSON.stringify({ message }), {
-    status: 401,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-export function badRequest(message: string): Response {
-  return new Response(JSON.stringify({ message }), {
-    status: 400,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-export function forbidden(message: string): Response {
-  return new Response(JSON.stringify({ message }), {
-    status: 403,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-export function serverError(message: string): Response {
-  return new Response(JSON.stringify({ message }), {
-    status: 500,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-export async function validateSession(): Promise<number | Response> {
-  const cookieStore = await cookies();
-  const userId = Number(cookieStore.get("user_id")?.value);
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return unauthorized("Sesion invalida");
-  }
-  return userId;
-}
 
 export async function validateCourseAccess(
   userId: number,

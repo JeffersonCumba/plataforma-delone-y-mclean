@@ -1,12 +1,11 @@
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
 import { type AnalyticsData } from "@/types/analytics";
 import {
-  badRequest,
   createClient,
   createStreamResponse,
   validateCourseAccess,
-  validateSession,
 } from "@/lib/ai-stream";
+import { requireSession, badRequest } from "@/lib/auth";
 
 interface InterpretRequestBody {
   courseId: number;
@@ -18,7 +17,7 @@ interface InterpretRequestBody {
 const OPENROUTER_MODEL = "openai/gpt-oss-120b";
 
 export async function POST(request: Request): Promise<Response> {
-  const session = await validateSession();
+  const session = await requireSession();
   if (session instanceof Response) return session;
 
   let body: InterpretRequestBody;
@@ -46,7 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     return badRequest("analytics requerido");
   }
 
-  const accessError = await validateCourseAccess(session, courseId);
+  const accessError = await validateCourseAccess(session.userId, courseId);
   if (accessError) return accessError;
 
   const clientResult = createClient();

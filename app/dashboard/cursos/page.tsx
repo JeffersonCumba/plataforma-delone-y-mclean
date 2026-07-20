@@ -1,18 +1,10 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { CoursesGrid } from "@/app/dashboard/_components/courses-grid";
 import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
 import { obtenerCursosProfesor } from "@/services/courseService";
+import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardCursosPage() {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    redirect("/login");
-  }
+  const { userId } = await requireAuth();
 
   const cursos = await obtenerCursosProfesor(userId);
 

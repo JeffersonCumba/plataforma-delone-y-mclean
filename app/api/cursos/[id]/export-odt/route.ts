@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
-import { cookies } from "next/headers";
 
 import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { obtenerCursosProfesor } from "@/services/courseService";
@@ -12,18 +11,7 @@ import {
   ODT_MIMETYPE,
   type AiConclusions,
 } from "@/lib/odt-report";
-
-function unauthorized(message: string): NextResponse {
-  return NextResponse.json({ message }, { status: 401 });
-}
-
-function badRequest(message: string): NextResponse {
-  return NextResponse.json({ message }, { status: 400 });
-}
-
-function forbidden(message: string): NextResponse {
-  return NextResponse.json({ message }, { status: 403 });
-}
+import { requireSession, badRequest, forbidden } from "@/lib/auth";
 
 function readConclusions(request: Request): AiConclusions {
   const url = new URL(request.url);
@@ -40,12 +28,9 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const cookieStore = await cookies();
-  const userId = Number(cookieStore.get("user_id")?.value);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return unauthorized("Sesion invalida");
-  }
+  const session = await requireSession();
+  if (session instanceof Response) return session;
+  const userId = session.userId;
 
   const { id } = await context.params;
   const courseId = Number(id);

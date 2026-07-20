@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMoodle } from "@/lib/moodle";
 import { pool } from "@/lib/db";
+import { requireSession } from "@/lib/auth";
 import type { RowDataPacket } from "mysql2";
 
 interface TeacherCourseRow extends RowDataPacket {
@@ -27,10 +27,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const cookieStore = await cookies();
-    const role = cookieStore.get("user_role")?.value;
-    const userIdCookie = cookieStore.get("user_id")?.value;
-    const currentUserId = Number(userIdCookie);
+    const session = await requireSession();
+    if (session instanceof Response) return session;
 
     const { id } = await params;
     const targetTeacherId = Number(id);
@@ -39,7 +37,7 @@ export async function GET(
       return NextResponse.json({ error: "ID de profesor inválido" }, { status: 400 });
     }
 
-    if (role !== "ADMIN" && currentUserId !== targetTeacherId) {
+    if (session.role !== "ADMIN" && session.userId !== targetTeacherId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }
 

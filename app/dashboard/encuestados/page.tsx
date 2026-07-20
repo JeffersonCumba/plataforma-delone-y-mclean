@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { Upload, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,14 +11,10 @@ import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 import { obtenerIdsProfesoresDeCursos } from "@/services/adminService";
 import type { MoodleCourse } from "@/types/course";
 
-export default async function DashboardEncuestadosPage() {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
+import { requireAuth } from "@/lib/auth";
 
-  if (!Number.isInteger(userId) || userId <= 0) {
-    redirect("/login");
-  }
+export default async function DashboardEncuestadosPage() {
+  const { userId } = await requireAuth();
 
   const courses: MoodleCourse[] = await obtenerCursosProfesor(userId);
 

@@ -75,7 +75,7 @@ export default async function ProfesorDashboardPage() {
         {isWarningPeriod && !isExpired && (
           <div className="mt-4 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 animate-pulse">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div>

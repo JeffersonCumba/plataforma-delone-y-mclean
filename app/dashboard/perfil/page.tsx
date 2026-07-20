@@ -1,21 +1,12 @@
 import { type RowDataPacket } from "mysql2";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { pool } from "@/lib/db";
 import { ProfileClient } from "@/app/dashboard/profesor/perfil/profile-client";
 import { obtenerCursosDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
+import { requireAuth } from "@/lib/auth";
 
 export default async function PerfilPage() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
-  const userId = cookieStore.get("user_id")?.value;
-
-  if (!userId) {
-    redirect("/login");
-  }
-
-  const profileId = Number(userId);
+  const { userId: profileId, role } = await requireAuth();
 
   const [rows] = await pool.execute<(RowDataPacket & { username: string; firstname: string; lastname: string; email: string })[]>(
     `SELECT username, firstname, lastname, email FROM mdl_user WHERE id = ?`,

@@ -1,24 +1,17 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CourseAnalyticsPanel } from "@/app/dashboard/_components/course-analytics-panel";
 import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerTodosLosCursos } from "@/services/adminService";
+import { requireAuth } from "@/lib/auth";
 
 export default async function CourseOverviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-  const role = cookieStore.get("user_role")?.value;
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    redirect("/login");
-  }
+  const { userId, role } = await requireAuth();
 
   const { id } = await params;
   const courseId = Number(id);

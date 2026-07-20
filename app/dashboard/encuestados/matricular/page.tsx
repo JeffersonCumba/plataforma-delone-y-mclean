@@ -1,20 +1,12 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { CSVUploader } from "@/app/dashboard/_components/CSVUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { obtenerCursosProfesor } from "@/services/courseService";
+import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardEncuestadosMatricularPage() {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    redirect("/login");
-  }
+  const { userId } = await requireAuth();
 
   const courses = await obtenerCursosProfesor(userId);
 

@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { requireAuth } from "@/lib/auth";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -15,23 +14,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value as "ADMIN" | "EVALUADOR";
-  const userNameCookie = cookieStore.get("user_name")?.value;
-  const userIdCookie = cookieStore.get("user_id")?.value;
-
-  if (!role) {
-    redirect("/login");
-  }
-
-  const userId = Number(userIdCookie);
-  if (!Number.isInteger(userId) || userId <= 0) {
-    redirect("/login");
-  }
-
-  const userName = userNameCookie
-    ? decodeURIComponent(userNameCookie)
-    : "Profesor";
+  const { userId, role, userName } = await requireAuth();
 
   return (
     <SidebarProvider>
