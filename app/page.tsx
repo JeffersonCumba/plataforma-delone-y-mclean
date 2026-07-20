@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AnimatedHeading } from "@/components/animated-heading";
+import { GoogleTranslateWidget } from "@/components/google-translate-widget";
 
 export default function Home() {
   return (
@@ -10,6 +11,9 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[linear-gradient(rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)] bg-size-[72px_72px]" />
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-10 lg:px-8">
         <div className="max-w-3xl">
+          <div className="mb-8">
+            <GoogleTranslateWidget hideLabel />
+          </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
             Plataforma de evaluación basada en DeLone y McLean
