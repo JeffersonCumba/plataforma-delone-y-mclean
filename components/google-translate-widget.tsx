@@ -70,6 +70,10 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
       setLanguageConfig(c);
     };
 
+    if (!existingLanguageCookieValue) {
+      setCookie(null, COOKIE_NAME, "/es/es", { path: "/", sameSite: "lax" });
+    }
+
     const injectScript = (id: string, src: string) =>
       new Promise<void>((resolve, reject) => {
         const existing = document.getElementById(
