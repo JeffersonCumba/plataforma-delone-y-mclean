@@ -135,7 +135,7 @@ export default function RegisterPage() {
           </div>
 
           <h1 className="mt-6 text-balance text-5xl font-semibold tracking-tight sm:text-6xl">
-            Crea tu cuenta para entrar al sistema de evaluacion.
+            Crea tu cuenta para entrar al sistema.
           </h1>
         </div>
 
