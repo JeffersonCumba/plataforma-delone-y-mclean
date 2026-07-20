@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { UserRound } from "lucide-react";
 
 import { Separator } from "@/components/ui/separator";
 import {
