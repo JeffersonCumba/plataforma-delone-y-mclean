@@ -5,6 +5,36 @@ import { parseCookies, setCookie } from "nookies";
 
 const COOKIE_NAME = "googtrans";
 
+function readLanguageFromCookie(rawCookieValue?: string): string | undefined {
+  if (!rawCookieValue) return undefined;
+
+  const decoded = decodeURIComponent(rawCookieValue).replace(/^"|"$/g, "");
+  const parts = decoded.split("/").filter(Boolean);
+  const language = parts[parts.length - 1];
+
+  return language || undefined;
+}
+
+function persistGoogleTranslateCookie(lang: string) {
+  const cookieValue = `/es/${lang}`;
+  const options = { path: "/", sameSite: "lax" as const };
+
+  setCookie(null, COOKIE_NAME, cookieValue, options);
+
+  if (typeof document === "undefined") return;
+
+  const host = window.location.hostname;
+  const maxAge = 60 * 60 * 24 * 365;
+  const base = `${COOKIE_NAME}=${encodeURIComponent(cookieValue)}; path=/; max-age=${maxAge}; samesite=lax`;
+
+  document.cookie = base;
+
+  if (host && host !== "localhost") {
+    document.cookie = `${base}; domain=${host}`;
+    document.cookie = `${base}; domain=.${host}`;
+  }
+}
+
 interface LanguageDescriptor {
   name: string;
   title: string;
@@ -41,13 +71,7 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
     const cookies = parseCookies();
     const existingLanguageCookieValue = cookies[COOKIE_NAME];
 
-    let languageValue: string | undefined;
-    if (existingLanguageCookieValue) {
-      const sp = existingLanguageCookieValue.split("/");
-      if (sp.length > 2) {
-        languageValue = sp[2];
-      }
-    }
+    let languageValue = readLanguageFromCookie(existingLanguageCookieValue);
     const gw = globalThis as unknown as {
       __GOOGLE_TRANSLATION_CONFIG__?: {
         languages: LanguageDescriptor[];
@@ -71,7 +95,7 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
     };
 
     if (!existingLanguageCookieValue) {
-      setCookie(null, COOKIE_NAME, "/es/es", { path: "/", sameSite: "lax" });
+      persistGoogleTranslateCookie("es");
     }
 
     const injectScript = (id: string, src: string) =>
@@ -165,7 +189,8 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
 
   const switchLanguage = (lang: string) => {
     setIsOpen(false);
-    setCookie(null, COOKIE_NAME, "/es/" + lang, { path: "/", sameSite: "lax" });
+    setCurrentLanguage(lang);
+    persistGoogleTranslateCookie(lang);
     if (typeof window !== "undefined") window.location.reload();
   };
 
@@ -222,7 +247,12 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
               const Flag = FLAG_COMPONENT[ld.name];
               const isActive = currentLanguage === ld.name;
               return (
-                <li key={ld.name} role="option" className="mb-1">
+                <li
+                  key={ld.name}
+                  role="option"
+                  aria-selected={isActive}
+                  className="mb-1"
+                >
                   <button
                     type="button"
                     onClick={() => switchLanguage(ld.name)}
@@ -235,7 +265,9 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:h-5 [&_svg]:w-5">
                       {Flag ? <Flag /> : null}
                     </span>
-                    <span className="flex-1 truncate text-left">{ld.title}</span>
+                    <span className="flex-1 truncate text-left">
+                      {ld.title}
+                    </span>
                     {isActive ? (
                       <svg
                         aria-hidden="true"
