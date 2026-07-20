@@ -1,6 +1,6 @@
 import "server-only";
 
-const MOODLE_URL = process.env.MOODLE_BASE_URL;
+const MOODLE_URL = process.env.NEXT_PUBLIC_MOODLE_BASE_URL;
 const MOODLE_TOKEN = process.env.MOODLE_TOKEN;
 const FETCH_TIMEOUT_MS = 15_000;
 

@@ -9,7 +9,7 @@ export default async function PerfilPage() {
   const { userId: profileId, role } = await requireAuth();
 
   const [rows] = await pool.execute<(RowDataPacket & { username: string; firstname: string; lastname: string; email: string })[]>(
-    `SELECT username, firstname, lastname, email FROM mdl_user WHERE id = ?`,
+    `SELECT username, firstname, lastname, email FROM mdl_user WHERE id = ? AND deleted = 0`,
     [profileId],
   );
   const user = rows[0] || { username: "", firstname: "", lastname: "", email: "" };

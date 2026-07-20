@@ -35,6 +35,7 @@ async function getTeachersNeedingWarning(
        WHERE t.deleted_at IS NULL
          AND t.status NOT IN ('EXPIRED', 'CANCELLED')
          AND t.warning_sent = FALSE
+         AND u.deleted = 0
          AND t.trial_ends_at IS NOT NULL
          AND t.trial_ends_at <= DATE_ADD(NOW(), INTERVAL ? DAY)
          AND t.trial_ends_at > NOW()`,
@@ -56,6 +57,7 @@ async function getExpiredTeachers(
         JOIN mdl_user u ON u.id = t.user_id
        WHERE t.deleted_at IS NULL
          AND t.status NOT IN ('EXPIRED', 'CANCELLED')
+         AND u.deleted = 0
          AND t.trial_ends_at IS NOT NULL
          AND t.trial_ends_at <= NOW()`,
   );

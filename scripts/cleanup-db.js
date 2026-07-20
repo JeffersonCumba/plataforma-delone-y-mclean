@@ -72,9 +72,9 @@ async function runCleanup() {
 
     await conn.beginTransaction();
 
-    // Find all non-admin users to delete
+    // Find all non-admin users to delete (including previously "deleted" by Moodle)
     const [usersToDelete] = await conn.execute(
-      `SELECT id FROM mdl_user WHERE deleted = 0 AND id != ? AND id != 1 AND username NOT IN ('guest')`,
+      `SELECT id FROM mdl_user WHERE id != ? AND id != 1 AND username NOT IN ('guest')`,
       [adminId],
     );
     const userIds = usersToDelete.map((r) => r.id);
@@ -211,6 +211,19 @@ async function runCleanup() {
       );
       console.log(`Deleted trial data for ${userIds.length} users`);
 
+      // Delete email verification records
+      await conn.execute(
+        `DELETE FROM mdl_user_email_verification WHERE user_id IN (${uPlaceholders})`,
+        userIds,
+      );
+      console.log(`Deleted email verification for ${userIds.length} users`);
+
+      // Delete user contexts
+      await conn.execute(
+        `DELETE FROM mdl_context WHERE contextlevel = 30 AND instanceid IN (${uPlaceholders})`,
+        userIds,
+      );
+
       // Delete user enrolments
       await conn.execute(
         `DELETE ue FROM mdl_user_enrolments ue JOIN mdl_enrol e ON e.id = ue.enrolid WHERE ue.userid IN (${uPlaceholders}) AND e.courseid != 1`,
@@ -250,6 +263,11 @@ async function runCleanup() {
 
     await conn.commit();
     console.log("\n✅ DB cleaned successfully. Only admin user remains.");
+
+    // Reset auto_increment outside transaction (DDL auto-commits)
+    const nextId = adminId + 1;
+    await conn.execute(`ALTER TABLE mdl_user AUTO_INCREMENT = ${nextId}`);
+    console.log(`Auto_increment reset to ${nextId}`);
   } catch (error) {
     await conn.rollback();
     console.error("Cleanup failed:", error);

@@ -345,12 +345,12 @@ export async function simularExpiracionAction(
 
   try {
     const [userRows] = await pool.execute<UserRow[]>(
-      `SELECT id, username, firstname, lastname, email FROM mdl_user WHERE id = ? LIMIT 1`,
+      `SELECT id, username, firstname, lastname, email FROM mdl_user WHERE id = ? AND deleted = 0 LIMIT 1`,
       [userId],
     );
     const user = userRows[0];
     if (!user) {
-      console.log(`[simularExpiracionAction] Usuario ${userId} no encontrado en DB`);
+      console.log(`[simularExpiracionAction] Usuario ${userId} no encontrado o eliminado`);
       return { ok: false, message: "Usuario no encontrado." };
     }
     console.log(`[simularExpiracionAction] Usuario: ${safeName(user)} <${user.email}>`);
