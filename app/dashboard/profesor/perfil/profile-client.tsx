@@ -60,6 +60,8 @@ export function ProfileClient({
     try {
       const result = await actualizarPerfilAction(profesorData);
       if (result.ok) {
+        localStorage.setItem("user_email", profesorData.email);
+        document.cookie = `user_email=${encodeURIComponent(profesorData.email)}; path=/; max-age=86400; samesite=lax`;
         setSaveMessage({ type: "success", text: result.message });
       } else {
         setSaveMessage({ type: "error", text: result.message });

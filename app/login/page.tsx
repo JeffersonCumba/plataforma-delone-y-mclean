@@ -76,10 +76,12 @@ export default function LoginPage({
       localStorage.setItem("user_role", result.role);
       localStorage.setItem("user_name", result.user.fullname);
       localStorage.setItem("user_id", String(result.user.id));
+      localStorage.setItem("user_email", result.user.email);
 
       document.cookie = `user_role=${result.role}; path=/; max-age=86400; samesite=lax`;
       document.cookie = `user_name=${encodeURIComponent(result.user.fullname)}; path=/; max-age=86400; samesite=lax`;
       document.cookie = `user_id=${result.user.id}; path=/; max-age=86400; samesite=lax`;
+      document.cookie = `user_email=${encodeURIComponent(result.user.email)}; path=/; max-age=86400; samesite=lax`;
 
       router.push("/dashboard");
     } catch (rawError) {

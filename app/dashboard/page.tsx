@@ -19,11 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { obtenerCursosDeProfesor, obtenerEstadisticasGenerales, obtenerEstudiantesDeProfesor, obtenerEncuestasDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { EmailVerificationBanner } from "@/components/email-verification-banner";
+import { isEmailVerified } from "@/services/emailVerificationService";
 
 import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardIndexPage() {
-  const { userId, role } = await requireAuth();
+  const { userId, role, email } = await requireAuth();
 
   if (role === "ADMIN") {
     const stats = await obtenerEstadisticasGenerales();
@@ -117,8 +119,14 @@ export default async function DashboardIndexPage() {
   const isWarningPeriod = trialInfo?.isWarningPeriod ?? false;
   const trialEndsAt = trialInfo?.trialEndsAt ?? null;
 
+  const emailVerified = await isEmailVerified(userId);
+
   return (
     <section className="space-y-8">
+      {!emailVerified && role === "EVALUADOR" && (
+        <EmailVerificationBanner email={email} />
+      )}
+
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Mi Panel</h1>

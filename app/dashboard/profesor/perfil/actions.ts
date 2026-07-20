@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { actualizarUsuarioMoodle } from "@/services/adminService";
+import { resetVerificationIfEmailChanged } from "@/services/emailVerificationService";
 
 export interface PerfilActionResult {
   ok: boolean;
@@ -33,8 +34,19 @@ export async function actualizarPerfilAction(
 
   try {
     await actualizarUsuarioMoodle(userId, changed);
+
+    if (changed.email) {
+      await resetVerificationIfEmailChanged(userId, changed.email);
+      cookieStore.set("user_email", encodeURIComponent(changed.email), {
+        path: "/",
+        maxAge: 86400,
+        sameSite: "lax",
+      });
+    }
+
     revalidatePath("/dashboard/perfil");
     revalidatePath("/dashboard/profesor/perfil");
+    revalidatePath("/dashboard");
     return { ok: true, message: "Perfil actualizado correctamente." };
   } catch (error) {
     console.error("[actualizarPerfilAction]", error);

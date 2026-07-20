@@ -6,6 +6,7 @@ import { z } from "zod";
 import { pool } from "@/lib/db";
 import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
 import { initializeTrialForTeacher } from "@/services/trialService";
+import { initializeEmailVerification } from "@/services/emailVerificationService";
 import {
   registerUserSchema,
   studentInputSchema,
@@ -386,6 +387,7 @@ export async function registrarUsuario(
     await crearCursoInicialProfesor(userId, data.firstname, data.lastname);
 
     await initializeTrialForTeacher(userId);
+    await initializeEmailVerification(userId, data.email);
 
     return userId;
   } catch (error) {
