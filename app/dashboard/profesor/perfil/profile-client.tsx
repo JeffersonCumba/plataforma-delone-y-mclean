@@ -108,7 +108,7 @@ export function ProfileClient({
       )}
 
       {isWarningPeriod && !isExpired && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse">
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -276,7 +276,7 @@ export function ProfileClient({
                     </>
                   ) : isWarningPeriod ? (
                     <>
-                      <AlertTriangle className="mr-1.5 h-3.5 w-3.5 animate-pulse" />
+                      <AlertTriangle className="mr-1.5 h-3.5 w-3.5 animate-pulse" style={{ animationIterationCount: 3 }} />
                       Por expirar
                     </>
                   ) : (

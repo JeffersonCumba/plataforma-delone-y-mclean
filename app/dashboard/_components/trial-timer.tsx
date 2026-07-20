@@ -35,7 +35,7 @@ function getTextColorClasses(isExpired: boolean, isWarningPeriod: boolean) {
 function getIcon(isExpired: boolean, isWarningPeriod: boolean, size: "sm" | "md" | "lg" = "md") {
   const iconSize = { sm: "h-3 w-3", md: "h-3.5 w-3.5", lg: "h-4 w-4" }[size];
   if (isExpired) return <XCircle className={cn(iconSize, "text-rose-500")} />;
-  if (isWarningPeriod) return <AlertTriangle className={cn(iconSize, "text-amber-500 animate-pulse")} />;
+  if (isWarningPeriod) return <AlertTriangle className={cn(iconSize, "text-amber-500 animate-pulse")} style={{ animationIterationCount: 3 }} />;
   return <Clock className={cn(iconSize, "text-cyan-500")} />;
 }
 

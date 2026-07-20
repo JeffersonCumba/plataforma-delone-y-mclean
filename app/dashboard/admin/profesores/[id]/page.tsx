@@ -116,9 +116,9 @@ export default async function AdminProfesorDetailPage({
       )}
 
       {trialInfo && isWarningPeriod && !isExpired && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50/80 p-4 animate-pulse">
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50/80 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
           <div className="flex items-center gap-3">
-            <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 animate-pulse" />
+            <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 animate-pulse" style={{ animationIterationCount: 3 }} />
             <div>
               <h2 className="font-semibold text-amber-800">
                 ¡Atención! Prueba por expirar

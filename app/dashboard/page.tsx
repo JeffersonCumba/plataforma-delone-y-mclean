@@ -152,7 +152,7 @@ export default async function DashboardIndexPage() {
       )}
 
       {isWarningPeriod && !isExpired && (
-        <div className="animate-pulse rounded-xl border-2 border-amber-200 bg-amber-50 p-4">
+        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
           <div className="flex items-center gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -223,7 +223,7 @@ export default async function DashboardIndexPage() {
                 {isExpired ? (
                   <><XCircle className="mr-1 h-3 w-3" /> Expirada</>
                 ) : isWarningPeriod ? (
-                  <><AlertTriangle className="mr-1 h-3 w-3 animate-pulse" /> Por expirar</>
+                  <><AlertTriangle className="mr-1 h-3 w-3 animate-pulse" style={{ animationIterationCount: 3 }} /> Por expirar</>
                 ) : (
                   <><CheckCircle className="mr-1 h-3 w-3" /> Activa</>
                 )}
