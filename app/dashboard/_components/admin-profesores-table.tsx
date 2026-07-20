@@ -3,18 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Pencil, UserRoundPlus, AlertTriangle, Clock, Play } from "lucide-react";
+import { ExternalLink, Pencil, UserRoundPlus, Play } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { CrearProfesorDialog } from "@/app/dashboard/_components/crear-profesor-dialog";
 import { EditarProfesorDialog } from "@/app/dashboard/_components/editar-profesor-dialog";
 import { ejecutarCronExpiracionAction } from "@/app/dashboard/admin/actions";

@@ -160,14 +160,14 @@ export default async function DashboardIndexPage() {
       )}
 
       {isWarningPeriod && !isExpired && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 animate-pulse" style={{ animationIterationCount: 1 }}>
           <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-200/40">
+              <AlertTriangle className="h-5 w-5 text-slate-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-amber-800">¡Atención! Tu prueba está por expirar</h3>
-              <p className="mt-1 text-amber-700">
+              <h3 className="text-lg font-semibold text-slate-800">¡Atención! Tu prueba está por expirar</h3>
+              <p className="mt-1 text-slate-600">
                 Quedan <strong>{daysRemaining} día(s)</strong> para que finalice tu período de prueba.
                 Contacta al administrador para renovar tu suscripción.
               </p>
@@ -231,7 +231,7 @@ export default async function DashboardIndexPage() {
                 {isExpired ? (
                   <><XCircle className="mr-1 h-3 w-3" /> Expirada</>
                 ) : isWarningPeriod ? (
-                  <><AlertTriangle className="mr-1 h-3 w-3 animate-pulse" style={{ animationIterationCount: 3 }} /> Por expirar</>
+                  <><AlertTriangle className="mr-1 h-3 w-3 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} /> Por expirar</>
                 ) : (
                   <><CheckCircle className="mr-1 h-3 w-3" /> Activa</>
                 )}

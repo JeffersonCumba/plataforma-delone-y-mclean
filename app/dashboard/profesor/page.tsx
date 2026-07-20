@@ -73,18 +73,18 @@ export default async function ProfesorDashboardPage() {
         )}
 
         {isWarningPeriod && !isExpired && (
-          <div className="mt-4 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 animate-pulse" style={{ animationIterationCount: 3 }}>
+          <div className="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50/60 animate-pulse" style={{ animationIterationCount: 1 }}>
             <div className="flex items-center gap-3">
-              <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <div className="shrink-0 w-10 h-10 rounded-full bg-amber-200/40 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-gray-700" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-amber-800">¡Atención! Tu prueba está por expirar</h3>
-                <p className="text-amber-700 mt-1">
+                <h3 className="text-lg font-semibold text-gray-800">¡Atención! Tu prueba está por expirar</h3>
+                <p className="text-gray-700 mt-1">
                   Quedan <strong>{daysRemaining} día(s)</strong> para que finalice tu período de prueba de {TRIAL_DAYS} días.
                   Tu cuenta y todos los datos serán eliminados automáticamente al llegar a 0 días.
                 </p>
-                <p className="text-amber-700 mt-2 text-sm">
+                <p className="text-gray-700 mt-2 text-sm">
                   Contacta al administrador para renovar tu suscripción y conservar tus cursos y datos.
                 </p>
               </div>
@@ -149,7 +149,7 @@ export default async function ProfesorDashboardPage() {
                   </>
                 ) : isWarningPeriod ? (
                   <>
-                    <AlertTriangle className="mr-1.5 h-3.5 w-3.5 animate-pulse" style={{ animationIterationCount: 3 }} />
+                    <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} />
                     Por expirar
                   </>
                 ) : (

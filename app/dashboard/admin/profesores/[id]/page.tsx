@@ -116,14 +116,14 @@ export default async function AdminProfesorDetailPage({
       )}
 
       {trialInfo && isWarningPeriod && !isExpired && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50/80 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 animate-pulse" style={{ animationIterationCount: 1 }}>
           <div className="flex items-center gap-3">
-            <Clock className="h-6 w-6 text-amber-500 flex-shrink-0 animate-pulse" style={{ animationIterationCount: 3 }} />
+            <Clock className="h-6 w-6 text-slate-600 flex-shrink-0" />
             <div>
-              <h2 className="font-semibold text-amber-800">
+              <h2 className="font-semibold text-slate-800">
                 ¡Atención! Prueba por expirar
               </h2>
-              <p className="text-amber-700 mt-1">
+              <p className="text-slate-600 mt-1">
                 Quedan <strong>{daysRemaining} día(s)</strong> para que finalice
                 la prueba de 30 días. Contacta al profesor para renovar su
                 suscripción.

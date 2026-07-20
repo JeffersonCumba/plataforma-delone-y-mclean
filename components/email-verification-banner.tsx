@@ -106,25 +106,25 @@ export function EmailVerificationBanner({ email }: Props) {
   }
 
   return (
-    <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
+    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 animate-pulse" style={{ animationIterationCount: 1 }}>
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-200/40">
           {step === "verifying" ? (
-            <RefreshCw className="h-5 w-5 text-amber-600 animate-spin" />
+            <RefreshCw className="h-5 w-5 text-neutral-700 animate-spin" />
           ) : (
-            <Mail className="h-5 w-5 text-amber-600" />
+            <Mail className="h-5 w-5 text-neutral-700" />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-amber-800">
+          <h3 className="text-base font-semibold text-neutral-800">
             Confirma tu correo electrónico
           </h3>
-          <p className="mt-1 text-sm text-amber-700">
+          <p className="mt-1 text-sm text-neutral-700">
             Enviamos un código de verificación a <strong>{email}</strong>.
             {step === "idle" && " Haz clic en \"Enviar código\" para recibirlo."}
           </p>
           {showOtp && (
-            <p className="mt-1 text-xs text-amber-500">
+            <p className="mt-1 text-xs text-gray-600">
               Revisa tu bandeja de spam si no ves el código.
             </p>
           )}
@@ -134,7 +134,7 @@ export function EmailVerificationBanner({ email }: Props) {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                className="border-amber-300 text-slate-700 hover:bg-amber-100"
                 onClick={handleSendCode}
                 disabled={disabled}
               >
@@ -155,7 +155,7 @@ export function EmailVerificationBanner({ email }: Props) {
                   onChange={setCode}
                   onComplete={handleVerify}
                 >
-                  <InputOTPGroup>
+                  <InputOTPGroup className="bg-white rounded-md">
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
@@ -188,7 +188,7 @@ export function EmailVerificationBanner({ email }: Props) {
           <div className="mt-2">
             <a
               href="/dashboard/perfil"
-              className="text-xs text-amber-600 underline underline-offset-2 hover:text-amber-800"
+              className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
             >
               ¿Correo incorrecto? Editar perfil
             </a>

@@ -110,14 +110,14 @@ export function ProfileClient({
       )}
 
       {isWarningPeriod && !isExpired && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 animate-pulse" style={{ animationIterationCount: 3 }}>
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 animate-pulse" style={{ animationIterationCount: 1 }}>
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div className="shrink-0 w-10 h-10 rounded-full bg-amber-200/40 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-slate-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-amber-800">¡Atención! Tu prueba está por expirar</h3>
-              <p className="text-amber-700 mt-1">
+              <h3 className="text-lg font-semibold text-slate-800">¡Atención! Tu prueba está por expirar</h3>
+              <p className="text-slate-600 mt-1">
                 Quedan <strong>{daysRemaining} día(s)</strong> para que finalice tu período de prueba de {trialDays} días.
               </p>
             </div>
@@ -278,7 +278,7 @@ export function ProfileClient({
                     </>
                   ) : isWarningPeriod ? (
                     <>
-                      <AlertTriangle className="mr-1.5 h-3.5 w-3.5 animate-pulse" style={{ animationIterationCount: 3 }} />
+                      <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} />
                       Por expirar
                     </>
                   ) : (
