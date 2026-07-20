@@ -49,6 +49,11 @@ export function ProfileClient({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const hasChanges =
+    profesorData.firstname !== user.firstname ||
+    profesorData.lastname !== user.lastname ||
+    profesorData.email !== user.email;
+
   const handleInputChange = (field: string, value: string) => {
     setProfesorData(prev => ({ ...prev, [field]: value }));
     setSaveMessage(null);
@@ -192,7 +197,7 @@ export function ProfileClient({
               <div className="flex justify-end pt-4 border-t border-slate-200">
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || !hasChanges}
                   className="gap-2"
                 >
                   {isSaving ? (
