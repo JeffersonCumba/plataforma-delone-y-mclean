@@ -3,12 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Pencil, UserRoundPlus, Play } from "lucide-react";
+import { ExternalLink, Pencil, UserRoundPlus, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CrearProfesorDialog } from "@/app/dashboard/_components/crear-profesor-dialog";
 import { EditarProfesorDialog } from "@/app/dashboard/_components/editar-profesor-dialog";
-import { ejecutarCronExpiracionAction } from "@/app/dashboard/admin/actions";
+import {
+  simularWarningAction,
+  simularExpiracionAction,
+} from "@/app/dashboard/admin/actions";
 import type { ProfesorRow } from "@/types/admin";
 import { TrialTimer } from "@/app/dashboard/_components/trial-timer";
 
@@ -21,12 +32,19 @@ export function AdminProfesoresTable({
 }: AdminProfesoresTableProps) {
   const router = useRouter();
   const [editTarget, setEditTarget] = useState<ProfesorRow | null>(null);
-  const [runningCron, setRunningCron] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    user: ProfesorRow;
+    type: "warning" | "expiration";
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleRunCron = async () => {
-    setRunningCron(true);
+  async function handleSimular(userId: number, type: "warning" | "expiration") {
+    setLoading(true);
+    setConfirmTarget(null);
     try {
-      const result = await ejecutarCronExpiracionAction();
+      const action =
+        type === "warning" ? simularWarningAction : simularExpiracionAction;
+      const result = await action(userId);
       if (result.ok) {
         toast.success(result.message);
         router.refresh();
@@ -34,11 +52,11 @@ export function AdminProfesoresTable({
         toast.error(result.message);
       }
     } catch {
-      toast.error("No se pudo ejecutar el cron de expiracion.");
+      toast.error("Error al simular.");
     } finally {
-      setRunningCron(false);
+      setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="space-y-4">
@@ -46,24 +64,14 @@ export function AdminProfesoresTable({
         <p className="text-sm text-slate-600">
           Total de profesores registrados: {profesores.length}
         </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRunCron}
-            disabled={runningCron}
-          >
-            <Play className="mr-2 h-4 w-4" />
-            {runningCron ? "Ejecutando..." : "Ejecutar Cron Expiracion"}
-          </Button>
-          <CrearProfesorDialog
-            trigger={
-              <Button>
-                <UserRoundPlus className="mr-2 h-4 w-4" />
-                Crear Profesor
-              </Button>
-            }
-          />
-        </div>
+        <CrearProfesorDialog
+          trigger={
+            <Button>
+              <UserRoundPlus className="mr-2 h-4 w-4" />
+              Crear Profesor
+            </Button>
+          }
+        />
       </div>
 
       {profesores.length === 0 ? (
@@ -113,7 +121,7 @@ export function AdminProfesoresTable({
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Button
                         asChild
                         variant="ghost"
@@ -136,6 +144,35 @@ export function AdminProfesoresTable({
                         <Pencil className="mr-1 h-3.5 w-3.5" />
                         Editar
                       </Button>
+                      {profesor.username !== "admin" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-amber-600 hover:bg-amber-50"
+                            onClick={() =>
+                              setConfirmTarget({ user: profesor, type: "warning" })
+                            }
+                          >
+                            <AlertTriangle className="mr-1 h-3.5 w-3.5" />
+                            Warn
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-rose-600 hover:bg-rose-50"
+                            onClick={() =>
+                              setConfirmTarget({
+                                user: profesor,
+                                type: "expiration",
+                              })
+                            }
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Expirar
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -157,6 +194,70 @@ export function AdminProfesoresTable({
           }}
         />
       ) : null}
+
+      <Dialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {confirmTarget?.type === "expiration" ? (
+                <Trash2 className="h-5 w-5 text-rose-600" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              )}
+              {confirmTarget?.type === "warning"
+                ? "Simular advertencia"
+                : "Simular expiracion"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmTarget?.type === "warning" ? (
+                <>
+                  El trial de{" "}
+                  <strong>{confirmTarget?.user.fullname}</strong> se movera a 3
+                  dias de expirar. Aparecera el banner de advertencia en su
+                  panel.
+                </>
+              ) : (
+                <>
+                  Se eliminaran permanentemente los cursos y datos de{" "}
+                  <strong>{confirmTarget?.user.fullname}</strong> de Moodle, y su
+                  prueba se marcara como expirada.{" "}
+                  <span className="font-semibold text-rose-600">
+                    Esta accion no se puede deshacer.
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmTarget(null)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmTarget?.type === "expiration" ? "destructive" : "default"}
+              onClick={() =>
+                confirmTarget &&
+                handleSimular(confirmTarget.user.id, confirmTarget.type)
+              }
+              disabled={loading}
+            >
+              {loading
+                ? "Simulando..."
+                : confirmTarget?.type === "warning"
+                  ? "Simular advertencia"
+                  : "Si, eliminar y expirar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
