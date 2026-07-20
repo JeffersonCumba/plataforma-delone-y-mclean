@@ -188,9 +188,11 @@ async function generateReportsForTeacher(
 async function deleteTeacherAndData(
   conn: PoolConnection,
   userId: number,
-): Promise<void> {
+): Promise<boolean> {
   const courses = await getTeacherCourses(conn, userId);
   console.log(`Eliminando datos del profesor ${userId}: ${courses.length} curso(s)`);
+
+  let allDeleted = true;
 
   for (const courseId of courses) {
     try {
@@ -200,6 +202,7 @@ async function deleteTeacherAndData(
       console.log(`Curso ${courseId} eliminado`);
     } catch (error) {
       console.error(`Error eliminando curso ${courseId} del profesor ${userId}:`, error);
+      allDeleted = false;
     }
   }
 
@@ -210,10 +213,19 @@ async function deleteTeacherAndData(
     console.log(`Usuario ${userId} eliminado de Moodle`);
   } catch (error) {
     console.error(`Error eliminando usuario ${userId} de Moodle:`, error);
+    allDeleted = false;
   }
 
-  await markTeacherExpired(userId);
-  console.log(`Trial marcado como expirado para el profesor ${userId}`);
+  if (allDeleted) {
+    await markTeacherExpired(userId);
+    console.log(`Trial marcado como expirado para el profesor ${userId}`);
+  } else {
+    console.error(
+      `CRITICAL: No se pudieron eliminar todos los datos de Moodle para ${userId}. No se marca como expirado, se reintentara en el proximo cron.`,
+    );
+  }
+
+  return allDeleted;
 }
 
 export async function GET(request: NextRequest) {
@@ -245,31 +257,31 @@ export async function GET(request: NextRequest) {
 
         const reports = await generateReportsForTeacher(conn, teacher.user_id, safeName);
 
-        if (reports) {
-          const result = await sendTrialExpiringEmail(
-            teacher.email,
-            safeName,
-            daysRemaining,
-            reports.excel,
-            reports.pdf,
-          );
+        if (!reports) {
+          console.log(`No se generaron respaldos para el profesor ${teacher.user_id}, se enviara aviso sin adjuntos`);
+        }
 
-          if (result.ok) {
-            await conn.execute(
-              `UPDATE mdl_user_trial SET warning_sent = TRUE, status = 'WARNING', warning_sent_at = NOW() WHERE user_id = ?`,
-              [teacher.user_id],
-            );
-            await conn.execute(
-              `INSERT INTO mdl_trial_audit_log (user_id, action, details) VALUES (?, 'WARNING_SENT', ?)`,
-              [teacher.user_id, JSON.stringify({ daysRemaining })],
-            );
-            warningsSent++;
-            console.log(`Aviso enviado al profesor ${teacher.user_id}`);
-          } else {
-            console.log(`Fallo envio de aviso al profesor ${teacher.user_id}: ${result.message}`);
-          }
+        const result = await sendTrialExpiringEmail(
+          teacher.email,
+          safeName,
+          daysRemaining,
+          reports?.excel,
+          reports?.pdf,
+        );
+
+        if (result.ok) {
+          await conn.execute(
+            `UPDATE mdl_user_trial SET warning_sent = TRUE, status = 'WARNING', warning_sent_at = NOW() WHERE user_id = ?`,
+            [teacher.user_id],
+          );
+          await conn.execute(
+            `INSERT INTO mdl_trial_audit_log (user_id, action, details) VALUES (?, 'WARNING_SENT', ?)`,
+            [teacher.user_id, JSON.stringify({ daysRemaining })],
+          );
+          warningsSent++;
+          console.log(`Aviso enviado al profesor ${teacher.user_id}`);
         } else {
-          console.log(`No se generaron respaldos para el profesor ${teacher.user_id}`);
+          console.log(`Fallo envio de aviso al profesor ${teacher.user_id}: ${result.message}`);
         }
       }
 
@@ -301,8 +313,10 @@ export async function GET(request: NextRequest) {
             continue;
           }
 
-          await deleteTeacherAndData(conn, teacher.user_id);
-          expiredDeleted++;
+          const deleted = await deleteTeacherAndData(conn, teacher.user_id);
+          if (deleted) {
+            expiredDeleted++;
+          }
           console.log(`Correo de expiracion enviado al profesor ${teacher.user_id}`);
         } catch (error) {
           console.error(`Error procesando profesor expirado ${teacher.user_id}:`, error);

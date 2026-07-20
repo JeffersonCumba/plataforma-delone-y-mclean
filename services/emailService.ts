@@ -63,19 +63,18 @@ export async function sendTrialExpiringEmail(
   teacherEmail: string,
   teacherName: string,
   daysRemaining: number,
-  excelBuffer: Buffer,
-  pdfBuffer: Buffer,
+  excelBuffer?: Buffer | null,
+  pdfBuffer?: Buffer | null,
 ): Promise<{ ok: boolean; message: string }> {
   const subject = `Tu prueba de ${TRIAL_DAYS} días expira en ${daysRemaining} día(s) - DeLone & McLean`;
+  const hasAttachments = Boolean(excelBuffer && pdfBuffer);
 
   const text = `
 Estimado/a ${teacherName},
 
 Tu período de prueba de ${TRIAL_DAYS} días en la plataforma DeLone & McLean expira en ${daysRemaining} día(s).
 
-Para que no pierdas tus datos, hemos adjuntado:
-- Un archivo Excel con la información de tus cursos y estudiantes
-- Un archivo PDF con el reporte completo de analíticas
+${hasAttachments ? "Para que no pierdas tus datos, hemos adjuntado:\n- Un archivo Excel con la información de tus cursos y estudiantes\n- Un archivo PDF con el reporte completo de analíticas" : "Los reportes de respaldo no estuvieron disponibles en este momento."}
 
 Por favor, contacta al administrador si deseas renovar tu acceso.
 
@@ -96,6 +95,7 @@ Equipo DeLone & McLean
     .attachments { background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0; }
     .footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 14px; }
     .timer { font-size: 24px; font-weight: bold; color: #dc2626; }
+    .no-reports { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0; color: #92400e; }
   </style>
 </head>
 <body>
@@ -110,13 +110,21 @@ Equipo DeLone & McLean
       <strong>⚠️ Acción requerida:</strong> Para no perder acceso a tus cursos, estudiantes y datos analíticos, por favor contacta al administrador para renovar tu suscripción.
     </div>
 
+    ${
+      hasAttachments
+        ? `
     <div class="attachments">
       <strong>📎 Archivos adjuntos (respaldos):</strong>
       <ul>
         <li><strong>backup_${teacherName.replace(/\s+/g, "_")}.xlsx</strong> - Cursos, estudiantes y métricas en Excel</li>
         <li><strong>reporte_${teacherName.replace(/\s+/g, "_")}.pdf</strong> - Reporte completo de analíticas DeLone & McLean</li>
       </ul>
-    </div>
+    </div>`
+        : `
+    <div class="no-reports">
+      ⚠️ Los reportes de respaldo no estuvieron disponibles en este momento. Serán generados en la próxima ejecución automática.
+    </div>`
+    }
 
     <p>Si ya has renovado tu acceso, puedes ignorar este mensaje.</p>
     <p>Saludos cordiales,<br>Equipo DeLone & McLean</p>
@@ -128,23 +136,27 @@ Equipo DeLone & McLean
 </html>
   `.trim();
 
+  const attachments = hasAttachments
+    ? [
+        {
+          filename: `backup_${teacherName.replace(/\s+/g, "_")}.xlsx`,
+          content: excelBuffer!,
+          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" as const,
+        },
+        {
+          filename: `reporte_${teacherName.replace(/\s+/g, "_")}.pdf`,
+          content: pdfBuffer!,
+          contentType: "application/pdf" as const,
+        },
+      ]
+    : [];
+
   return sendEmail({
     to: teacherEmail,
     subject,
     text,
     html,
-    attachments: [
-      {
-        filename: `backup_${teacherName.replace(/\s+/g, "_")}.xlsx`,
-        content: excelBuffer,
-        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      },
-      {
-        filename: `reporte_${teacherName.replace(/\s+/g, "_")}.pdf`,
-        content: pdfBuffer,
-        contentType: "application/pdf",
-      },
-    ],
+    attachments,
   });
 }
 
