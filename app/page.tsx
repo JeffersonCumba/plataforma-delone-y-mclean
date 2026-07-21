@@ -16,7 +16,7 @@ export default function Home() {
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
-            Plataforma de evaluación basada en DeLone y McLean
+            Plataforma DeLone y McLean
           </div>
 
           <AnimatedHeading className="mt-6 text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-[55px]">
