@@ -17,7 +17,7 @@ export default async function DashboardCursosPage() {
         </p>
       </div>
 
-      <CreateCourseForm />
+      <CreateCourseForm courseCount={cursos.length} />
 
       <CoursesGrid courses={cursos} />
     </section>

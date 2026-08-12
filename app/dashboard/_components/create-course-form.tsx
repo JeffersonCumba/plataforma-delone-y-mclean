@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusIcon } from "lucide-react";
+import { MAX_COURSES_PER_USER } from "@/lib/constants";
 
 function generateDefaultValues(): { fullname: string; shortname: string } {
   const now = new Date();
@@ -44,8 +45,10 @@ interface CreateCourseFormState {
 
 export function CreateCourseForm({
   onSuccess,
+  courseCount,
 }: {
   onSuccess?: () => void;
+  courseCount?: number;
 } = {}) {
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -56,13 +59,16 @@ export function CreateCourseForm({
     summary: "",
   });
 
+  const limitReached =
+    typeof courseCount === "number" && courseCount >= MAX_COURSES_PER_USER;
+
   const onChange =
     (field: keyof CreateCourseFormState) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((current) => ({ ...current, [field]: event.target.value }));
     };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     startTransition(async () => {
@@ -82,6 +88,11 @@ export function CreateCourseForm({
 
   return (
     <div className="flex flex-wrap items-center gap-3 animate-fade-up">
+      {limitReached ? (
+        <p className="text-sm font-medium text-amber-700">
+          Límite alcanzado: elimina un curso para poder crear otro.
+        </p>
+      ) : null}
       <Dialog open={open} onOpenChange={(newOpen) => {
         if (newOpen) {
           const defaults = generateDefaultValues();
@@ -94,7 +105,7 @@ export function CreateCourseForm({
         setOpen(newOpen);
       }}>
         <DialogTrigger asChild>
-          <Button size="lg">
+          <Button size="lg" disabled={limitReached}>
             crear curso <PlusIcon />
           </Button>
         </DialogTrigger>

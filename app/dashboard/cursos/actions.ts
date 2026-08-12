@@ -3,8 +3,9 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import { fetchMoodle } from "@/lib/moodle";
 import { createCourseSchema } from "@/lib/validations/course";
+import { MAX_COURSES_PER_USER } from "@/lib/constants";
 import { crearCursoProfesor } from "@/services/courseService";
 import { obtenerCursosProfesor } from "@/services/courseService";
 
@@ -39,6 +40,18 @@ export async function createCourseAction(
       message:
         parsed.error.issues[0]?.message ?? "Datos invalidos para crear curso",
     };
+  }
+
+  const roleCookie = cookieStore.get("user_role")?.value;
+
+  if (roleCookie === "EVALUADOR") {
+    const courses = await obtenerCursosProfesor(userId);
+    if (courses.length >= MAX_COURSES_PER_USER) {
+      return {
+        ok: false,
+        message: `Has alcanzado el límite de ${MAX_COURSES_PER_USER} cursos. Elimina un curso para poder crear otro.`,
+      };
+    }
   }
 
   try {

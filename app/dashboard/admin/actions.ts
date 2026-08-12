@@ -4,11 +4,10 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { type RowDataPacket } from "mysql2";
-import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import { fetchMoodle } from "@/lib/moodle";
 import { pool } from "@/lib/db";
-import { createCourseSchema } from "@/lib/validations/course";
 import { registerUserSchema } from "@/lib/validations/user";
-import { crearCursoProfesor, obtenerCursosProfesor } from "@/services/courseService";
+import { obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
 import { markTeacherDeleted, markTeacherExpired, getTrialDays } from "@/services/trialService";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/services/emailService";
@@ -202,51 +201,6 @@ export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult>
     return {
       ok: false,
       message: "No se pudo ejecutar el cron de expiracion. Intenta de nuevo mas tarde.",
-    };
-  }
-}
-
-export async function crearCursoAction(
-  input: unknown,
-): Promise<AdminActionResult> {
-  try {
-    await requireAdmin();
-  } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
-  }
-
-  const parsed = createCourseSchema.safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: parsed.error.issues[0]?.message ?? "Datos invalidos para crear el curso.",
-    };
-  }
-
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "Sesion invalida." };
-  }
-
-  try {
-    const course = await crearCursoProfesor(userId, parsed.data);
-
-    revalidatePath("/dashboard/admin");
-    revalidatePath("/dashboard/admin/cursos");
-    revalidatePath("/dashboard/cursos");
-
-    return {
-      ok: true,
-      message: `Curso ${course.fullname ?? parsed.data.fullname} creado con encuesta base.`,
-    };
-  } catch (error) {
-    console.error("[admin crearCursoAction]", error);
-    return {
-      ok: false,
-      message: "No se pudo crear el curso. Verifica los datos e intenta de nuevo.",
     };
   }
 }
