@@ -17,6 +17,7 @@ import {
 import type { AnalyticsData } from "@/types/analytics";
 import type { ExportVariant } from "@/types/export";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
+import { canExport } from "@/app/dashboard/_components/export-guard";
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
@@ -119,6 +120,10 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
   }
 
   function handleDirectClick(): void {
+    if (!canExport(analytics.totalSurveys)) {
+      return;
+    }
+
     const url = buildExportUrl(courseId, snapshotTexts());
     void triggerDownload(url);
   }
@@ -150,6 +155,10 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
   }
 
   function handleClick(): void {
+    if (!canExport(analytics.totalSurveys)) {
+      return;
+    }
+
     const texts = snapshotTexts();
     const allFilled = Boolean(
       texts.satisfaction && texts.descriptive && texts.betas && texts.frequencies && texts.critical,

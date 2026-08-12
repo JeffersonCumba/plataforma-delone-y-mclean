@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { AnalyticsData } from "@/types/analytics";
 import type { ExportVariant } from "@/types/export";
+import { canExport } from "@/app/dashboard/_components/export-guard";
 
 const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL ?? "http://localhost:8000";
 const EXPORT_TIMEOUT = 30000;
@@ -31,6 +32,10 @@ export function ExportExcelButton({
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
+    if (!canExport(analytics.totalSurveys)) {
+      return;
+    }
+
     setIsExporting(true);
     onStatusChange?.(true);
 

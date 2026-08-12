@@ -1,10 +1,10 @@
-# 🤖 Perfil del Agente: Arquitecto Full-Stack (Tesis UTN)
+# Perfil del Agente: Arquitecto Full-Stack (Tesis UTN)
 
 Eres un experto en Next.js 15 (App Router), TypeScript, la API REST de Moodle y computación estadística en JavaScript/Node.js. Tu objetivo es desarrollar una plataforma web autónoma que evalúa la calidad de software bajo el modelo conceptual de **DeLone y McLean (D&M IS Success Model)**, integrando datos de Moodle de forma analítica y generando reportes avanzados asistidos por Inteligencia Artificial.
 
 ---
 
-## 🛠️ Contexto Tecnológico y Arquitectura Local
+## Contexto Tecnológico y Arquitectura Local
 * **Frontend:** Next.js, Tailwind CSS, Lucide React (iconos), Shadcn UI para la visualización de datos estadísticos.
 * **Backend:** Next.js Route Handlers (Actúa como API nativa y proxy seguro para Moodle).
 * **Moodle:** Instalación local en Laragon (`http://localhost`).
@@ -12,7 +12,7 @@ Eres un experto en Next.js 15 (App Router), TypeScript, la API REST de Moodle y 
 
 ---
 
-## 📐 Lógica del Modelo DeLone y McLean (D&M) en la Práctica
+## Lógica del Modelo DeLone y McLean (D&M) en la Práctica
 El agente debe entender que el sistema automatiza un flujo psicométrico basado en una Escala de Likert (1 al 5). Los datos planos extraídos de Moodle (`mdl_feedback_value`) deben procesarse bajo el siguiente flujo matemático antes de renderizarse o enviarse al LLM:
 
 1. **Estructura de Dimensiones:** Las preguntas en Moodle pertenecen a códigos específicos que representan el flujo causal completo del modelo:
@@ -30,12 +30,7 @@ El agente debe entender que el sistema automatiza un flujo psicométrico basado 
 
 ---
 
-## 📋 Reglas de Codificación (Instrucciones para Copilot / Cursor)
+## Reglas de Codificación
 **Estilo de la UI:** Tablas e interfaces limpias usando shadcnUi y Tailwind CSS. Los gráficos analíticos deben mostrar claramente los Coeficientes Beta ($\beta$) mapeados como pesos porcentuales de impacto sobre la satisfacción del sistema.
 
 ---
-
-## 🎯 Tareas Inmediatas
-1. Configurar el cliente de conexión base en `lib/moodle.ts`.
-2. Crear un sistema de Login que valide las credenciales contra la función `core_user_get_users_by_field` de Moodle.
-3. Crear el script en `lib/analytics.ts` que reciba un arreglo de objetos tipo matriz, verifique que se cumpla el mínimo de registros y calcule el Alfa de Cronbach nativo y los Coeficientes Beta a través de la librería matemática de JS.

@@ -11,6 +11,7 @@ import {
   ODT_MIMETYPE,
   type AiConclusions,
 } from "@/lib/odt-report";
+import { MIN_EXPORT_RESPONSES } from "@/lib/constants";
 import { requireSession, badRequest, forbidden } from "@/lib/auth";
 
 function readConclusions(request: Request): AiConclusions {
@@ -48,8 +49,10 @@ export async function GET(
 
   const analytics = await getCourseAnalyticsData(courseId);
 
-  if (analytics.totalSurveys === 0) {
-    return badRequest("Este curso aun no tiene encuestas respondidas");
+  if (analytics.totalSurveys < MIN_EXPORT_RESPONSES) {
+    return badRequest(
+      `Se requieren al menos ${MIN_EXPORT_RESPONSES} respuestas válidas para exportar el reporte.`,
+    );
   }
 
   const generatedAt = new Date().toISOString();

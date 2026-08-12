@@ -5,6 +5,7 @@ import MultivariateLinearRegression from "ml-regression-multivariate-linear";
 import { type RowDataPacket } from "mysql2";
 
 import { pool } from "@/lib/db";
+import { MOODLE_TEACHER_ROLE_ID } from "@/lib/constants";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 import { getCachedAnalytics, setCachedAnalytics } from "@/lib/analytics-cache";
 import {
@@ -985,13 +986,25 @@ function buildAnalyticsData(
   };
 }
 
+const EXCLUDE_TEACHER_SQL = `
+  AND fc.userid NOT IN (
+    SELECT ra.userid
+      FROM mdl_role_assignments ra
+      JOIN mdl_context ctx ON ctx.id = ra.contextid
+     WHERE ctx.contextlevel = 50
+       AND ctx.instanceid = f.course
+       AND ra.roleid = ?
+  )
+`;
+
 async function getCompletedCountForCourse(courseId: number): Promise<number> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT COUNT(DISTINCT fc.id) AS count
-     FROM mdl_feedback_completed fc
-     JOIN mdl_feedback f ON f.id = fc.feedback
-     WHERE f.course = ?`,
-    [courseId],
+       FROM mdl_feedback_completed fc
+       JOIN mdl_feedback f ON f.id = fc.feedback
+      WHERE f.course = ?
+      ${EXCLUDE_TEACHER_SQL}`,
+    [courseId, MOODLE_TEACHER_ROLE_ID],
   );
   return (rows as { count: number }[])[0]?.count ?? 0;
 }
@@ -1022,8 +1035,9 @@ export async function getCourseAnalyticsData(
       INNER JOIN mdl_feedback_item fi ON fi.id = fv.item
       WHERE f.course = ?
         AND fv.value IS NOT NULL
-        AND fv.value <> ''`,
-    [courseId],
+        AND fv.value <> ''
+      ${EXCLUDE_TEACHER_SQL}`,
+    [courseId, MOODLE_TEACHER_ROLE_ID],
   );
 
   const summary = buildAnalyticsData(rows);

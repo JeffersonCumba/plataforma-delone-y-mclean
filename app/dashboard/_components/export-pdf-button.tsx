@@ -17,6 +17,7 @@ import {
 import type { AnalyticsData } from "@/types/analytics";
 import type { ExportVariant } from "@/types/export";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
+import { canExport } from "@/app/dashboard/_components/export-guard";
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
@@ -127,6 +128,10 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
   }
 
   function handleDirectClick(): void {
+    if (!canExport(analytics.totalSurveys)) {
+      return;
+    }
+
     const payload = buildExportPayload(courseId, courseName, analytics, snapshotTexts());
     void triggerDownload(payload);
   }
@@ -164,6 +169,10 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
   }
 
   function handleClick(): void {
+    if (!canExport(analytics.totalSurveys)) {
+      return;
+    }
+
     const texts = snapshotTexts();
     const allFilled = Boolean(
       texts.satisfaction && texts.descriptive && texts.betas && texts.frequencies && texts.critical,
