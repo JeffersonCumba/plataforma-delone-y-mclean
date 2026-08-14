@@ -26,6 +26,9 @@ import {
   buildSatisfactionDistributionPrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
 
+const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL ?? "http://localhost:8000";
+const EXPORT_TIMEOUT = 30000;
+
 interface ExportOdtButtonProps {
   courseId: number;
   courseName: string;
@@ -43,24 +46,13 @@ export interface ExportOdtHandle {
   handleClick: () => void;
 }
 
-const MAX_TEXT_LENGTH = 5000;
-
-function truncateForUrl(text: string, max = MAX_TEXT_LENGTH): string {
-  return text.length > max ? text.slice(0, max) : text;
-}
-
-function buildExportUrl(
+function buildExportPayload(
   courseId: number,
+  courseName: string,
+  analytics: AnalyticsData,
   texts: { satisfaction: string; descriptive: string; betas: string; frequencies: string; critical: string },
-): string {
-  const params = new URLSearchParams({
-    satisfaction: truncateForUrl(texts.satisfaction),
-    descriptive: truncateForUrl(texts.descriptive),
-    betas: truncateForUrl(texts.betas),
-    frequencies: truncateForUrl(texts.frequencies),
-    critical: truncateForUrl(texts.critical),
-  });
-  return `/api/cursos/${courseId}/export-odt?${params.toString()}`;
+) {
+  return { courseId, courseName, analytics, aiInterpretations: texts };
 }
 
 export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>(function ExportOdtButton(
@@ -92,15 +84,26 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
     };
   }
 
-  async function triggerDownload(url: string): Promise<void> {
+  async function triggerDownload(payload: Record<string, unknown>): Promise<void> {
     setIsExporting(true);
     onStatusChange?.(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), EXPORT_TIMEOUT);
+
     try {
-      const response = await fetch(url, { method: "GET" });
+      const response = await fetch(`${PYTHON_API_URL}/api/export/odt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      console.log("🚀 ~ triggerDownload ~ response:", response)
+
       if (!response.ok) {
         throw new Error("No se pudo generar el reporte ODT");
       }
+
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -111,9 +114,14 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
       document.body.removeChild(anchor);
       URL.revokeObjectURL(objectUrl);
       toast.success("Reporte ODT exportado");
-    } catch {
-      toast.error("No se pudo generar el reporte ODT");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast.error("La exportación tardó demasiado, intenta de nuevo");
+      } else {
+        toast.error("No se pudo generar el reporte ODT");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsExporting(false);
       onStatusChange?.(false);
     }
@@ -124,8 +132,8 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
       return;
     }
 
-    const url = buildExportUrl(courseId, snapshotTexts());
-    void triggerDownload(url);
+    const payload = buildExportPayload(courseId, courseName, analytics, snapshotTexts());
+    void triggerDownload(payload);
   }
 
   async function handleGenerateAndExport(): Promise<void> {
@@ -139,8 +147,14 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
         criticalInterp.interpret(buildCriticalQuestionsPrompt(courseName, analytics)),
       ]);
       setShowConfirmDialog(false);
-      const url = buildExportUrl(courseId, { satisfaction, descriptive, betas, frequencies, critical });
-      await triggerDownload(url);
+      const payload = buildExportPayload(courseId, courseName, analytics, {
+        satisfaction,
+        descriptive,
+        betas,
+        frequencies,
+        critical,
+      });
+      await triggerDownload(payload);
     } catch {
       toast.error("Error al generar interpretaciones");
     } finally {
@@ -150,8 +164,8 @@ export const ExportOdtButton = forwardRef<ExportOdtHandle, ExportOdtButtonProps>
 
   function handleExportWithoutIA(): void {
     setShowConfirmDialog(false);
-    const url = buildExportUrl(courseId, snapshotTexts());
-    void triggerDownload(url);
+    const payload = buildExportPayload(courseId, courseName, analytics, snapshotTexts());
+    void triggerDownload(payload);
   }
 
   function handleClick(): void {

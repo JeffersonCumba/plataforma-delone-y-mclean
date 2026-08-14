@@ -1,5 +1,12 @@
 import type { AnalyticsData } from "@/types/analytics";
-import type { AiConclusions } from "@/lib/odt-report";
+
+export interface AiConclusions {
+  satisfaction: string;
+  descriptive: string;
+  betas: string;
+  frequencies: string;
+  critical: string;
+}
 
 export interface ExportExcelRequest {
   courseId: number;
@@ -8,6 +15,13 @@ export interface ExportExcelRequest {
 }
 
 export interface ExportPdfRequest {
+  courseId: number;
+  courseName: string;
+  analytics: AnalyticsData;
+  aiInterpretations: AiConclusions;
+}
+
+export interface ExportOdtRequest {
   courseId: number;
   courseName: string;
   analytics: AnalyticsData;
