@@ -196,7 +196,11 @@
 iframe.goog-te-banner-frame,
 .goog-te-banner-frame.skiptranslate,
 .goog-te-gadget-icon,
-body > .skiptranslate {
+body > .skiptranslate,
+.goog-te-spinner-pos,
+.goog-te-spinner,
+.goog-te-spinner-animation,
+.goog-te-spinner-path {
   display: none !important;
 }
 
