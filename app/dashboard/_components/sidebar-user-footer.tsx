@@ -12,6 +12,7 @@ import {
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { isTranslationActive } from "@/components/google-translate-widget";
 
 interface SidebarUserFooterProps {
   userName: string;
@@ -26,7 +27,11 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
     localStorage.removeItem("user_role");
     localStorage.removeItem("user_name");
     localStorage.removeItem("user_id");
-    router.push("/logout");
+    if (isTranslationActive()) {
+      window.location.href = "/logout";
+    } else {
+      router.push("/logout");
+    }
   };
 
   const profileHref = "/dashboard/perfil";

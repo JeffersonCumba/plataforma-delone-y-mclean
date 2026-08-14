@@ -30,6 +30,15 @@ function persistGoogleTranslateCookie(lang: string) {
   }
 }
 
+export function isTranslationActive(): boolean {
+  if (typeof document === "undefined") return false;
+  const cookies = document.cookie;
+  const match = cookies.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]*)`));
+  if (!match) return false;
+  const language = readLanguageFromCookie(match[1]);
+  return Boolean(language) && language !== "es";
+}
+
 interface LanguageDescriptor {
   name: string;
   title: string;

@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { TranslationNavigationGuard } from "@/components/translation-navigation-guard";
 
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${geistSans.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <TranslationNavigationGuard />
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="bottom-right" />
       </body>
