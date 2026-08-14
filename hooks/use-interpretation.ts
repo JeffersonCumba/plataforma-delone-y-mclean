@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { isTranslationActive } from "@/components/google-translate-widget";
 import { type AnalyticsData } from "@/types/analytics";
 
 interface InterpretationContext {
@@ -118,13 +119,16 @@ export function useInterpretation(
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulated = "";
+        const deferredRender = isTranslationActive();
 
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           if (!value) continue;
           accumulated += decoder.decode(value, { stream: true });
-          setText(accumulated);
+          if (!deferredRender) {
+            setText(accumulated);
+          }
         }
         accumulated += decoder.decode();
         if (accumulated) setText(accumulated);

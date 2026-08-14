@@ -75,6 +75,7 @@ export function InterpretationPanel({
     <div
       className={cn(
         "mt-4 rounded-2xl border border-cyan-200/80 bg-linear-to-br from-white via-cyan-50/30 to-white p-4 shadow-sm",
+        isLoading && "notranslate",
         className,
       )}
     >

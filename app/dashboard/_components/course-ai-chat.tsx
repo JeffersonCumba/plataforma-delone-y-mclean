@@ -14,6 +14,7 @@ import { Bot, Loader2, Send, Trash2, UserRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isTranslationActive } from "@/components/google-translate-widget";
 import {
   Sheet,
   SheetContent,
@@ -166,17 +167,27 @@ export function CourseAiChatProvider({
 
         const reader = response.body.getReader();
         const stream = parseStream(reader);
+        const deferredRender = isTranslationActive();
 
-        await stream((accumulated) => {
+        const commitAssistant = (content: string) => {
           setMessages((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
             if (last && last.role === "assistant") {
-              next[next.length - 1] = { ...last, content: accumulated };
+              next[next.length - 1] = { ...last, content };
             }
             return next;
           });
+        };
+
+        const accumulated = await stream((chunk) => {
+          if (!deferredRender) {
+            commitAssistant(chunk);
+          }
         });
+        if (deferredRender && accumulated) {
+          commitAssistant(accumulated);
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Error desconocido";
@@ -447,6 +458,7 @@ function ChatBubble({
           isUser
             ? "rounded-tr-sm bg-slate-900 text-white"
             : "rounded-tl-sm border border-cyan-100 bg-white text-slate-800",
+          isStreaming && "notranslate",
         )}
       >
         {message.content || (isStreaming ? "" : "...")}
