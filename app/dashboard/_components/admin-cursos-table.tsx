@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Plus } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
@@ -15,7 +14,6 @@ interface AdminCursosTableProps {
 
 export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
   const router = useRouter();
-  const [showCreate, setShowCreate] = useState(false);
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
@@ -32,22 +30,12 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
         <p className="text-sm text-slate-600">
           Total de cursos en Moodle: {cursos.length}
         </p>
-        <Button onClick={() => setShowCreate((prev) => !prev)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {showCreate ? "Cerrar" : "Crear Curso"}
-        </Button>
+        <CreateCourseForm
+          onSuccess={() => {
+            router.refresh();
+          }}
+        />
       </div>
-
-      {showCreate ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <CreateCourseForm
-            onSuccess={() => {
-              setShowCreate(false);
-              router.refresh();
-            }}
-          />
-        </div>
-      ) : null}
 
       {cursos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
