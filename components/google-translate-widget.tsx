@@ -39,22 +39,6 @@ export function isTranslationActive(): boolean {
   return Boolean(language) && language !== "es";
 }
 
-function hasActiveSession(): boolean {
-  if (typeof document === "undefined") return false;
-  return /(?:^|;\s*)user_id=/.test(document.cookie);
-}
-
-function syncMoodleLanguage(lang: string): void {
-  if (typeof navigator === "undefined" || !hasActiveSession()) return;
-  try {
-    const payload = JSON.stringify({ lang });
-    const blob = new Blob([payload], { type: "application/json" });
-    navigator.sendBeacon("/api/moodle/language", blob);
-  } catch {
-    // silencioso: la sincronizacion de idioma es best-effort
-  }
-}
-
 interface LanguageDescriptor {
   name: string;
   title: string;
@@ -211,7 +195,6 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
     setIsOpen(false);
     setCurrentLanguage(lang);
     persistGoogleTranslateCookie(lang);
-    syncMoodleLanguage(lang);
     if (typeof window !== "undefined") window.location.reload();
   };
 
