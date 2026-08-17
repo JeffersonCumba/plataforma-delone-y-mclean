@@ -6,8 +6,11 @@ import { revalidatePath } from "next/cache";
 import { fetchMoodle } from "@/lib/moodle";
 import { createCourseSchema } from "@/lib/validations/course";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
-import { crearCursoProfesor } from "@/services/courseService";
-import { obtenerCursosProfesor } from "@/services/courseService";
+import {
+  crearCursoProfesor,
+  obtenerCursosProfesor,
+  normalizeLanguage,
+} from "@/services/courseService";
 
 export interface CreateCourseActionResult {
   ok: boolean;
@@ -55,7 +58,8 @@ export async function createCourseAction(
   }
 
   try {
-    const course = await crearCursoProfesor(userId, parsed.data);
+    const lang = normalizeLanguage(cookieStore.get("googtrans")?.value);
+    const course = await crearCursoProfesor(userId, parsed.data, lang);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/cursos");

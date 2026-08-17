@@ -47,10 +47,12 @@ interface DefaultQuestion {
   text: string;
 }
 
+type SurveyLanguage = "es" | "en" | "pt";
+
 const LIKERT_PRESENTATION =
   "r>>>>>1>>Totalmente en desacuerdo\r|2>>En desacuerdo\r|3>>Ni de acuerdo ni en desacuerdo\r|4>>De acuerdo\r|5>>Totalmente de acuerdo";
 
-const DEFAULT_QUESTIONS: DefaultQuestion[] = [
+const ES_QUESTIONS: DefaultQuestion[] = [
   { dimension: "calidad_sys", text: "¿Es el sistema fácil de usar?" },
   {
     dimension: "calidad_sys",
@@ -134,6 +136,205 @@ const DEFAULT_QUESTIONS: DefaultQuestion[] = [
   },
 ];
 
+const EN_QUESTIONS: DefaultQuestion[] = [
+  { dimension: "calidad_sys", text: "Is the system easy to use?" },
+  {
+    dimension: "calidad_sys",
+    text: "Is the system user-friendly?",
+  },
+  {
+    dimension: "calidad_sys",
+    text: "Does the system respond quickly to requests?",
+  },
+  {
+    dimension: "calidad_sys",
+    text: "Is the system available whenever needed?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "Is the information provided by the system accurate?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "Is the information complete enough to perform my tasks?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "Is the information up to date and timely?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "Is the information presented in a useful format?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "Does the support staff have the necessary technical knowledge?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "Does support respond quickly to identified issues?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "Does support show genuine interest in resolving doubts?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "Does the system have clear manuals or help materials?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "Do I intend to keep using the system in the future?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "Do I use the system frequently to carry out my tasks?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "Is the system an essential part of my daily workflow?",
+  },
+  {
+    dimension: "satis_user",
+    text: "Am I satisfied with the overall functioning of the system?",
+  },
+  {
+    dimension: "satis_user",
+    text: "Does the system meet my initial use expectations?",
+  },
+  {
+    dimension: "satis_user",
+    text: "Do I feel the system is effective for meeting my needs?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "Does the system improve my productivity at work?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "Does the system help me make decisions more efficiently?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "Does the system facilitate the achievement of my work objectives?",
+  },
+];
+
+const PT_QUESTIONS: DefaultQuestion[] = [
+  { dimension: "calidad_sys", text: "O sistema é fácil de usar?" },
+  {
+    dimension: "calidad_sys",
+    text: "O sistema é amigável para o usuário?",
+  },
+  {
+    dimension: "calidad_sys",
+    text: "O sistema responde rapidamente às solicitações?",
+  },
+  {
+    dimension: "calidad_sys",
+    text: "O sistema está disponível sempre que necessário?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "A informação fornecida pelo sistema é precisa?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "A informação é completa para realizar minhas tarefas?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "A informação está atualizada e é oportuna?",
+  },
+  {
+    dimension: "calidad_info",
+    text: "A informação é apresentada em um formato útil?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "A equipe de suporte tem os conhecimentos técnicos necessários?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "O suporte responde rapidamente aos problemas detectados?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "O suporte demonstra interesse genuíno em resolver as dúvidas?",
+  },
+  {
+    dimension: "calidad_serv",
+    text: "O sistema possui manuais ou materiais de ajuda claros?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "Tenho a intenção de continuar usando o sistema no futuro?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "Uso o sistema com frequência para realizar minhas tarefas?",
+  },
+  {
+    dimension: "uso_sistema",
+    text: "O sistema é uma parte essencial do meu fluxo de trabalho diário?",
+  },
+  {
+    dimension: "satis_user",
+    text: "Estou satisfeito com o funcionamento geral do sistema?",
+  },
+  {
+    dimension: "satis_user",
+    text: "O sistema atende às minhas expectativas iniciais de uso?",
+  },
+  {
+    dimension: "satis_user",
+    text: "Sinto que o sistema é eficaz para atender às minhas necessidades?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "O sistema melhora minha produtividade no trabalho?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "O sistema me ajuda a tomar decisões de forma mais eficiente?",
+  },
+  {
+    dimension: "benef_netos",
+    text: "O sistema facilita o cumprimento dos meus objetivos de trabalho?",
+  },
+];
+
+const SURVEY_QUESTIONS: Record<SurveyLanguage, DefaultQuestion[]> = {
+  es: ES_QUESTIONS,
+  en: EN_QUESTIONS,
+  pt: PT_QUESTIONS,
+};
+
+function getSurveyQuestions(lang: string): DefaultQuestion[] {
+  const language: SurveyLanguage =
+    lang === "en" || lang === "pt" ? lang : "es";
+  return SURVEY_QUESTIONS[language];
+}
+
+export function normalizeLanguage(lang: string | undefined | null): string {
+  const value = (lang ?? "")
+    .trim()
+    .replace(/^"|"$/g, "")
+    .toLowerCase();
+  if (value.includes("%")) {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      // fallthrough a la limpieza basica
+    }
+  }
+  if (value.includes("/")) {
+    const parts = value.split("/").filter(Boolean);
+    return parts[parts.length - 1];
+  }
+  return value;
+}
+
 function validateCreateCourseInput(
   input: CreateCourseInput,
 ): CreateCourseInput {
@@ -196,9 +397,11 @@ async function ensureSectionZero(
 export async function createDefaultFeedbackInCourse(
   courseId: number,
   courseShortname: string,
+  lang?: string,
 ): Promise<void> {
   const connection = await pool.getConnection();
   const now = Math.floor(Date.now() / 1000);
+  const questions = getSurveyQuestions(lang ?? "es");
 
   try {
     await connection.beginTransaction();
@@ -215,7 +418,7 @@ export async function createDefaultFeedbackInCourse(
     const feedbackId = Number((feedbackResult as ResultSetHeader).insertId);
 
     let position = 1;
-    for (const question of DEFAULT_QUESTIONS) {
+    for (const question of questions) {
       await connection.execute(
         `INSERT INTO mdl_feedback_item
           (feedback, template, name, label, presentation, typ, hasvalue, position,
@@ -305,6 +508,7 @@ export async function createDefaultFeedbackInCourse(
 export async function crearCursoProfesor(
   userId: number,
   input: CreateCourseInput,
+  lang?: string,
 ): Promise<MoodleCourse> {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new Error("Sesion invalida para crear curso");
@@ -361,6 +565,7 @@ export async function crearCursoProfesor(
     await createDefaultFeedbackInCourse(
       createdCourse.id,
       createdCourse.shortname,
+      lang,
     );
 
     return {
@@ -395,3 +600,69 @@ export const obtenerCursosProfesor = cache(async function obtenerCursosProfesor(
 
   return Array.isArray(courses) ? courses : [];
 });
+
+interface FeedbackItemRow extends RowDataPacket {
+  id: number;
+  label: string;
+  position: number;
+}
+
+export async function syncFeedbackLanguageInCourse(
+  courseId: number,
+  lang: string,
+): Promise<number> {
+  const connection = await pool.getConnection();
+  const questions = getSurveyQuestions(lang ?? "es");
+
+  try {
+    await connection.beginTransaction();
+
+    const [feedbacks] = await connection.execute<RowDataPacket[]>(
+      "SELECT id FROM mdl_feedback WHERE course = ?",
+      [courseId],
+    );
+
+    let updated = 0;
+
+    for (const feedback of feedbacks as Array<{ id: number }>) {
+      const [items] = await connection.execute<FeedbackItemRow[]>(
+        `SELECT id, label, position FROM mdl_feedback_item
+         WHERE feedback = ? ORDER BY position ASC`,
+        [feedback.id],
+      );
+
+      for (const item of items) {
+        const expected = questions[item.position - 1];
+        if (!expected) continue;
+        if (item.label !== expected.dimension) continue;
+        await connection.execute(
+          "UPDATE mdl_feedback_item SET name = ? WHERE id = ?",
+          [expected.text, item.id],
+        );
+        updated += 1;
+      }
+    }
+
+    await connection.commit();
+    return updated;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function syncFeedbackLanguageForTeacher(
+  userId: number,
+  lang: string,
+): Promise<number> {
+  const courses = await obtenerCursosProfesor(userId);
+  let total = 0;
+
+  for (const course of courses) {
+    total += await syncFeedbackLanguageInCourse(course.id, lang);
+  }
+
+  return total;
+}
