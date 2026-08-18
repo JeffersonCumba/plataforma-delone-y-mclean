@@ -1,6 +1,4 @@
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
-import { getServerLocale } from "@/lib/server-locale";
-import { translateError } from "@/lib/errors";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
 import { type AnalyticsData } from "@/types/analytics";
