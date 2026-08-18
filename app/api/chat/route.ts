@@ -69,7 +69,10 @@ export async function POST(request: Request): Promise<Response> {
     stream: true,
     temperature: 0.3,
     messages: [
-      { role: "system", content: buildSystemPrompt(courseName, analytics) },
+      {
+        role: "system",
+        content: buildSystemPrompt(courseName, analytics, locale),
+      },
       ...sanitizedHistory,
     ],
   });

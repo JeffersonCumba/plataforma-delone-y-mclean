@@ -2,6 +2,7 @@ import {
   DIMENSIONS_MAP,
   type AnalyticsData,
 } from "@/types/analytics";
+import type { Locale } from "@/i18n/locales";
 import { translateError } from "@/lib/errors";
 
 export function buildSystemPrompt(
