@@ -19,10 +19,8 @@ import { useTranslations } from "next-intl";
 import {
   LIKERT_LABELS,
   type AnalyticsData,
-  type DimensionKey,
   type QuestionFrequency,
 } from "@/types/analytics";
-
 interface FrequenciesBarChartProps {
   data: QuestionFrequency[];
   courseId: number;
@@ -39,13 +37,12 @@ const LIKERT_COLORS: Record<(typeof LIKERT_LABELS)[number], string> = {
   "Totalmente de acuerdo": "#10b981",
 };
 
-const DIMENSION_SHORT: Record<DimensionKey, string> = {
-  calidad_sys: "Sis",
-  calidad_info: "Inf",
-  calidad_serv: "Serv",
-  uso_sistema: "Uso",
-  satis_user: "Sat",
-  benef_netos: "Net",
+const LIKERT_KEY: Record<(typeof LIKERT_LABELS)[number], string> = {
+  "Totalmente en desacuerdo": "stronglyDisagree",
+  "En desacuerdo": "disagree",
+  Neutral: "neutral",
+  "De acuerdo": "agree",
+  "Totalmente de acuerdo": "stronglyAgree",
 };
 
 interface CustomTooltipProps {
@@ -76,12 +73,9 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
         {label}
         {datum ? ` — ${datum.questionText}` : ""}
       </p>
-      {datum ? (
+       {datum ? (
         <p className="mt-0.5 text-xs text-slate-500">
-          {t("dimensionShort", {
-            dimension: DIMENSION_SHORT[datum.dimension],
-            total,
-          })}
+          {t("dimensionShort." + datum.dimension)}
         </p>
       ) : null}
       <ul className="mt-2 space-y-1">
@@ -184,7 +178,7 @@ export function FrequenciesBarChart({
                       <Bar
                         key={label}
                         dataKey={label}
-                        name={label}
+                        name={t("likert." + LIKERT_KEY[label])}
                         fill={LIKERT_COLORS[label]}
                         radius={[3, 3, 0, 0]}
                         maxBarSize={28}

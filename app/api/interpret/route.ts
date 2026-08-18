@@ -1,4 +1,6 @@
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
+import { getServerLocale } from "@/lib/server-locale";
+import { translateError } from "@/lib/errors";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
 import { type AnalyticsData } from "@/types/analytics";
@@ -63,7 +65,7 @@ export async function POST(request: Request): Promise<Response> {
     stream: true,
     temperature: 0.3,
     messages: [
-      { role: "system", content: buildSystemPrompt(courseName, analytics) },
+      { role: "system", content: buildSystemPrompt(courseName, analytics, locale) },
       { role: "user", content: prompt.trim() },
     ],
   });

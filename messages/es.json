@@ -443,7 +443,15 @@
     "criticalQuestions": "Preguntas Críticas",
     "criticalQuestionsDesc": "Las tres preguntas con promedio individual por debajo de 3.0.",
     "noCriticalQuestions": "No se detectaron preguntas críticas por debajo del umbral.",
-    "dimension": "Dimensión: {dimension}"
+    "dimension": "Dimensión: {dimension}",
+    "dimensions": {
+      "calidad_sys": "Calidad del Sistema",
+      "calidad_info": "Calidad de la Información",
+      "calidad_serv": "Calidad del Servicio",
+      "uso_sistema": "Uso del Sistema",
+      "satis_user": "Satisfacción del Usuario",
+      "benef_netos": "Beneficios Netos"
+    }
   },
   "charts": {
     "satisfactionTitle": "Distribución de Niveles de Satisfacción",
@@ -456,8 +464,27 @@
     "noFrequenciesData": "Sin datos de preguntas para graficar.",
     "questionsProcessed": "{count} pregunta{s} procesadas. Desplaza horizontalmente para ver todas las preguntas.",
     "questionCount": "s",
-    "dimensionShort": "Dimensión: {dimension} · n = {total}",
-    "students": "alumnos"
+    "dimensionShort": {
+      "calidad_sys": "Sis",
+      "calidad_info": "Inf",
+      "calidad_serv": "Serv",
+      "uso_sistema": "Uso",
+      "satis_user": "Sat",
+      "benef_netos": "Net"
+    },
+    "students": "alumnos",
+    "likert": {
+      "stronglyDisagree": "Totalmente en desacuerdo",
+      "disagree": "En desacuerdo",
+      "neutral": "Neutral",
+      "agree": "De acuerdo",
+      "stronglyAgree": "Totalmente de acuerdo",
+      "satisfied": "Satisfechos",
+      "dissatisfied": "Insatisfechos"
+    },
+    "satisfied": "Satisfechos",
+    "neutral": "Neutrales",
+    "dissatisfied": "Insatisfechos"
   },
   "export": {
     "export": "Exportar",
@@ -699,5 +726,8 @@
       "sendSuccess": "Correo enviado correctamente",
       "sendFailed": "No se pudo enviar el correo."
     }
+  },
+  "prompts": {
+    "systemLanguage": "Responde SIEMPRE en español"
   }
 }

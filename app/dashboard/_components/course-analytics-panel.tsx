@@ -27,7 +27,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  DIMENSIONS_MAP,
   type AnalyticsData,
   type AnalyticsQuestionAlert,
   type DimensionKey,
@@ -101,7 +100,7 @@ function AlertRow({ item }: { item: AnalyticsQuestionAlert }) {
             {item.question}
           </p>
           <p className="text-sm text-slate-600">
-            {t("dimension", { dimension: DIMENSIONS_MAP[item.dimension] })}
+            {t("dimension", { dimension: t(`dimensions.${item.dimension}`) })}
           </p>
         </div>
         <div className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-amber-700 ring-1 ring-amber-200">
@@ -473,7 +472,7 @@ function CourseAnalyticsContent({
                   className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
                 >
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    R² {DIMENSIONS_MAP[target]}
+                    R² {t(`dimensions.${target}`)}
                   </p>
                   <p className="mt-1 text-2xl font-semibold text-slate-900">
                     {r2.toFixed(3)}

@@ -636,6 +636,7 @@ function bootstrapStandardizedCoefficients(
 
 function buildStructuralModel(
   surveyDimensionRows: SurveyDimensionMeans[],
+  locale: Locale,
 ): {
   structuralPaths: StructuralPathResult[];
   rSquared: Partial<Record<DimensionKey, number>>;
@@ -655,7 +656,7 @@ function buildStructuralModel(
           key: `${predictor}->${equation.target}`,
           from: predictor,
           to: equation.target,
-          name: `${DIMENSIONS_MAP[predictor]} → ${DIMENSIONS_MAP[equation.target]}`,
+          name: `${translateError(locale, `dimensions.${predictor}`)} → ${translateError(locale, `dimensions.${equation.target}`)}`,
           coefficient: 0,
           ciLow: 0,
           ciHigh: 0,
@@ -700,6 +701,7 @@ function buildStructuralModel(
 
 function buildConstructReliability(
   rows: FeedbackAnalyticsRow[],
+  locale: Locale,
 ): ConstructReliabilityResult[] {
   const dimensions = new Map<
     DimensionKey,
@@ -727,7 +729,7 @@ function buildConstructReliability(
     if (itemCount < 2) {
       return {
         dimension,
-        name: DIMENSIONS_MAP[dimension],
+        name: translateError(locale, `dimensions.${dimension}`),
         itemCount,
         cronbachAlpha: 0,
         compositeReliability: 0,
@@ -783,6 +785,7 @@ function buildConstructReliability(
 function buildDiscriminantValidity(
   surveyDimensionRows: SurveyDimensionMeans[],
   constructReliability: ConstructReliabilityResult[],
+  locale: Locale,
 ): DiscriminantValidityResult[] {
   const aveByDimension = new Map(
     constructReliability.map((entry) => [entry.dimension, entry.ave]),
@@ -814,8 +817,8 @@ function buildDiscriminantValidity(
       results.push({
         left,
         right,
-        leftName: DIMENSIONS_MAP[left],
-        rightName: DIMENSIONS_MAP[right],
+        leftName: translateError(locale, `dimensions.${left}`),
+        rightName: translateError(locale, `dimensions.${right}`),
         correlation: Number(correlation.toFixed(3)),
         sqrtAveLeft: Number(sqrtAveLeft.toFixed(3)),
         sqrtAveRight: Number(sqrtAveRight.toFixed(3)),
@@ -836,13 +839,15 @@ function buildDeloneMcleanModel(
       questionValues: Map<string, number>;
     }
   >,
+  locale: Locale,
 ): DeloneMcleanModelResult {
   const surveyDimensionRows = buildSurveyDimensionMeans(surveyAccumulator);
-  const structural = buildStructuralModel(surveyDimensionRows);
-  const constructReliability = buildConstructReliability(rows);
+  const structural = buildStructuralModel(surveyDimensionRows, locale);
+  const constructReliability = buildConstructReliability(rows, locale);
   const discriminantValidity = buildDiscriminantValidity(
     surveyDimensionRows,
     constructReliability,
+    locale,
   );
 
   return {
@@ -857,6 +862,7 @@ function buildDeloneMcleanModel(
 
 function buildAnalyticsData(
   rows: FeedbackAnalyticsRow[],
+  locale: Locale,
 ): Omit<AnalyticsData, "totalRespondents" | "responseRate"> {
   const dimensionAccumulator = new Map<
     DimensionKey,
@@ -984,7 +990,7 @@ function buildAnalyticsData(
     criticalQuestions: buildQuestionAlerts(questionAccumulator),
     satisfactionDistribution: buildSatisfactionDistribution(surveyAccumulator),
     questionFrequencies: buildQuestionFrequencies(questionAccumulator),
-    deloneMcleanModel: buildDeloneMcleanModel(rows, surveyAccumulator),
+    deloneMcleanModel: buildDeloneMcleanModel(rows, surveyAccumulator, locale),
   };
 }
 
@@ -1043,7 +1049,7 @@ export async function getCourseAnalyticsData(
     [courseId, MOODLE_TEACHER_ROLE_ID],
   );
 
-  const summary = buildAnalyticsData(rows);
+  const summary = buildAnalyticsData(rows, locale);
   const totalRespondents = (await obtenerEncuestadosPorCurso(courseId, locale)).length;
   const responseRate =
     totalRespondents > 0

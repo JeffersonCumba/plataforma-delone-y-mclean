@@ -443,7 +443,15 @@
     "criticalQuestions": "Critical Questions",
     "criticalQuestionsDesc": "The three questions with an individual average below 3.0.",
     "noCriticalQuestions": "No critical questions detected below the threshold.",
-    "dimension": "Dimension: {dimension}"
+    "dimension": "Dimension: {dimension}",
+    "dimensions": {
+      "calidad_sys": "System Quality",
+      "calidad_info": "Information Quality",
+      "calidad_serv": "Service Quality",
+      "uso_sistema": "System Use",
+      "satis_user": "User Satisfaction",
+      "benef_netos": "Net Benefits"
+    }
   },
   "charts": {
     "satisfactionTitle": "Satisfaction Levels Distribution",
@@ -456,8 +464,27 @@
     "noFrequenciesData": "No question data to plot.",
     "questionsProcessed": "{count} question{s} processed. Scroll horizontally to see all questions.",
     "questionCount": "s",
-    "dimensionShort": "Dimension: {dimension} · n = {total}",
-    "students": "students"
+    "dimensionShort": {
+      "calidad_sys": "Sys",
+      "calidad_info": "Info",
+      "calidad_serv": "Serv",
+      "uso_sistema": "Use",
+      "satis_user": "Sat",
+      "benef_netos": "Net"
+    },
+    "students": "students",
+    "likert": {
+      "stronglyDisagree": "Strongly disagree",
+      "disagree": "Disagree",
+      "neutral": "Neutral",
+      "agree": "Agree",
+      "stronglyAgree": "Strongly agree",
+      "satisfied": "Satisfied",
+      "dissatisfied": "Dissatisfied"
+    },
+    "satisfied": "Satisfied",
+    "neutral": "Neutral",
+    "dissatisfied": "Dissatisfied"
   },
   "export": {
     "export": "Export",
@@ -699,5 +726,8 @@
       "sendSuccess": "Email sent successfully",
       "sendFailed": "Could not send the email."
     }
+  },
+  "prompts": {
+    "systemLanguage": "Always respond in English"
   }
 }

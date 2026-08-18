@@ -2,10 +2,12 @@ import {
   DIMENSIONS_MAP,
   type AnalyticsData,
 } from "@/types/analytics";
+import { translateError } from "@/lib/errors";
 
 export function buildSystemPrompt(
   courseName: string,
   analytics: AnalyticsData,
+  locale: Locale,
 ): string {
   const criticalBlock = analytics.criticalQuestions
     .map(
@@ -13,6 +15,8 @@ export function buildSystemPrompt(
         `- "${item.question}" (${DIMENSIONS_MAP[item.dimension]}) -> ${item.average.toFixed(2)}/5`,
     )
     .join("\n");
+
+  const languageLine = translateError(locale, "prompts.systemLanguage");
 
   const betaBlock = analytics.betaCoefficients
     .map((beta) => `- ${beta.name}: beta = ${beta.value.toFixed(3)}`)

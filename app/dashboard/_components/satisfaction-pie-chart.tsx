@@ -31,6 +31,13 @@ interface CustomTooltipProps {
   payload?: CustomTooltipPayload[];
 }
 
+type SatisfactionName = SatisfactionPieDatum["name"];
+const SAT_KEY: Record<SatisfactionName, string> = {
+  Satisfechos: "satisfied",
+  Neutrales: "neutral",
+  Insatisfechos: "dissatisfied",
+};
+
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const t = useTranslations("charts");
 
@@ -42,7 +49,9 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg">
-      <p className="text-sm font-semibold text-slate-950">{datum.name}</p>
+      <p className="text-sm font-semibold text-slate-950">
+        {t(SAT_KEY[datum.name])}
+      </p>
       <p className="text-xs text-slate-600">
         {datum.value} {t("students")} &mdash; {datum.percentage.toFixed(1)}%
       </p>
@@ -115,11 +124,14 @@ export function SatisfactionPieChart({
                   verticalAlign="bottom"
                   height={36}
                   iconType="circle"
-                  formatter={(value, entry) => {
-                    const datum = entry.payload as SatisfactionPieDatum | undefined;
-                    const pct = datum ? datum.percentage.toFixed(1) : "0.0";
-                    return `${value} (${pct}%)`;
-                  }}
+                   formatter={(value, entry) => {
+                     const datum = entry.payload as SatisfactionPieDatum | undefined;
+                     const pct = datum ? datum.percentage.toFixed(1) : "0.0";
+                     return [
+                       `${t(SAT_KEY[value as SatisfactionName])} (${pct}%)`,
+                       value as string,
+                     ];
+                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
