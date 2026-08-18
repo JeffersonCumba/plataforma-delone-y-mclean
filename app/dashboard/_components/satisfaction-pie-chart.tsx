@@ -11,6 +11,7 @@ import {
   type SatisfactionPieDatum,
 } from "@/types/analytics";
 import { buildSatisfactionDistributionPrompt } from "@/app/dashboard/_components/chart-ai-prompts";
+import { useTranslations } from "next-intl";
 
 interface SatisfactionPieChartProps {
   data: SatisfactionPieDatum[];
@@ -31,6 +32,8 @@ interface CustomTooltipProps {
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
+  const t = useTranslations("charts");
+
   if (!active || !payload || payload.length === 0) {
     return null;
   }
@@ -41,7 +44,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg">
       <p className="text-sm font-semibold text-slate-950">{datum.name}</p>
       <p className="text-xs text-slate-600">
-        {datum.value} alumnos &mdash; {datum.percentage.toFixed(1)}%
+        {datum.value} {t("students")} &mdash; {datum.percentage.toFixed(1)}%
       </p>
     </div>
   );
@@ -55,6 +58,7 @@ export function SatisfactionPieChart({
   analytics,
   interp,
 }: SatisfactionPieChartProps) {
+  const t = useTranslations("charts");
   const total = data.reduce((acc, item) => acc + item.value, 0);
   const isEmpty = total === 0;
 
@@ -64,11 +68,10 @@ export function SatisfactionPieChart({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle className="text-xl">
-              Distribución de Niveles de Satisfacción
+              {t("satisfactionTitle")}
             </CardTitle>
             <p className="text-sm text-slate-600">
-              Clasificación demográfica de los estudiantes según su promedio en
-              la dimensión de satisfacción del usuario.
+              {t("satisfactionDescription")}
             </p>
           </div>
           <InterpretChartButton
@@ -85,7 +88,7 @@ export function SatisfactionPieChart({
         <div className="h-90 w-full">
           {isEmpty ? (
             <div className="flex h-full items-center justify-center text-sm text-slate-500">
-              Aún no hay datos de satisfacción para clasificar.
+              {t("noSatisfactionData")}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -123,7 +126,11 @@ export function SatisfactionPieChart({
           )}
         </div>
         <p className="mt-2 text-xs text-slate-500">
-          {total} usuario{total === 1 ? "" : "s"} clasificados de {totalRespondents} matriculados.
+          {t("studentsClassified", {
+            total,
+            s: total === 1 ? "" : t("studentsCount"),
+            totalRespondents,
+          })}
         </p>
         <InterpretationPanel
           text={interp.text}

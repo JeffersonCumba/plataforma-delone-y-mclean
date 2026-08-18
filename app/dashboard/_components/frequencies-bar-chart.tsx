@@ -15,6 +15,7 @@ import { InterpretChartButton } from "@/app/dashboard/_components/interpret-char
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import { buildFrequenciesPrompt } from "@/app/dashboard/_components/chart-ai-prompts";
+import { useTranslations } from "next-intl";
 import {
   LIKERT_LABELS,
   type AnalyticsData,
@@ -60,6 +61,8 @@ interface CustomTooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  const t = useTranslations("charts");
+
   if (!active || !payload || payload.length === 0) {
     return null;
   }
@@ -75,7 +78,10 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
       </p>
       {datum ? (
         <p className="mt-0.5 text-xs text-slate-500">
-          Dimensión: {DIMENSION_SHORT[datum.dimension]} · n = {total}
+          {t("dimensionShort", {
+            dimension: DIMENSION_SHORT[datum.dimension],
+            total,
+          })}
         </p>
       ) : null}
       <ul className="mt-2 space-y-1">
@@ -108,6 +114,7 @@ export function FrequenciesBarChart({
   analytics,
   interp,
 }: FrequenciesBarChartProps) {
+  const t = useTranslations("charts");
   const isEmpty = data.length === 0;
 
   return (
@@ -116,11 +123,10 @@ export function FrequenciesBarChart({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle className="text-xl">
-              Histograma de Frecuencias por Pregunta
+              {t("frequenciesTitle")}
             </CardTitle>
             <p className="text-sm text-slate-600">
-              Distribución de respuestas Likert (1 a 5) para cada pregunta del
-              cuestionario DeLone y McLean.
+              {t("frequenciesDescription")}
             </p>
           </div>
           <InterpretChartButton
@@ -134,7 +140,7 @@ export function FrequenciesBarChart({
       <CardContent>
         {isEmpty ? (
           <div className="flex h-72 items-center justify-center text-sm text-slate-500">
-            Sin datos de preguntas para graficar.
+            {t("noFrequenciesData")}
           </div>
         ) : (
           <div className="overflow-x-auto pb-2">
@@ -191,8 +197,10 @@ export function FrequenciesBarChart({
           </div>
         )}
         <p className="mt-3 text-xs text-slate-500">
-          {data.length} pregunta{data.length === 1 ? "" : "s"} procesadas.
-          Desplaza horizontalmente para ver todas las preguntas.
+          {t("questionsProcessed", {
+            count: data.length,
+            s: data.length === 1 ? "" : t("questionCount"),
+          })}
         </p>
         <InterpretationPanel
           text={interp.text}

@@ -4,6 +4,7 @@ import { Loader2, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface InterpretationPanelProps {
   text: string;
@@ -66,6 +67,7 @@ export function InterpretationPanel({
   onClose,
   className,
 }: InterpretationPanelProps) {
+  const t = useTranslations("ia");
   const hasContent = Boolean(text) || isLoading || Boolean(error);
   if (!hasContent) {
     return null;
@@ -75,7 +77,6 @@ export function InterpretationPanel({
     <div
       className={cn(
         "mt-4 rounded-2xl border border-cyan-200/80 bg-linear-to-br from-white via-cyan-50/30 to-white p-4 shadow-sm",
-        isLoading && "notranslate",
         className,
       )}
     >
@@ -83,7 +84,7 @@ export function InterpretationPanel({
         <div className="flex items-center gap-2 text-cyan-700">
           <Sparkles className="h-4 w-4" />
           <span className="text-xs font-semibold uppercase tracking-wider">
-            Interpretacion IA
+            {t("panelTitle")}
           </span>
         </div>
         {onClose ? (
@@ -91,8 +92,8 @@ export function InterpretationPanel({
             variant="ghost"
             size="icon-sm"
             onClick={onClose}
-            aria-label="Cerrar interpretacion"
-            title="Cerrar interpretacion"
+            aria-label={t("closeInterpretation")}
+            title={t("closeInterpretation")}
             disabled={isLoading}
           >
             <X className="h-4 w-4" />
@@ -109,7 +110,7 @@ export function InterpretationPanel({
       {!error && isLoading && !text ? (
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
-          <span>Analizando los datos del curso...</span>
+          <span>{t("analyzing")}</span>
         </div>
       ) : null}
 

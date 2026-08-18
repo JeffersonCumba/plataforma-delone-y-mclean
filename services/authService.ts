@@ -3,7 +3,9 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { type RowDataPacket } from "mysql2";
 
-import {pool} from "@/lib/db";
+  import {pool} from "@/lib/db";
+  import { translateError } from "@/lib/errors";
+  import type { Locale } from "@/i18n/locales";
 
 export interface MoodleUser {
   id: number;
@@ -237,15 +239,16 @@ const MOODLE_ADMIN_EMAIL = process.env.MOODLE_ADMIN_EMAIL?.trim().toLowerCase();
 export async function login(
   email: string,
   password: string,
+  locale: Locale,
 ): Promise<{ ok: true; user: LoginResult["user"]; role: UserRole } | { ok: false; message: string }> {
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!normalizedEmail) {
-    return { ok: false, message: "El correo electrónico es obligatorio para iniciar sesión" };
+    return { ok: false, message: translateError(locale, "auth.emailRequired") };
   }
 
   if (!password.trim()) {
-    return { ok: false, message: "La contraseña es obligatoria para iniciar sesión" };
+    return { ok: false, message: translateError(locale, "auth.passwordRequired") };
   }
 
   try {
@@ -257,13 +260,13 @@ export async function login(
     const user = rows[0];
 
     if (!user) {
-      return { ok: false, message: "No se encontró un usuario con ese correo electrónico" };
+      return { ok: false, message: translateError(locale, "auth.userNotFound") };
     }
 
     const isValidPassword = verifySha512CryptPassword(password, user.password);
 
     if (!isValidPassword) {
-      return { ok: false, message: "Credenciales incorrectas" };
+      return { ok: false, message: translateError(locale, "auth.invalidCredentials") };
     }
 
     const fullname = `${user.firstname ?? ""} ${user.lastname ?? ""}`.trim();
@@ -287,6 +290,6 @@ export async function login(
     };
   } catch (error) {
     console.error("[login] Error:", error);
-    return { ok: false, message: "Error al iniciar sesión. Intentalo de nuevo más tarde." };
+    return { ok: false, message: translateError(locale, "auth.genericError") };
   }
 }

@@ -1,4 +1,6 @@
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import { type AnalyticsData } from "@/types/analytics";
 import {
   createClient,
@@ -17,6 +19,7 @@ interface ChatRequestBody {
 const OPENROUTER_MODEL = "openai/gpt-oss-120b";
 
 export async function POST(request: Request): Promise<Response> {
+  const locale = await getServerLocale();
   const session = await requireSession();
   if (session instanceof Response) return session;
 
@@ -24,24 +27,28 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = (await request.json()) as ChatRequestBody;
   } catch {
-    return badRequest("Cuerpo de la solicitud invalido");
+    return badRequest(translateError(locale, "api.invalidBody"));
   }
 
   const { courseId, courseName, analytics, messages } = body;
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    return badRequest("courseId invalido");
+    return badRequest(translateError(locale, "api.invalidCourseId"));
   }
 
   if (typeof courseName !== "string" || courseName.length === 0) {
-    return badRequest("courseName requerido");
+    return badRequest(translateError(locale, "api.courseNameRequired"));
   }
 
   if (!analytics || !Array.isArray(messages)) {
-    return badRequest("messages y analytics son requeridos");
+    return badRequest(translateError(locale, "api.messagesAnalyticsRequired"));
   }
 
-  const accessError = await validateCourseAccess(session.userId, courseId);
+  const accessError = await validateCourseAccess(
+    session.userId,
+    courseId,
+    locale,
+  );
   if (accessError) return accessError;
 
   const sanitizedHistory = messages
@@ -54,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
     .slice(-12)
     .map((entry) => ({ role: entry.role, content: entry.content.trim() }));
 
-  const clientResult = createClient();
+  const clientResult = createClient(locale);
   if (clientResult instanceof Response) return clientResult;
 
   const completion = await clientResult.client.chat.completions.create({
@@ -67,5 +74,5 @@ export async function POST(request: Request): Promise<Response> {
     ],
   });
 
-  return createStreamResponse(completion);
+  return createStreamResponse(completion, locale);
 }

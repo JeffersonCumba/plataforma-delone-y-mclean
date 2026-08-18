@@ -1,5 +1,7 @@
 import { requireSession, badRequest, serverError } from "@/lib/auth";
 import { syncFeedbackLanguageForTeacher } from "@/services/courseService";
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 
 const SUPPORTED_LANGUAGES = new Set(["es", "en", "pt"]);
 
@@ -8,6 +10,7 @@ interface FeedbackLanguageRequestBody {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const locale = await getServerLocale();
   const session = await requireSession();
   if (session instanceof Response) return session;
 
@@ -15,17 +18,17 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = (await request.json()) as FeedbackLanguageRequestBody;
   } catch {
-    return badRequest("Cuerpo de la solicitud invalido");
+    return badRequest(translateError(locale, "api.invalidBody"));
   }
 
   const lang = body.lang?.trim().toLowerCase();
 
   if (!lang) {
-    return badRequest("lang requerido");
+    return badRequest(translateError(locale, "api.langRequired"));
   }
 
   if (!SUPPORTED_LANGUAGES.has(lang)) {
-    return badRequest(`idioma no soportado: ${lang}`);
+    return badRequest(translateError(locale, "api.unsupportedLang", { lang }));
   }
 
   try {
@@ -43,6 +46,6 @@ export async function POST(request: Request): Promise<Response> {
       "[feedback-language] Error al retraducir encuestas:",
       err,
     );
-    return serverError("No se pudieron retraducir las encuestas");
+    return serverError(translateError(locale, "api.retranslateFailed"));
   }
 }

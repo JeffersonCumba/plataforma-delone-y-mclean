@@ -5,12 +5,14 @@ import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerTodosLosCursos } from "@/services/adminService";
 import { requireAuth } from "@/lib/auth";
+import { getServerLocale } from "@/lib/server-locale";
 
 export default async function CourseOverviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const locale = await getServerLocale();
   const { userId, role } = await requireAuth();
 
   const { id } = await params;
@@ -30,7 +32,7 @@ export default async function CourseOverviewPage({
     }
     courseName = found.fullname;
   } else {
-    const courses = await obtenerCursosProfesor(userId);
+    const courses = await obtenerCursosProfesor(userId, locale);
     const currentCourse = courses.find((course) => course.id === courseId);
     if (!currentCourse) {
       redirect("/dashboard/cursos");
@@ -41,7 +43,7 @@ export default async function CourseOverviewPage({
   let analytics: Awaited<ReturnType<typeof getCourseAnalyticsData>>;
 
   try {
-    analytics = await getCourseAnalyticsData(courseId);
+    analytics = await getCourseAnalyticsData(courseId, locale);
   } catch (error) {
     console.error("Error obteniendo analytics del curso:", error);
     redirect("/dashboard/cursos?error=Error al cargar analytics");

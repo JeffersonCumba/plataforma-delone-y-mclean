@@ -2,20 +2,19 @@
 
 import { toast } from "sonner";
 
-const GOOGLE_TRANSLATE_COOKIE = "googtrans";
+import { DEFAULT_LOCALE, isSupportedLocale, LOCALE_COOKIE } from "@/i18n/locales";
 
-function readDropdownLanguage(): string | undefined {
-  if (typeof document === "undefined") return "es";
+function readDropdownLanguage(): string {
+  if (typeof document === "undefined") return DEFAULT_LOCALE;
 
   const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${GOOGLE_TRANSLATE_COOKIE}=([^;]*)`),
+    new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=([^;]*)`),
   );
-  if (!match) return "es";
+  if (!match) return DEFAULT_LOCALE;
 
   const raw = (match[1] ?? "").replace(/^"|"$/g, "");
   const decoded = raw.includes("%") ? decodeURIComponent(raw) : raw;
-  const parts = decoded.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? "es";
+  return isSupportedLocale(decoded) ? decoded : DEFAULT_LOCALE;
 }
 
 export function getMoodleLoginUrl(): string {

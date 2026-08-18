@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +20,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatedHeading } from "@/components/animated-heading";
-import { GoogleTranslateWidget } from "@/components/google-translate-widget";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { registerUserSchema } from "@/lib/validations/user";
 import { registrarUsuario } from "@/services/userService";
+import type { Locale } from "@/i18n/locales";
 
 type FieldErrors = Partial<Record<"username" | "firstname" | "lastname" | "email" | "password", string>>;
 
@@ -39,14 +41,16 @@ function fieldKeyFromIssuePath(path: (string | number | symbol)[]): keyof FieldE
 
 function fieldKeyFromMessage(msg: string): keyof FieldErrors | null {
   const lower = msg.toLowerCase();
-  if (lower.includes("usuario")) return "username";
-  if (lower.includes("correo")) return "email";
-  if (lower.includes("contrase")) return "password";
+  if (/usua|user/i.test(lower) && !/correo|email/.test(lower)) return "username";
+  if (/correo|e-mail|email/i.test(lower)) return "email";
+  if (/contrase|pass|senha|sen/i.test(lower)) return "password";
   return null;
 }
 
 export default function RegisterPage() {
   const router = useRouter();
+  const locale = useLocale() as Locale;
+  const t = useTranslations("register");
 
   const [form, setForm] = useState<RegisterFormState>({
     username: "",
@@ -82,7 +86,7 @@ export default function RegisterPage() {
     event.preventDefault();
     setErrors({});
 
-    const parsed = registerUserSchema.safeParse(form);
+    const parsed = registerUserSchema(locale).safeParse(form);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const field = fieldKeyFromIssuePath(issue.path);
@@ -93,7 +97,7 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const result = await registrarUsuario(parsed.data);
+    const result = await registrarUsuario(parsed.data, locale);
 
     if (!result.ok) {
       const field = fieldKeyFromMessage(result.message);
@@ -114,7 +118,7 @@ export default function RegisterPage() {
       password: "",
     });
 
-    toast.success("Usuario registrado exitosamente");
+    toast.success(t("registeredSuccess"));
 
     const emailParam = encodeURIComponent(parsed.data.email);
     setTimeout(() => router.push(`/login?email=${emailParam}`), 1200);
@@ -127,15 +131,15 @@ export default function RegisterPage() {
       <section className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="max-w-xl text-slate-950">
           <div className="mb-8">
-            <GoogleTranslateWidget hideLabel />
+            <LanguageSwitcher hideLabel />
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
-            Registro visual de acceso
+            {t("badge")}
           </div>
 
           <AnimatedHeading className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[55px]">
-            Crea tu cuenta para entrar al sistema de evaluación.
+            {t("heading")}
           </AnimatedHeading>
         </div>
 
@@ -146,13 +150,13 @@ export default function RegisterPage() {
               <div className="mb-2 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-500">
-                    Registro
+                    {t("cardEyebrow")}
                   </p>
                   <CardTitle className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                    Nuevo usuario
+                    {t("cardTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Completa los datos básicos para solicitar acceso.
+                    {t("cardDescription")}
                   </CardDescription>
                 </div>
               </div>
@@ -161,11 +165,11 @@ export default function RegisterPage() {
             <CardContent className="px-8 pb-8 sm:px-10 sm:pb-10">
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="username">Nombre de usuario</Label>
+                  <Label htmlFor="username">{t("usernameLabel")}</Label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="usuario123"
+                    placeholder={t("usernamePlaceholder")}
                     value={form.username}
                     onChange={handleChange("username")}
                     disabled={loading}
@@ -179,11 +183,11 @@ export default function RegisterPage() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Nombre</Label>
+                    <Label htmlFor="firstName">{t("firstNameLabel")}</Label>
                     <Input
                       id="firstName"
                       type="text"
-                      placeholder="Nombre"
+                      placeholder={t("firstNamePlaceholder")}
                       value={form.firstname}
                       onChange={handleChange("firstname")}
                       disabled={loading}
@@ -196,11 +200,11 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Apellido</Label>
+                    <Label htmlFor="lastName">{t("lastNameLabel")}</Label>
                     <Input
                       id="lastName"
                       type="text"
-                      placeholder="Apellido"
+                      placeholder={t("lastNamePlaceholder")}
                       value={form.lastname}
                       onChange={handleChange("lastname")}
                       disabled={loading}
@@ -214,11 +218,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electrónico</Label>
+                  <Label htmlFor="email">{t("emailLabel")}</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="nombre@dominio.com"
+                    placeholder={t("emailPlaceholder")}
                     value={form.email}
                     onChange={handleChange("email")}
                     disabled={loading}
@@ -231,11 +235,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="password">{t("passwordLabel")}</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Crear contraseña"
+                    placeholder={t("passwordPlaceholder")}
                     value={form.password}
                     onChange={handleChange("password")}
                     disabled={loading}
@@ -259,7 +263,7 @@ export default function RegisterPage() {
                     ) : (
                       <UserRoundPlus className="mr-2 h-4 w-4" />
                     )}
-                    {loading ? "Registrando..." : "Crear cuenta"}
+                    {loading ? t("submitLoading") : t("submit")}
                   </Button>
                   <Button
                     asChild
@@ -267,7 +271,7 @@ export default function RegisterPage() {
                     className="w-full"
                     size="lg"
                   >
-                    <Link href="/login">Ya tengo cuenta</Link>
+                    <Link href="/login">{t("alreadyHaveAccount")}</Link>
                   </Button>
                 </div>
               </form>

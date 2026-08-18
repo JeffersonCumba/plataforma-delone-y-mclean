@@ -37,6 +37,7 @@ import {
   matricularUsuarioAction,
 } from "@/app/dashboard/encuestados/actions";
 import type { MoodleUserSummary } from "@/types/encuestado";
+import { useTranslations } from "next-intl";
 
 interface MatricularUsuarioDialogProps {
   courses: MoodleCourse[];
@@ -78,6 +79,7 @@ export function MatricularUsuarioDialog({
   onOpenChange: controlledOnOpenChange,
   trigger,
 }: MatricularUsuarioDialogProps) {
+  const t = useTranslations("matricular");
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -124,7 +126,7 @@ export function MatricularUsuarioDialog({
     const trimmed = query.trim();
 
     if (trimmed.length < 2) {
-      toast.error("Ingresa al menos 2 caracteres para buscar");
+      toast.error(t("searchMinChars"));
       return;
     }
 
@@ -147,7 +149,7 @@ export function MatricularUsuarioDialog({
     } catch {
       if (!controller.signal.aborted) {
         setResults([]);
-        toast.error("Error inesperado al buscar usuarios");
+        toast.error(t("unexpectedSearchError"));
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -158,16 +160,16 @@ export function MatricularUsuarioDialog({
 
   function validateNewUser(): boolean {
     const errors: Partial<NewUserForm> = {};
-    if (!newUser.username.trim()) errors.username = "Requerido";
-    if (!newUser.firstname.trim()) errors.firstname = "Requerido";
-    if (!newUser.lastname.trim()) errors.lastname = "Requerido";
+    if (!newUser.username.trim()) errors.username = t("required");
+    if (!newUser.firstname.trim()) errors.firstname = t("required");
+    if (!newUser.lastname.trim()) errors.lastname = t("required");
     if (!newUser.email.trim()) {
-      errors.email = "Requerido";
+      errors.email = t("required");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email.trim())) {
-      errors.email = "Email invalido";
+      errors.email = t("invalidEmail");
     }
     if (!newUser.password) {
-      errors.password = "Requerido";
+      errors.password = t("required");
     } else {
       const pwd = newUser.password;
       const ok =
@@ -177,8 +179,7 @@ export function MatricularUsuarioDialog({
         /\d/.test(pwd) &&
         /[^A-Za-z0-9]/.test(pwd);
       if (!ok) {
-        errors.password =
-          "8+ caracteres, mayuscula, minuscula, numero y caracter especial";
+        errors.password = t("passwordRequirements");
       }
     }
     setFieldErrors(errors);
@@ -187,17 +188,17 @@ export function MatricularUsuarioDialog({
 
   function handleSubmit() {
     if (!courseId) {
-      toast.error("Selecciona un curso");
+      toast.error(t("selectCourseError"));
       return;
     }
 
     if (mode === "existing" && !selectedUser) {
-      toast.error("Selecciona un usuario de los resultados");
+      toast.error(t("selectUserError"));
       return;
     }
 
     if (mode === "new" && !validateNewUser()) {
-      toast.error("Revisa los campos del formulario");
+      toast.error(t("checkFormError"));
       return;
     }
 
@@ -250,24 +251,23 @@ export function MatricularUsuarioDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-cyan-700" />
-            Matricular usuario
+            {t("dialogTitle")}
           </DialogTitle>
           <DialogDescription>
-            Busca un usuario existente en Moodle o crea uno nuevo y matricularlo
-            en el curso seleccionado.
+            {t("dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-2 space-y-4">
           {showCourseSelect ? (
             <div className="space-y-2">
-              <Label htmlFor="enroll-course">Curso destino</Label>
+              <Label htmlFor="enroll-course">{t("courseDestination")}</Label>
               <Select value={courseId} onValueChange={setCourseId}>
                 <SelectTrigger
                   id="enroll-course"
                   className="h-11 w-full border-slate-300 bg-white text-sm"
                 >
-                  <SelectValue placeholder="Selecciona un curso" />
+                  <SelectValue placeholder={t("selectCourse")} />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
@@ -291,7 +291,7 @@ export function MatricularUsuarioDialog({
               }`}
             >
               <Search className="h-4 w-4" />
-              Buscar existente
+              {t("searchExisting")}
             </button>
             <button
               type="button"
@@ -303,14 +303,14 @@ export function MatricularUsuarioDialog({
               }`}
             >
               <UserPlus className="h-4 w-4" />
-              Crear nuevo
+              {t("createNew")}
             </button>
           </div>
 
           {mode === "existing" ? (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="user-search">Buscar usuario</Label>
+                <Label htmlFor="user-search">{t("searchUserLabel")}</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -327,7 +327,7 @@ export function MatricularUsuarioDialog({
                           void handleSearch();
                         }
                       }}
-                      placeholder="Username del usuario en Moodle (min. 2 caracteres)"
+                      placeholder={t("searchUserPlaceholder")}
                       className="h-11 pl-9 pr-9"
                       disabled={searching || submitting}
                     />
@@ -348,7 +348,7 @@ export function MatricularUsuarioDialog({
                     ) : (
                       <Search className="mr-2 h-4 w-4" />
                     )}
-                    Buscar
+                    {t("search")}
                   </Button>
                 </div>
               </div>
@@ -356,12 +356,11 @@ export function MatricularUsuarioDialog({
               <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-200 bg-white">
                 {!hasSearched ? (
                   <div className="px-4 py-6 text-center text-sm text-slate-500">
-                    Ingresa un criterio y presiona Buscar para encontrar
-                    usuarios en Moodle.
+                    {t("searchHint")}
                   </div>
                 ) : results.length === 0 && !searching ? (
                   <div className="px-4 py-6 text-center text-sm text-slate-500">
-                    No se encontraron usuarios con ese criterio.
+                    {t("noResults")}
                   </div>
                 ) : (
                   <ul className="divide-y divide-slate-100">
@@ -382,7 +381,7 @@ export function MatricularUsuarioDialog({
                                 setSelectedUser(isSelected ? null : user)
                               }
                               className="h-4 w-4 shrink-0 cursor-pointer rounded-sm border-slate-300 text-cyan-600 accent-cyan-600 focus:ring-cyan-500 disabled:cursor-not-allowed"
-                              aria-label={`Seleccionar a ${user.fullname || user.username}`}
+                              aria-label={t("selectUserAria", { name: user.fullname || user.username })}
                             />
                             <span
                               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
@@ -398,7 +397,7 @@ export function MatricularUsuarioDialog({
                                 {user.fullname || user.username}
                               </span>
                               <span className="block truncate text-xs text-slate-500">
-                                {user.email || "Sin email"}
+                                {user.email || t("noEmail")}
                               </span>
                             </span>
                             <span className="shrink-0 text-xs text-slate-500">
@@ -415,7 +414,7 @@ export function MatricularUsuarioDialog({
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="nu-username">Usuario</Label>
+                <Label htmlFor="nu-username">{t("usernameLabel")}</Label>
                 <Input
                   id="nu-username"
                   value={newUser.username}
@@ -425,7 +424,7 @@ export function MatricularUsuarioDialog({
                       username: event.target.value,
                     }))
                   }
-                  placeholder="jperez"
+                  placeholder={t("usernamePlaceholder")}
                   disabled={submitting}
                 />
                 {fieldErrors.username ? (
@@ -435,7 +434,7 @@ export function MatricularUsuarioDialog({
                 ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="nu-firstname">Nombre</Label>
+                <Label htmlFor="nu-firstname">{t("firstNameLabel")}</Label>
                 <Input
                   id="nu-firstname"
                   value={newUser.firstname}
@@ -445,7 +444,7 @@ export function MatricularUsuarioDialog({
                       firstname: event.target.value,
                     }))
                   }
-                  placeholder="Juan"
+                  placeholder={t("firstNamePlaceholder")}
                   disabled={submitting}
                 />
                 {fieldErrors.firstname ? (
@@ -455,7 +454,7 @@ export function MatricularUsuarioDialog({
                 ) : null}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="nu-lastname">Apellido</Label>
+                <Label htmlFor="nu-lastname">{t("lastNameLabel")}</Label>
                 <Input
                   id="nu-lastname"
                   value={newUser.lastname}
@@ -465,7 +464,7 @@ export function MatricularUsuarioDialog({
                       lastname: event.target.value,
                     }))
                   }
-                  placeholder="Perez"
+                  placeholder={t("lastNamePlaceholder")}
                   disabled={submitting}
                 />
                 {fieldErrors.lastname ? (
@@ -475,7 +474,7 @@ export function MatricularUsuarioDialog({
                 ) : null}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="nu-email">Email</Label>
+                <Label htmlFor="nu-email">{t("emailLabel")}</Label>
                 <Input
                   id="nu-email"
                   type="email"
@@ -486,7 +485,7 @@ export function MatricularUsuarioDialog({
                       email: event.target.value,
                     }))
                   }
-                  placeholder="juan@ejemplo.com"
+                  placeholder={t("emailPlaceholder")}
                   disabled={submitting}
                 />
                 {fieldErrors.email ? (
@@ -494,7 +493,7 @@ export function MatricularUsuarioDialog({
                 ) : null}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="nu-password">Contraseña</Label>
+                <Label htmlFor="nu-password">{t("passwordLabel")}</Label>
                 <Input
                   id="nu-password"
                   type="password"
@@ -505,7 +504,7 @@ export function MatricularUsuarioDialog({
                       password: event.target.value,
                     }))
                   }
-                  placeholder="Minimo 8 caracteres"
+                  placeholder={t("passwordPlaceholder")}
                   disabled={submitting}
                 />
                 {fieldErrors.password ? (
@@ -527,13 +526,17 @@ export function MatricularUsuarioDialog({
           >
             Cancelar
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+          >
             {submitting ? (
               <Spinner className="mr-2" />
             ) : (
               <UserRound className="mr-2 h-4 w-4" />
             )}
-            {submitting ? "Matriculando..." : "Matricular"}
+            {submitting ? t("enrolling") : t("matricular")}
           </Button>
         </DialogFooter>
       </DialogContent>

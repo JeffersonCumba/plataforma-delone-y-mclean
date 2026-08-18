@@ -7,7 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/app/dashboard/_components/dashboard-sidebar";
-import { GoogleTranslateWidget } from "@/components/google-translate-widget";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { DashboardEntrance } from "@/components/dashboard-entrance";
 
 export default async function DashboardLayout({
@@ -33,7 +33,7 @@ export default async function DashboardLayout({
             </div>
 
             <div className="flex w-full max-w-sm justify-end">
-              <GoogleTranslateWidget />
+              <LanguageSwitcher />
             </div>
           </div>
         </header>

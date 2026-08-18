@@ -6,11 +6,13 @@ import { type PoolConnection } from "mysql2/promise";
 import { type ResultSetHeader, type RowDataPacket } from "mysql2";
 
 import { pool } from "@/lib/db";
+import { translateError } from "@/lib/errors";
 import {
   createCourseSchema,
   type CreateCourseInput,
 } from "@/lib/validations/course";
 import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
+import type { Locale } from "@/i18n/locales";
 import type { MoodleCourse } from "@/types/course";
 import type { DimensionKey } from "@/types/analytics";
 
@@ -334,34 +336,16 @@ function getSurveyPresentation(lang: string): string {
   return LIKERT_PRESENTATION[language];
 }
 
-export function normalizeLanguage(lang: string | undefined | null): string {
-  const value = (lang ?? "")
-    .trim()
-    .replace(/^"|"$/g, "")
-    .toLowerCase();
-  if (value.includes("%")) {
-    try {
-      return decodeURIComponent(value);
-    } catch {
-      // fallthrough a la limpieza basica
-    }
-  }
-  if (value.includes("/")) {
-    const parts = value.split("/").filter(Boolean);
-    return parts[parts.length - 1];
-  }
-  return value;
-}
-
 function validateCreateCourseInput(
   input: CreateCourseInput,
+  locale: Locale,
 ): CreateCourseInput {
   try {
-    return createCourseSchema.parse(input);
+    return createCourseSchema(locale).parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        error.issues[0]?.message ?? "Datos invalidos para crear curso",
+        error.issues[0]?.message ?? translateError(locale, "course.invalidData"),
       );
     }
 
@@ -369,7 +353,10 @@ function validateCreateCourseInput(
   }
 }
 
-async function getCourseContextId(courseId: number): Promise<number> {
+async function getCourseContextId(
+  courseId: number,
+  locale: Locale,
+): Promise<number> {
   const [rows] = await pool.execute<CourseContextRow[]>(
     "SELECT id, path, depth FROM mdl_context WHERE contextlevel = 50 AND instanceid = ? LIMIT 1",
     [courseId],
@@ -378,7 +365,7 @@ async function getCourseContextId(courseId: number): Promise<number> {
   const contextId = rows[0]?.id;
 
   if (!contextId) {
-    throw new Error("No se encontro el contexto del curso creado");
+    throw new Error(translateError(locale, "course.contextNotFound"));
   }
 
   return contextId;
@@ -415,22 +402,22 @@ async function ensureSectionZero(
 export async function createDefaultFeedbackInCourse(
   courseId: number,
   courseShortname: string,
-  lang?: string,
+  lang: Locale,
 ): Promise<void> {
   const connection = await pool.getConnection();
   const now = Math.floor(Date.now() / 1000);
-  const questions = getSurveyQuestions(lang ?? "es");
-  const presentation = getSurveyPresentation(lang ?? "es");
+  const questions = getSurveyQuestions(lang);
+  const presentation = getSurveyPresentation(lang);
 
   try {
     await connection.beginTransaction();
 
     const [feedbackResult] = await connection.execute(
       `INSERT INTO mdl_feedback
-        (course, name, intro, introformat, anonymous, email_notification, multiple_submit,
-         autonumbering, site_after_submit, page_after_submit, page_after_submitformat,
-         publish_stats, timeopen, timeclose, timemodified, completionsubmit)
-       VALUES (?, ?, '', 1, 1, 0, 0, 0, '', '', 1, 0, 0, 0, ?, 0)`,
+          (course, name, intro, introformat, anonymous, email_notification, multiple_submit,
+           autonumbering, site_after_submit, page_after_submit, page_after_submitformat,
+           publish_stats, timeopen, timeclose, timemodified, completionsubmit)
+         VALUES (?, ?, '', 1, 1, 0, 0, 0, '', '', 1, 0, 0, 0, ?, 0)`,
       [courseId, `Cuestionario DeLone y McLean - ${courseShortname}`, now],
     );
 
@@ -460,7 +447,7 @@ export async function createDefaultFeedbackInCourse(
 
     const feedbackModuleId = moduleRows[0]?.id;
     if (!feedbackModuleId) {
-      throw new Error("No se encontro el modulo feedback en Moodle");
+      throw new Error(translateError(lang, "course.feedbackModuleNotFound"));
     }
 
     const section = await ensureSectionZero(connection, courseId, now);
@@ -496,7 +483,7 @@ export async function createDefaultFeedbackInCourse(
 
     const courseContext = courseContextRows[0];
     if (!courseContext?.id || !courseContext.path || !courseContext.depth) {
-      throw new Error("No se encontro el contexto del curso para el feedback");
+      throw new Error(translateError(lang, "course.feedbackContextNotFound"));
     }
 
     const [moduleContextResult] = await connection.execute(
@@ -527,24 +514,24 @@ export async function createDefaultFeedbackInCourse(
 export async function crearCursoProfesor(
   userId: number,
   input: CreateCourseInput,
-  lang?: string,
+  lang: Locale,
 ): Promise<MoodleCourse> {
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error("Sesion invalida para crear curso");
+    throw new Error(translateError(lang, "course.invalidSession"));
   }
 
-  const data = validateCreateCourseInput(input);
+  const data = validateCreateCourseInput(input, lang);
   const categoryId = Number(process.env.MOODLE_DEFAULT_CATEGORY_ID ?? 1);
   const teacherRoleId = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
 
   if (!Number.isInteger(categoryId) || categoryId <= 0) {
     throw new Error(
-      "MOODLE_DEFAULT_CATEGORY_ID no esta configurado correctamente",
+      translateError(lang, "course.categoryNotConfigured"),
     );
   }
 
   if (!Number.isInteger(teacherRoleId) || teacherRoleId <= 0) {
-    throw new Error("MOODLE_TEACHER_ROLE_ID no esta configurado correctamente");
+    throw new Error(translateError(lang, "course.teacherRoleNotConfigured"));
   }
 
   try {
@@ -563,7 +550,7 @@ export async function crearCursoProfesor(
 
     const createdCourse = createdCourses?.[0];
     if (!createdCourse?.id) {
-      throw new Error("Moodle no devolvio el curso creado");
+      throw new Error(translateError(lang, "course.notReturned"));
     }
     console.log("[crearCursoProfesor] Moodle response:", JSON.stringify(createdCourse));
 
@@ -573,7 +560,7 @@ export async function crearCursoProfesor(
       "enrolments[0][courseid]": String(createdCourse.id),
     });
 
-    const courseContextId = await getCourseContextId(createdCourse.id);
+    const courseContextId = await getCourseContextId(createdCourse.id, lang);
 
     await fetchMoodle<unknown>("core_role_assign_roles", {
       "assignments[0][roleid]": String(teacherRoleId),
@@ -597,7 +584,7 @@ export async function crearCursoProfesor(
   } catch (error) {
     console.error("[crearCursoProfesor]", error);
     if (error instanceof MoodleApiError) {
-      throw new Error("Error al crear el curso en Moodle. Verifica los datos e intenta de nuevo.");
+      throw new Error(translateError(lang, "course.createFailed"));
     }
     throw error;
   }
@@ -605,9 +592,10 @@ export async function crearCursoProfesor(
 
 export const obtenerCursosProfesor = cache(async function obtenerCursosProfesor(
   userId: number,
+  locale: Locale = "es",
 ): Promise<MoodleCourse[]> {
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error("El userId no es valido para consultar cursos");
+    throw new Error(translateError(locale, "course.invalidUserId"));
   }
 
   const courses = await fetchMoodle<MoodleCourse[]>(

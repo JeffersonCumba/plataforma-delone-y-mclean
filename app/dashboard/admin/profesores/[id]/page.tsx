@@ -10,6 +10,7 @@ import { obtenerCursosDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { RowDataPacket } from "mysql2";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { getTranslations } from "next-intl/server";
 
 interface ProfesorInfoRow extends RowDataPacket {
   id: number;
@@ -26,6 +27,7 @@ export default async function AdminProfesorDetailPage({
 }) {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
+  const t = await getTranslations("profesorDetail");
 
   if (role !== "ADMIN") {
     redirect("/dashboard/cursos");
@@ -77,14 +79,17 @@ export default async function AdminProfesorDetailPage({
       >
         <Link href="/dashboard/admin/profesores">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver a Profesores
+          {t("backToProfesores")}
         </Link>
       </Button>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Profesor: {profesor.firstname} {profesor.lastname}
+            {t("profesorTitle", {
+              firstName: profesor.firstname,
+              lastName: profesor.lastname,
+            })}
           </h1>
           <p className="text-sm text-slate-600">@{profesor.username}</p>
         </div>
@@ -106,11 +111,10 @@ export default async function AdminProfesorDetailPage({
       {trialInfo && isExpired && (
         <div className="rounded-xl border-2 border-rose-200 bg-rose-50/80 p-6 text-center">
           <h2 className="text-xl font-semibold text-rose-800">
-            Período de prueba expirado
+            {t("trialExpired")}
           </h2>
           <p className="mt-1 text-rose-700">
-            La cuenta de este profesor ha expirado y sus datos han sido
-            eliminados.
+            {t("trialExpiredDescription")}
           </p>
         </div>
       )}
@@ -121,12 +125,13 @@ export default async function AdminProfesorDetailPage({
             <Clock className="h-6 w-6 text-slate-600 flex-shrink-0" />
             <div>
               <h2 className="font-semibold text-slate-800">
-                ¡Atención! Prueba por expirar
+                {t("trialWarning")}
               </h2>
               <p className="text-slate-600 mt-1">
-                Quedan <strong>{daysRemaining} día(s)</strong> para que finalice
-                la prueba de 30 días. Contacta al profesor para renovar su
-                suscripción.
+                {t.rich("trialWarningDescription", {
+                  days: daysRemaining,
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
             </div>
           </div>
@@ -135,13 +140,13 @@ export default async function AdminProfesorDetailPage({
 
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Perfil del Profesor</CardTitle>
+          <CardTitle className="text-lg">{t("profileCardTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Usuario
+                {t("user")}
               </dt>
               <dd className="mt-1 text-sm font-medium text-slate-900">
                 {profesor.username}
@@ -149,7 +154,7 @@ export default async function AdminProfesorDetailPage({
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Nombre completo
+                {t("fullName")}
               </dt>
               <dd className="mt-1 text-sm text-slate-900">
                 {profesor.firstname} {profesor.lastname}
@@ -157,20 +162,20 @@ export default async function AdminProfesorDetailPage({
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Correo
+                {t("email")}
               </dt>
               <dd className="mt-1 text-sm text-slate-600">{profesor.email}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Cursos asignados
+                {t("assignedCourses")}
               </dt>
               <dd className="mt-1 text-sm text-slate-900">{cursos.length}</dd>
             </div>
             {trialInfo && (
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Período de prueba
+                  {t("trialPeriod")}
                 </dt>
                 <dd className="mt-1">
                   <TrialTimerHorizontal
@@ -190,12 +195,12 @@ export default async function AdminProfesorDetailPage({
 
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Cursos del Profesor</CardTitle>
+          <CardTitle className="text-lg">{t("teacherCoursesTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           {cursos.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-              Este profesor no tiene cursos asignados.
+              {t("noCourses")}
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -215,7 +220,7 @@ export default async function AdminProfesorDetailPage({
                     <span className="group relative inline-block cursor-pointer py-0.5">
                       <span className="flex items-center gap-1">
                         <BookOpen className="h-3 w-3" />
-                        Ver analítica
+                        {t("viewAnalytics")}
                       </span>
 
                       <span className="absolute bottom-0 left-0 h-px w-0 bg-cyan-700 transition-all duration-300 ease-out group-hover:w-full"></span>

@@ -12,15 +12,19 @@ import { obtenerIdsProfesoresDeCursos } from "@/services/adminService";
 import type { MoodleCourse } from "@/types/course";
 
 import { requireAuth } from "@/lib/auth";
+import { getServerLocale } from "@/lib/server-locale";
+import { getTranslations } from "next-intl/server";
 
 export default async function DashboardEncuestadosPage() {
   const { userId } = await requireAuth();
+  const locale = await getServerLocale();
+  const t = await getTranslations("encuestados");
 
-  const courses: MoodleCourse[] = await obtenerCursosProfesor(userId);
+  const courses: MoodleCourse[] = await obtenerCursosProfesor(userId, locale);
 
   const respondentsByCourse = await Promise.all(
     courses.map(async (course) => {
-      const respondents = await obtenerEncuestadosPorCurso(course.id);
+      const respondents = await obtenerEncuestadosPorCurso(course.id, locale);
 
       return respondents.map<EncuestadoRow>((respondent) => ({
         id: respondent.id,
@@ -44,16 +48,16 @@ export default async function DashboardEncuestadosPage() {
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-2xl">Encuestados</CardTitle>
+            <CardTitle className="text-2xl">{t("title")}</CardTitle>
             <p className="text-sm text-slate-600">
-              Tabla general de usuarios matriculados en los cursos.
+              {t("description")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="lg">
               <Link href="/dashboard/encuestados/matricular">
                 <Upload className="mr-2 h-4 w-4" />
-                Matricular CSV
+                {t("matricularCsv")}
               </Link>
             </Button>
             <MatricularUsuarioDialog
@@ -61,7 +65,7 @@ export default async function DashboardEncuestadosPage() {
               trigger={
                 <Button size="lg">
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Matricular usuario
+                  {t("matricularUser")}
                 </Button>
               }
             />
@@ -71,7 +75,7 @@ export default async function DashboardEncuestadosPage() {
         <CardContent>
           {respondents.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-              No hay encuestados matriculados por el momento.
+              {t("noRespondents")}
             </div>
           ) : (
             <EncuestadosTable rows={respondents} courses={courses} teacherMap={teacherMap} />

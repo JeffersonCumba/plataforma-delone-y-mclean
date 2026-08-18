@@ -1,22 +1,27 @@
 import { z } from "zod";
 
-export const createCourseSchema = z.object({
-  fullname: z
-    .string()
-    .trim()
-    .min(5, "El nombre del curso debe tener al menos 5 caracteres")
-    .max(100, "El nombre del curso es demasiado largo"),
-  shortname: z
-    .string()
-    .trim()
-    .min(3, "El codigo corto es obligatorio")
-    .max(100, "El codigo corto es demasiado largo"),
-  summary: z
-    .string()
-    .trim()
-    .max(2000, "La descripcion es demasiado larga")
-    .optional()
-    .default(""),
-});
+import { type Locale } from "@/i18n/locales";
+import { translateError } from "@/lib/errors";
 
-export type CreateCourseInput = z.infer<typeof createCourseSchema>;
+export function createCourseSchema(locale: Locale) {
+  return z.object({
+    fullname: z
+      .string()
+      .trim()
+      .min(5, translateError(locale, "validation.courseFullnameMin"))
+      .max(100, translateError(locale, "validation.courseFullnameMax")),
+    shortname: z
+      .string()
+      .trim()
+      .min(3, translateError(locale, "validation.courseShortnameMin"))
+      .max(100, translateError(locale, "validation.courseShortnameMax")),
+    summary: z
+      .string()
+      .trim()
+      .max(2000, translateError(locale, "validation.courseSummaryMax"))
+      .optional()
+      .default(""),
+  });
+}
+
+export type CreateCourseInput = z.infer<ReturnType<typeof createCourseSchema>>;

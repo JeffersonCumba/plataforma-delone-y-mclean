@@ -12,7 +12,7 @@ import {
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { isTranslationActive } from "@/components/google-translate-widget";
+import { useTranslations } from "next-intl";
 
 interface SidebarUserFooterProps {
   userName: string;
@@ -22,16 +22,13 @@ interface SidebarUserFooterProps {
 
 export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterProps) {
   const router = useRouter();
+  const t = useTranslations("sidebar");
 
   const handleLogout = () => {
     localStorage.removeItem("user_role");
     localStorage.removeItem("user_name");
     localStorage.removeItem("user_id");
-    if (isTranslationActive()) {
-      window.location.href = "/logout";
-    } else {
-      router.push("/logout");
-    }
+    router.push("/logout");
   };
 
   const profileHref = "/dashboard/perfil";
@@ -55,7 +52,7 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
                 {userName}
               </span>
               <span className="block text-xs text-sidebar-foreground/70">
-                Perfil
+                {t("profile")}
               </span>
             </span>
           </Link>
@@ -63,7 +60,7 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
 
         <SidebarMenuItem>
           <SidebarMenuButton
-            tooltip="Cerrar sesion"
+            tooltip={t("logoutTooltip")}
             variant="outline"
             className="h-auto items-center justify-start gap-3 px-3 py-2 cursor-pointer"
             onClick={handleLogout}
@@ -72,7 +69,7 @@ export function SidebarUserFooter({ userName, role, userId }: SidebarUserFooterP
               <LogOut className="h-5 w-5" />
             </span>
             <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">
-              Cerrar sesion
+              {t("logout")}
             </span>
           </SidebarMenuButton>
         </SidebarMenuItem>

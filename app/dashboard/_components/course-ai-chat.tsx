@@ -14,7 +14,6 @@ import { Bot, Loader2, Send, Trash2, UserRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isTranslationActive } from "@/components/google-translate-widget";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { type AnalyticsData } from "@/types/analytics";
+import { useTranslations } from "next-intl";
 
 type ChatRole = "user" | "assistant";
 
@@ -61,11 +61,11 @@ export function useCourseAiChat(): CourseAiChatContextValue {
   return context;
 }
 
-const SUGGESTIONS: string[] = [
-  "¿Cual dimension presenta el mayor riesgo y por que?",
-  "Explica el coeficiente beta dominante en terminos de negocio.",
-  "¿Que acciones concretas me recomiendas para mejorar la satisfaccion?",
-  "¿Como interpreto el Alfa de Cronbach en este contexto?",
+const SUGGESTION_KEYS: string[] = [
+  "suggestion1",
+  "suggestion2",
+  "suggestion3",
+  "suggestion4",
 ];
 
 function parseStream(reader: ReadableStreamDefaultReader<Uint8Array>) {
@@ -100,6 +100,7 @@ export function CourseAiChatProvider({
   courseName,
   analytics,
 }: CourseAiChatProviderProps) {
+  const t = useTranslations("ia");
   const [isOpen, setIsOpen] = useState(false);
   const [prefill, setPrefill] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -161,13 +162,12 @@ export function CourseAiChatProvider({
         if (!response.ok || !response.body) {
           const payload = await response
             .json()
-            .catch(() => ({ message: "Error al contactar al asistente" }));
-          throw new Error(payload.message ?? "Error desconocido");
+            .catch(() => ({ message: t("chatError") }));
+          throw new Error(payload.message ?? t("unknownError"));
         }
 
         const reader = response.body.getReader();
         const stream = parseStream(reader);
-        const deferredRender = isTranslationActive();
 
         const commitAssistant = (content: string) => {
           setMessages((prev) => {
@@ -181,16 +181,14 @@ export function CourseAiChatProvider({
         };
 
         const accumulated = await stream((chunk) => {
-          if (!deferredRender) {
-            commitAssistant(chunk);
-          }
+          commitAssistant(chunk);
         });
-        if (deferredRender && accumulated) {
+        if (accumulated) {
           commitAssistant(accumulated);
         }
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Error desconocido";
+          err instanceof Error ? err.message : t("unknownError");
         setError(message);
         setMessages((prev) => {
           const next = [...prev];
@@ -206,7 +204,7 @@ export function CourseAiChatProvider({
         isSendingRef.current = false;
       }
     },
-    [analytics, courseId, courseName],
+    [analytics, courseId, courseName, t],
   );
 
   useEffect(() => {
@@ -262,11 +260,12 @@ export function CourseAiChatProvider({
 
 function CourseAiChatFab() {
   const { isOpen, openChat } = useCourseAiChat();
+  const t = useTranslations("ia");
 
   return (
     <button
       type="button"
-      aria-label="Abrir asistente de IA"
+      aria-label={t("fabLabel")}
       onClick={() => openChat()}
       className={cn(
         "group fixed bottom-6 right-6 z-40 flex size-13 items-center justify-center rounded-full text-white bg-cyan-600 hover:bg-black",
@@ -294,6 +293,7 @@ function CourseAiChatPanel() {
     courseName,
     scrollRef,
   } = useCourseAiChat();
+  const t = useTranslations("ia");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -325,10 +325,10 @@ function CourseAiChatPanel() {
               </div>
               <div>
                 <SheetTitle className="text-base text-slate-950">
-                  Asistente de IA
+                  {t("assistantTitle")}
                 </SheetTitle>
                 <SheetDescription className="text-xs">
-                  Analisis · {courseName}
+                  {t("assistantSubtitle", { course: courseName })}
                 </SheetDescription>
               </div>
             </div>
@@ -338,8 +338,8 @@ function CourseAiChatPanel() {
                 size="icon-sm"
                 onClick={clearChat}
                 disabled={!canClear}
-                title="Limpiar conversacion"
-                aria-label="Limpiar conversacion"
+                title={t("clearConversation")}
+                aria-label={t("clearConversation")}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -347,8 +347,8 @@ function CourseAiChatPanel() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={closeChat}
-                aria-label="Cerrar asistente"
-                title="Cerrar asistente"
+                aria-label={t("closeAssistant")}
+                title={t("closeAssistant")}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -364,26 +364,24 @@ function CourseAiChatPanel() {
             <div className="space-y-4">
               <div className="rounded-2xl border border-cyan-200/80 bg-white/80 p-4 shadow-sm">
                 <p className="text-sm text-slate-700">
-                  Hola, soy tu copiloto analitico. Puedo ayudarte a interpretar
-                  los resultados del curso segun el modelo DeLone y McLean.
-                  Preguntame lo que necesites.
+                  {t("greeting")}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Sugerencias
+                  {t("suggestions")}
                 </p>
                 <div className="flex flex-col gap-2">
-                  {SUGGESTIONS.map((suggestion) => (
+                  {SUGGESTION_KEYS.map((key) => (
                     <button
-                      key={suggestion}
+                      key={key}
                       type="button"
-                      onClick={() => void sendMessage(suggestion)}
+                      onClick={() => void sendMessage(t(key))}
                       disabled={isLoading}
                       className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:border-cyan-300 hover:bg-cyan-50 disabled:opacity-50"
                     >
-                      {suggestion}
+                      {t(key)}
                     </button>
                   ))}
                 </div>
@@ -415,8 +413,7 @@ function CourseAiChatPanel() {
           className="border-t border-slate-200/80 bg-white/90 p-3 backdrop-blur"
         >
           <p className="mt-2 text-[11px] text-slate-500">
-            Las respuestas se generan a partir de los datos reales del curso.
-            Verifica cualquier conclusion antes de tomar decisiones.
+            {t("disclaimer")}
           </p>
         </form>
       </SheetContent>
@@ -458,7 +455,6 @@ function ChatBubble({
           isUser
             ? "rounded-tr-sm bg-slate-900 text-white"
             : "rounded-tl-sm border border-cyan-100 bg-white text-slate-800",
-          isStreaming && "notranslate",
         )}
       >
         {message.content || (isStreaming ? "" : "...")}

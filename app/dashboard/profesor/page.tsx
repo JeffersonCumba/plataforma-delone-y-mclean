@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BookOpen, CheckCircle, Clock, RefreshCw, Users, XCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ export default async function ProfesorDashboardPage() {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
   const userId = cookieStore.get("user_id")?.value;
+  const t = await getTranslations("profesorPanel");
 
   if (role !== "EVALUADOR" || !userId) {
     redirect("/dashboard/cursos");
@@ -38,9 +40,9 @@ export default async function ProfesorDashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Mi Panel</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
             <p className="text-sm text-slate-600">
-              Cursos asignados y período de prueba.
+              {t("description")}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -62,10 +64,9 @@ export default async function ProfesorDashboardPage() {
                 <XCircle className="h-5 w-5 text-rose-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-rose-800">Tu período de prueba ha expirado</h3>
+                <h3 className="text-lg font-semibold text-rose-800">{t("trialExpired")}</h3>
                 <p className="text-sm text-rose-700 mt-1">
-                  Tu cuenta y todos los datos asociados (cursos, estudiantes, encuestas) han sido eliminados permanentemente.
-                  Contacta al administrador para renovar tu acceso.
+                  {t("trialExpiredDescription")}
                 </p>
               </div>
             </div>
@@ -79,13 +80,16 @@ export default async function ProfesorDashboardPage() {
                 <AlertTriangle className="h-5 w-5 text-gray-700" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">¡Atención! Tu prueba está por expirar</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t("trialWarning")}</h3>
                 <p className="text-gray-700 mt-1">
-                  Quedan <strong>{daysRemaining} día(s)</strong> para que finalice tu período de prueba de {TRIAL_DAYS} días.
-                  Tu cuenta y todos los datos serán eliminados automáticamente al llegar a 0 días.
+                  {t.rich("trialWarningDescription", {
+                    days: daysRemaining,
+                    trialDays: TRIAL_DAYS,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                 </p>
                 <p className="text-gray-700 mt-2 text-sm">
-                  Contacta al administrador para renovar tu suscripción y conservar tus cursos y datos.
+                  {t("trialWarningContact")}
                 </p>
               </div>
             </div>
@@ -96,7 +100,7 @@ export default async function ProfesorDashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Cursos Activos</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("activeCourses")}</CardTitle>
             <BookOpen className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
@@ -106,15 +110,15 @@ export default async function ProfesorDashboardPage() {
 
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Período de Prueba</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("trialPeriod")}</CardTitle>
             <Clock className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{daysRemaining} / {TRIAL_DAYS} días</p>
+                <p className="text-2xl font-semibold text-slate-900">{t("daysOfTrial", { days: daysRemaining, trialDays: TRIAL_DAYS })}</p>
                 <p className="text-sm text-slate-500">
-                  {isExpired ? "Expirado" : isWarningPeriod ? "¡Por expirar!" : "Activo"}
+                  {isExpired ? t("expired") : isWarningPeriod ? t("aboutToExpire") : t("active")}
                 </p>
               </div>
               <TrialTimerHorizontal
@@ -131,7 +135,7 @@ export default async function ProfesorDashboardPage() {
 
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Estado de la Cuenta</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("accountStatus")}</CardTitle>
             <Users className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
@@ -145,17 +149,17 @@ export default async function ProfesorDashboardPage() {
                 {isExpired ? (
                   <>
                     <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Expirada
+                    {t("expiredStatus")}
                   </>
                 ) : isWarningPeriod ? (
                   <>
                     <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} />
-                    Por expirar
+                    {t("aboutToExpireStatus")}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Activa
+                    {t("activeStatus")}
                   </>
                 )}
               </span>
@@ -167,11 +171,11 @@ export default async function ProfesorDashboardPage() {
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Mis Cursos</CardTitle>
+            <CardTitle className="text-lg">{t("myCourses")}</CardTitle>
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/cursos">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Actualizar
+                {t("refresh")}
               </Link>
             </Button>
           </div>
@@ -179,16 +183,16 @@ export default async function ProfesorDashboardPage() {
         <CardContent>
           {courses.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-              No tienes cursos asignados todavía.
+              {t("noCourses")}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Nombre Corto</th>
-                    <th className="px-4 py-3 font-medium">Nombre Completo</th>
-                    <th className="px-4 py-3 font-medium">Acciones</th>
+                    <th className="px-4 py-3 font-medium">{t("shortName")}</th>
+                    <th className="px-4 py-3 font-medium">{t("fullName")}</th>
+                    <th className="px-4 py-3 font-medium">{t("actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,7 +209,7 @@ export default async function ProfesorDashboardPage() {
                         >
                           <Link href={`/dashboard/cursos/${course.id}`}>
                             <BookOpen className="mr-1 h-3.5 w-3.5" />
-                            Ver Analítica
+                            {t("viewAnalytics")}
                           </Link>
                         </Button>
                       </td>

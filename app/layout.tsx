@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { TranslationNavigationGuard } from "@/components/translation-navigation-guard";
-import { TranslationSpinnerGuard } from "@/components/translation-spinner-guard";
 
 import "./globals.css";
 
@@ -18,17 +18,20 @@ export const metadata: Metadata = {
   description: "Plataforma de evaluacion de software integrada con Moodle",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="es" className={`${geistSans.className} h-full antialiased`}>
+    <html lang={locale} className={`${geistSans.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <TranslationNavigationGuard />
-        <TranslationSpinnerGuard />
-        <TooltipProvider>{children}</TooltipProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </NextIntlClientProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>

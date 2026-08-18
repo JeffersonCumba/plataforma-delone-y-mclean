@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { type RowDataPacket } from "mysql2";
 import { fetchMoodle } from "@/lib/moodle";
 import { pool } from "@/lib/db";
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import { registerUserSchema } from "@/lib/validations/user";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
@@ -26,21 +28,22 @@ async function requireAdmin(): Promise<void> {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
   if (role !== "ADMIN") {
-    throw new Error("Acceso denegado. Se requiere rol de administrador.");
+    throw new Error(translateError(await getServerLocale(), "admin.accessDenied"));
   }
 }
 
 export async function eliminarProfesorAction(
   userId: number,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "ID de usuario invalido." };
+    return { ok: false, message: translateError(locale, "admin.invalidUserId") };
   }
 
   try {
@@ -50,12 +53,12 @@ export async function eliminarProfesorAction(
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
 
-    return { ok: true, message: "Profesor eliminado correctamente de Moodle." };
+    return { ok: true, message: translateError(locale, "admin.profesorDeleted") };
   } catch (error) {
     console.error("[eliminarProfesorAction]", error);
     return {
       ok: false,
-      message: "No se pudo eliminar el profesor. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "admin.profesorDeleteFailed"),
     };
   }
 }
@@ -63,14 +66,15 @@ export async function eliminarProfesorAction(
 export async function eliminarCursoAction(
   courseId: number,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    return { ok: false, message: "ID de curso invalido." };
+    return { ok: false, message: translateError(locale, "admin.invalidCourseId") };
   }
 
   try {
@@ -82,12 +86,12 @@ export async function eliminarCursoAction(
     revalidatePath("/dashboard/admin/cursos");
     revalidatePath("/dashboard/cursos");
 
-    return { ok: true, message: "Curso eliminado correctamente de Moodle." };
+    return { ok: true, message: translateError(locale, "admin.courseDeleted") };
   } catch (error) {
     console.error("[eliminarCursoAction]", error);
     return {
       ok: false,
-      message: "No se pudo eliminar el curso. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "admin.courseDeleteFailed"),
     };
   }
 }
@@ -95,23 +99,25 @@ export async function eliminarCursoAction(
 export async function crearProfesorAction(
   input: unknown,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
-  const parsed = registerUserSchema.safeParse(input);
+  const parsed = registerUserSchema(locale).safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
       message:
-        parsed.error.issues[0]?.message ?? "Datos de registro invalidos.",
+        parsed.error.issues[0]?.message ??
+        translateError(locale, "admin.registerInvalidData"),
     };
   }
 
   try {
-    await registrarUsuario(parsed.data);
+    await registrarUsuario(parsed.data, locale);
 
     const trialDays = await getTrialDays();
     revalidatePath("/dashboard/admin");
@@ -119,13 +125,16 @@ export async function crearProfesorAction(
 
     return {
       ok: true,
-      message: `Profesor ${parsed.data.username} creado correctamente con periodo de prueba de ${trialDays} dias.`,
+      message: translateError(locale, "admin.profesorCreated", {
+        username: parsed.data.username,
+        days: trialDays,
+      }),
     };
   } catch (error) {
     console.error("[crearProfesorAction]", error);
     return {
       ok: false,
-      message: "No se pudo crear el profesor. Verifica los datos e intenta de nuevo.",
+      message: translateError(locale, "admin.profesorCreateFailed"),
     };
   }
 }
@@ -134,14 +143,15 @@ export async function actualizarProfesorAction(
   userId: number,
   input: UpdateUserInput,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "ID de usuario invalido." };
+    return { ok: false, message: translateError(locale, "admin.invalidUserId") };
   }
 
   try {
@@ -150,21 +160,22 @@ export async function actualizarProfesorAction(
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
 
-    return { ok: true, message: "Profesor actualizado correctamente." };
+    return { ok: true, message: translateError(locale, "admin.profesorUpdated") };
   } catch (error) {
     console.error("[actualizarProfesorAction]", error);
     return {
       ok: false,
-      message: "No se pudo actualizar el profesor. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "admin.profesorUpdateFailed"),
     };
   }
 }
 
 export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   try {
@@ -180,7 +191,9 @@ export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult>
     if (!res.ok) {
       return {
         ok: false,
-        message: `El cron respondio con estado ${res.status}.`,
+        message: translateError(locale, "admin.cronResponded", {
+          status: res.status,
+        }),
       };
     }
 
@@ -194,13 +207,16 @@ export async function ejecutarCronExpiracionAction(): Promise<AdminActionResult>
 
     return {
       ok: true,
-      message: `Cron ejecutado: ${data.warningsSent ?? 0} avisos y ${data.expiredDeleted ?? 0} cuentas eliminadas.`,
+      message: translateError(locale, "admin.cronExecuted", {
+        warnings: data.warningsSent ?? 0,
+        deleted: data.expiredDeleted ?? 0,
+      }),
     };
   } catch (error) {
     console.error("[ejecutarCronExpiracionAction]", error);
     return {
       ok: false,
-      message: "No se pudo ejecutar el cron de expiracion. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "admin.cronExecuteFailed"),
     };
   }
 }
@@ -220,17 +236,18 @@ function safeName(row: UserRow): string {
 export async function simularWarningAction(
   userId: number,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   console.log(`[simularWarningAction] Iniciando para userId=${userId}`);
 
   try {
     await requireAdmin();
   } catch {
     console.log(`[simularWarningAction] Fallo por permisos`);
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "ID de usuario invalido." };
+    return { ok: false, message: translateError(locale, "admin.invalidUserId") };
   }
 
   try {
@@ -241,7 +258,7 @@ export async function simularWarningAction(
     const user = userRows[0];
     if (!user) {
       console.log(`[simularWarningAction] Usuario ${userId} no encontrado en DB`);
-      return { ok: false, message: "Usuario no encontrado." };
+      return { ok: false, message: translateError(locale, "admin.userNotFound") };
     }
     console.log(`[simularWarningAction] Usuario: ${safeName(user)} <${user.email}>`);
 
@@ -272,29 +289,36 @@ export async function simularWarningAction(
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
 
-    const msg = `Advertencia simulada: trial a 3 dias, correo ${emailResult.ok ? "enviado" : "fallo: " + emailResult.message}`;
+    const msg = translateError(locale, "admin.warningSimulated", {
+      emailStatus: emailResult.ok
+        ? "enviado"
+        : translateError(locale, "admin.emailFailed", {
+            message: emailResult.message,
+          }),
+    });
     console.log(`[simularWarningAction] Finalizado: ${msg}`);
     return { ok: true, message: msg };
   } catch (error) {
     console.error(`[simularWarningAction] Error:`, error);
-    return { ok: false, message: "No se pudo simular la advertencia. Revisa los logs." };
+    return { ok: false, message: translateError(locale, "admin.warningSimulateFailed") };
   }
 }
 
 export async function simularExpiracionAction(
   userId: number,
 ): Promise<AdminActionResult> {
+  const locale = await getServerLocale();
   console.log(`[simularExpiracionAction] Iniciando para userId=${userId}`);
 
   try {
     await requireAdmin();
   } catch {
     console.log(`[simularExpiracionAction] Fallo por permisos`);
-    return { ok: false, message: "No tienes permisos de administrador." };
+    return { ok: false, message: translateError(locale, "admin.noPermissions") };
   }
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "ID de usuario invalido." };
+    return { ok: false, message: translateError(locale, "admin.invalidUserId") };
   }
 
   try {
@@ -305,7 +329,7 @@ export async function simularExpiracionAction(
     const user = userRows[0];
     if (!user) {
       console.log(`[simularExpiracionAction] Usuario ${userId} no encontrado o eliminado`);
-      return { ok: false, message: "Usuario no encontrado." };
+      return { ok: false, message: translateError(locale, "admin.userNotFound") };
     }
     console.log(`[simularExpiracionAction] Usuario: ${safeName(user)} <${user.email}>`);
 
@@ -315,7 +339,7 @@ export async function simularExpiracionAction(
 
     if (!emailResult.ok) {
       console.log(`[simularExpiracionAction] El correo fallo, se cancela la eliminacion`);
-      return { ok: false, message: `El correo de expiracion no pudo enviarse: ${emailResult.message}. No se eliminaron datos.` };
+      return { ok: false, message: translateError(locale, "admin.expirationEmailFailed", { message: emailResult.message }) };
     }
     console.log(`[simularExpiracionAction] Correo enviado, procediendo con eliminacion...`);
 
@@ -349,14 +373,16 @@ export async function simularExpiracionAction(
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard/admin/profesores");
 
-    const msg = `Expiracion simulada: correo enviado, ${courses.length} curso(s) y usuario eliminados.`;
+    const msg = translateError(locale, "admin.expirationSimulated", {
+      count: courses.length,
+    });
     console.log(`[simularExpiracionAction] Finalizado: ${msg}`);
     return { ok: true, message: msg };
   } catch (error) {
     console.error(`[simularExpiracionAction] Error:`, error);
     return {
       ok: false,
-      message: "No se pudo simular la expiracion. Revisa los logs.",
+      message: translateError(locale, "admin.expirationSimulateFailed"),
     };
   }
 }

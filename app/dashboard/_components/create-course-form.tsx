@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
 
 function generateDefaultValues(): { fullname: string; shortname: string } {
@@ -50,6 +51,7 @@ export function CreateCourseForm({
   onSuccess?: () => void;
   courseCount?: number;
 } = {}) {
+  const t = useTranslations("courses");
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [generatedDefaults] = useState(() => generateDefaultValues());
@@ -90,7 +92,7 @@ export function CreateCourseForm({
     <div className="flex flex-wrap items-center gap-3 animate-fade-up">
       {limitReached ? (
         <p className="text-sm font-medium text-amber-700">
-          Límite alcanzado: elimina un curso para poder crear otro.
+          {t("limitReached")}
         </p>
       ) : null}
       <Dialog open={open} onOpenChange={(newOpen) => {
@@ -106,63 +108,66 @@ export function CreateCourseForm({
       }}>
         <DialogTrigger asChild>
           <Button size="lg" disabled={limitReached}>
-            crear curso <PlusIcon />
+            {t("createCourse")} <PlusIcon />
           </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Crear nuevo curso</DialogTitle>
+            <DialogTitle>{t("createCourseDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Al crear el curso se agrega automaticamente la encuesta DeLone
-              &amp; McLean con preguntas fijas.
+              {t("createCourseDialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <form className="mt-4 grid gap-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="course-fullname">Nombre del curso</Label>
+              <Label htmlFor="course-fullname">{t("courseNameLabel")}</Label>
               <Input
                 id="course-fullname"
                 value={form.fullname}
                 onChange={onChange("fullname")}
-                placeholder="Evaluacion de Software 2026"
+                placeholder={t("courseNamePlaceholder")}
                 disabled={isPending}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="course-shortname">Codigo corto</Label>
+              <Label htmlFor="course-shortname">{t("shortCodeLabel")}</Label>
               <Input
                 id="course-shortname"
                 value={form.shortname}
                 onChange={onChange("shortname")}
-                placeholder="DLM-2026"
+                placeholder={t("shortCodePlaceholder")}
                 disabled={isPending}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="course-summary">Descripcion (opcional)</Label>
+              <Label htmlFor="course-summary">{t("summaryLabel")}</Label>
               <Input
                 id="course-summary"
                 value={form.summary}
                 onChange={onChange("summary")}
-                placeholder="Curso para evaluacion con modelo DeLone y McLean"
+                placeholder={t("summaryPlaceholder")}
                 disabled={isPending}
               />
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" size="lg" disabled={isPending}>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isPending}
+              >
                 {isPending ? (
                   <>
                     <Spinner className="mr-2" />
-                    Creando curso...
+                    {t("creatingCourse")}
                   </>
                 ) : (
-                  "Crear curso"
+                  t("createCourse")
                 )}
               </Button>
             </div>

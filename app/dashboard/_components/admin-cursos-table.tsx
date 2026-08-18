@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
@@ -14,10 +15,12 @@ interface AdminCursosTableProps {
 
 export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("adminCursos");
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString("es-AR", {
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -28,7 +31,7 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600">
-          Total de cursos en Moodle: {cursos.length}
+          {t("totalCourses", { count: cursos.length })}
         </p>
         <CreateCourseForm
           onSuccess={() => {
@@ -39,20 +42,20 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
 
       {cursos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-          No hay cursos creados en Moodle.
+          {t("noCourses")}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full min-w-250 text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Nombre corto</th>
-                <th className="px-4 py-3 font-medium">Nombre completo</th>
-                <th className="px-4 py-3 font-medium">Profesor(es)</th>
-                <th className="px-4 py-3 font-medium">Alumnos</th>
-                <th className="px-4 py-3 font-medium">Encuestas</th>
-                <th className="px-4 py-3 font-medium">Creado</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
+                <th className="px-4 py-3 font-medium">{t("shortName")}</th>
+                <th className="px-4 py-3 font-medium">{t("fullName")}</th>
+                <th className="px-4 py-3 font-medium">{t("profesores")}</th>
+                <th className="px-4 py-3 font-medium">{t("alumnos")}</th>
+                <th className="px-4 py-3 font-medium">{t("encuestas")}</th>
+                <th className="px-4 py-3 font-medium">{t("created")}</th>
+                <th className="px-4 py-3 font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +94,7 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
                       >
                         <Link href={`/dashboard/cursos/${curso.id}`}>
                           <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                          Analítica
+                          {t("analytics")}
                         </Link>
                       </Button>
                     </div>

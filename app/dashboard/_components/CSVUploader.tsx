@@ -29,11 +29,9 @@ import type { MoodleCourse } from "@/types/course";
 import { registrarEstudiantesCsvAction } from "@/app/dashboard/encuestados/actions";
 import type { BatchRegistrationResult } from "@/services/userService";
 import type { StudentInput } from "@/lib/validations/user";
+import { useTranslations } from "next-intl";
 
 type CsvRow = Record<string, unknown>;
-
-const REQUIRED_HINT =
-  "Columnas requeridas: username, firstname, lastname, email, password";
 
 function normalizeKey(value: string): string {
   return value
@@ -71,6 +69,7 @@ function toStudentInput(row: CsvRow): StudentInput | null {
 }
 
 export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
+  const t = useTranslations("csv");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(
@@ -83,7 +82,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
 
   const parseFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      toast.error("Solo se permiten archivos CSV");
+      toast.error(t("onlyCsv"));
       return;
     }
 
@@ -97,7 +96,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           .filter((student): student is StudentInput => Boolean(student));
 
         if (mappedStudents.length === 0) {
-          toast.error(REQUIRED_HINT);
+          toast.error(t("requiredHint"));
           setStudents([]);
           setFileName(file.name);
           return;
@@ -107,11 +106,11 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
         setStudents(mappedStudents);
         setLastBatchResult(null);
         toast.success(
-          `Archivo cargado: ${mappedStudents.length} usuarios detectados`,
+          t("fileLoaded", { count: mappedStudents.length }),
         );
       },
       error: () => {
-        toast.error("No fue posible leer el archivo CSV");
+        toast.error(t("csvReadError"));
       },
     });
   };
@@ -135,12 +134,12 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
 
   const handleProcess = async () => {
     if (!selectedCourseId) {
-      toast.error("Selecciona un curso antes de registrar estudiantes");
+      toast.error(t("selectCourseFirst"));
       return;
     }
 
     if (students.length === 0) {
-      toast.error("Carga un CSV valido antes de continuar");
+      toast.error(t("loadValidCsv"));
       return;
     }
 
@@ -161,12 +160,19 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
       setLastBatchResult(batchResult);
 
       toast.success(
-        `Matriculacion masiva completada: ${batchResult.enrolled} matriculados, ${batchResult.created} creados, ${batchResult.skipped} existentes${batchResult.failed ? `, ${batchResult.failed} con error` : ""}`,
+        t("batchCompleted", {
+          enrolled: batchResult.enrolled,
+          created: batchResult.created,
+          skipped: batchResult.skipped,
+          failed: batchResult.failed
+            ? t("failedSuffix", { failed: batchResult.failed })
+            : "",
+        }),
       );
 
       if (batchResult.errors.length > 0) {
         toast.error(
-          `Se omitieron ${batchResult.failed} estudiantes por error en el CSV o Moodle`,
+          t("skippedErrors", { failed: batchResult.failed }),
         );
       }
 
@@ -176,7 +182,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
       const message =
         error instanceof Error
           ? error.message
-          : "No fue posible completar el proceso";
+          : t("processFailed");
       toast.error(message);
     } finally {
       setProcessing(false);
@@ -192,11 +198,10 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           </div>
           <div>
             <CardTitle className="text-xl">
-              Matriculación Masiva por CSV
+              {t("title")}
             </CardTitle>
             <CardDescription>
-              Arrastra un archivo CSV con estudiantes, selecciona el curso y
-              procesa la carga.
+              {t("description")}
             </CardDescription>
           </div>
         </div>
@@ -205,7 +210,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
       <CardContent className="space-y-5 p-6">
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <Label>Curso destino</Label>
+            <Label>{t("courseDestination")}</Label>
             <Select
               value={selectedCourseId}
               onValueChange={setSelectedCourseId}
@@ -213,13 +218,13 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
             >
               <SelectTrigger
                 className="mt-2 h-11 w-full border-slate-300 bg-white text-sm text-slate-900"
-                aria-label="Curso destino"
+                aria-label={t("courseDestination")}
               >
-                <SelectValue placeholder="Selecciona un curso" />
+                <SelectValue placeholder={t("selectCourse")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Cursos</SelectLabel>
+                  <SelectLabel>{t("courses")}</SelectLabel>
                   {courses.map((course) => (
                     <SelectItem key={course.id} value={String(course.id)}>
                       {course.fullname}
@@ -231,7 +236,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           </div>
 
           <div>
-            <Label>Archivo CSV</Label>
+            <Label>{t("csvFile")}</Label>
             <Input
               ref={fileInputRef}
               type="file"
@@ -259,9 +264,9 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
         >
           <Upload className="h-8 w-8 text-slate-600" />
           <p className="mt-3 text-sm font-medium text-slate-900">
-            Arrastra y suelta tu archivo CSV aquí o haz clic para seleccionarlo
+            {t("dragDropHint")}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{REQUIRED_HINT}</p>
+          <p className="mt-1 text-xs text-slate-500">{t("requiredHint")}</p>
           {fileName ? (
             <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600">
               <FileText className="h-3.5 w-3.5" />
@@ -274,12 +279,12 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium text-slate-900">
               {processing
-                ? "Procesando estudiantes..."
+                ? t("processingStudents")
                 : lastBatchResult
-                  ? `${lastBatchResult.total} estudiantes procesados`
+                  ? t("studentsProcessed", { total: lastBatchResult.total })
                   : students.length > 0
-                    ? `${students.length} estudiantes listos para procesar`
-                    : "Esperando archivo CSV"}
+                    ? t("studentsReady", { students: students.length })
+                    : t("waitingCsv")}
             </span>
             {processing ? (
               <Spinner className="h-4 w-4" />
@@ -294,9 +299,12 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
           ) : null}
           {lastBatchResult ? (
             <div className="mt-1 text-sm text-slate-600">
-              Procesados: {lastBatchResult.total}. Creados:{" "}
-              {lastBatchResult.created}. Matriculados:{" "}
-              {lastBatchResult.enrolled}. Fallos: {lastBatchResult.failed}.
+              {t("summary", {
+                total: lastBatchResult.total,
+                created: lastBatchResult.created,
+                enrolled: lastBatchResult.enrolled,
+                failed: lastBatchResult.failed,
+              })}
             </div>
           ) : null}
         </div>
@@ -304,8 +312,8 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             {students.length > 0
-              ? `${students.length} usuarios detectados en el CSV`
-              : REQUIRED_HINT}
+              ? t("usersDetected", { count: students.length })
+              : t("requiredHint")}
           </p>
           <Button
             onClick={handleProcess}
@@ -317,7 +325,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
             {processing ? (
               <Spinner className="mr-2" />
             ) : null}
-            {processing ? "Procesando..." : "Registrar estudiantes"}
+            {processing ? "Procesando..." : t("registerStudents")}
           </Button>
         </div>
       </CardContent>

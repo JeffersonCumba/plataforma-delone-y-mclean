@@ -16,6 +16,7 @@ import { ExportPdfButton, type ExportPdfHandle } from "@/app/dashboard/_componen
 import { ExportOdtButton, type ExportOdtHandle } from "@/app/dashboard/_components/export-odt-button";
 import type { AnalyticsData } from "@/types/analytics";
 import type { InterpretationHandle } from "@/hooks/use-interpretation";
+import { useTranslations } from "next-intl";
 
 interface ExportDropdownProps {
   courseId: number;
@@ -38,6 +39,7 @@ export function ExportDropdown({
   frequenciesInterp,
   criticalInterp,
 }: ExportDropdownProps) {
+  const t = useTranslations("export");
   const [isExporting, setIsExporting] = useState(false);
   const hasData = analytics.totalSurveys > 0;
 
@@ -53,10 +55,10 @@ export function ExportDropdown({
           <Button
             disabled={!hasData || isExporting}
             className={!hasData ? "cursor-not-allowed opacity-50" : ""}
-            title={!hasData ? "No hay datos para exportar" : "Exportar reportes"}
+            title={!hasData ? t("noDataToExport") : t("exportReports")}
           >
             {isExporting ? <Spinner className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
-            {isExporting ? "Exportando..." : "Exportar"}
+            {isExporting ? t("exporting") : t("export")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

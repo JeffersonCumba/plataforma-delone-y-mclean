@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import {
   Activity,
   BookOpen,
@@ -26,6 +27,7 @@ import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardIndexPage() {
   const { userId, role, email } = await requireAuth();
+  const t = await getTranslations("dashboard");
 
   if (role === "ADMIN") {
     const stats = await obtenerEstadisticasGenerales();
@@ -33,14 +35,14 @@ export default async function DashboardIndexPage() {
     return (
       <section className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Panel General</h1>
-          <p className="text-sm text-slate-500">Resumen general de la plataforma.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">{t("adminPanelTitle")}</h1>
+          <p className="text-sm text-slate-500">{t("adminPanelDescription")}</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Profesores</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t("profesores")}</CardTitle>
               <GraduationCap className="h-5 w-5 text-slate-400" />
             </CardHeader>
             <CardContent>
@@ -50,7 +52,7 @@ export default async function DashboardIndexPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Cursos</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t("courses")}</CardTitle>
               <BookOpen className="h-5 w-5 text-slate-400" />
             </CardHeader>
             <CardContent>
@@ -60,7 +62,7 @@ export default async function DashboardIndexPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Estudiantes</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t("estudiantes")}</CardTitle>
               <UsersRound className="h-5 w-5 text-slate-400" />
             </CardHeader>
             <CardContent>
@@ -70,7 +72,7 @@ export default async function DashboardIndexPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Encuestas</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">{t("encuestas")}</CardTitle>
               <ClipboardList className="h-5 w-5 text-slate-400" />
             </CardHeader>
             <CardContent>
@@ -80,24 +82,24 @@ export default async function DashboardIndexPage() {
         </div>
 
         <div>
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Acceso rápido</h2>
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">{t("quickAccess")}</h2>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/admin/profesores">
                 <GraduationCap className="mr-2 h-4 w-4" />
-                Profesores
+                {t("profesores")}
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/admin/cursos">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Cursos
+                {t("courses")}
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/admin/alumnos">
                 <UserCheck className="mr-2 h-4 w-4" />
-                Alumnos
+                {t("estudiantes")}
               </Link>
             </Button>
           </div>
@@ -129,8 +131,8 @@ export default async function DashboardIndexPage() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Mi Panel</h1>
-          <p className="text-sm text-slate-500">Resumen de tus cursos y período de prueba.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">{t("myPanelTitle")}</h1>
+          <p className="text-sm text-slate-500">{t("myPanelDescription")}</p>
         </div>
         <TrialTimerHorizontal
           daysRemaining={daysRemaining}
@@ -149,10 +151,9 @@ export default async function DashboardIndexPage() {
               <XCircle className="h-5 w-5 text-rose-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-rose-800">Tu período de prueba ha expirado</h3>
+              <h3 className="text-lg font-semibold text-rose-800">{t("trialExpiredTitle")}</h3>
               <p className="mt-1 text-sm text-rose-700">
-                Tu cuenta y todos los datos asociados han sido eliminados permanentemente.
-                Contacta al administrador para renovar tu acceso.
+                {t("trialExpiredDescription")}
               </p>
             </div>
           </div>
@@ -166,10 +167,12 @@ export default async function DashboardIndexPage() {
               <AlertTriangle className="h-5 w-5 text-slate-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-800">¡Atención! Tu prueba está por expirar</h3>
+              <h3 className="text-lg font-semibold text-slate-800">{t("trialWarningTitle")}</h3>
               <p className="mt-1 text-slate-600">
-                Quedan <strong>{daysRemaining} día(s)</strong> para que finalice tu período de prueba.
-                Contacta al administrador para renovar tu suscripción.
+                {t.rich("trialWarningDays", {
+                  days: daysRemaining,
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
             </div>
           </div>
@@ -179,7 +182,7 @@ export default async function DashboardIndexPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Cursos Activos</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("activeCourses")}</CardTitle>
             <BookOpen className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
@@ -189,37 +192,37 @@ export default async function DashboardIndexPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Estudiantes</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("estudiantes")}</CardTitle>
             <UsersRound className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-slate-900">{totalStudents}</p>
-            <p className="text-xs text-slate-500">Matriculados en tus cursos</p>
+            <p className="text-xs text-slate-500">{t("enrolledStudents")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Encuestas</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("encuestas")}</CardTitle>
             <ClipboardList className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-slate-900">{totalSurveys}</p>
-            <p className="text-xs text-slate-500">Completadas por tus estudiantes</p>
+            <p className="text-xs text-slate-500">{t("completedSurveys")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Período de Prueba</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("trialPeriod")}</CardTitle>
             <Clock className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{daysRemaining} / {TRIAL_DAYS} días</p>
+                <p className="text-2xl font-semibold text-slate-900">{t("daysOfTrial", { days: daysRemaining, trialDays: TRIAL_DAYS })}</p>
                 <p className="text-sm text-slate-500">
-                  {isExpired ? "Expirado" : isWarningPeriod ? "¡Por expirar!" : "Activo"}
+                  {isExpired ? t("expired") : isWarningPeriod ? t("aboutToExpire") : t("active")}
                 </p>
               </div>
               <span className={cn(
@@ -229,11 +232,11 @@ export default async function DashboardIndexPage() {
                 !isExpired && !isWarningPeriod && "bg-emerald-100 text-emerald-700",
               )}>
                 {isExpired ? (
-                  <><XCircle className="mr-1 h-3 w-3" /> Expirada</>
+                  <><XCircle className="mr-1 h-3 w-3" /> {t("expiredBadge")}</>
                 ) : isWarningPeriod ? (
-                  <><AlertTriangle className="mr-1 h-3 w-3 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} /> Por expirar</>
+                  <><AlertTriangle className="mr-1 h-3 w-3 text-slate-600 animate-pulse" style={{ animationIterationCount: 1 }} /> {t("aboutToExpireBadge")}</>
                 ) : (
-                  <><CheckCircle className="mr-1 h-3 w-3" /> Activa</>
+                  <><CheckCircle className="mr-1 h-3 w-3" /> {t("activeBadge")}</>
                 )}
               </span>
             </div>
@@ -242,18 +245,18 @@ export default async function DashboardIndexPage() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Acceso rápido</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">{t("quickAccess")}</h2>
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="default" size="sm">
             <Link href="/dashboard/cursos">
               <BookOpen className="mr-2 h-4 w-4" />
-              Mis Cursos
+              {t("myCourses")}
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/encuestados">
               <UsersRound className="mr-2 h-4 w-4" />
-              Encuestados
+              {t("encuestados")}
             </Link>
           </Button>
         </div>
@@ -263,11 +266,11 @@ export default async function DashboardIndexPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Tus Cursos</CardTitle>
+              <CardTitle className="text-lg">{t("yourCourses")}</CardTitle>
               <Button asChild variant="ghost" size="sm">
                 <Link href="/dashboard/cursos">
                   <Activity className="mr-2 h-4 w-4" />
-                  Ver todos
+                  {t("viewAll")}
                 </Link>
               </Button>
             </div>
@@ -277,9 +280,9 @@ export default async function DashboardIndexPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Nombre Corto</th>
-                    <th className="px-4 py-3 font-medium">Nombre Completo</th>
-                    <th className="px-4 py-3 font-medium">Acciones</th>
+                    <th className="px-4 py-3 font-medium">{t("shortName")}</th>
+                    <th className="px-4 py-3 font-medium">{t("fullName")}</th>
+                    <th className="px-4 py-3 font-medium">{t("actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,7 +294,7 @@ export default async function DashboardIndexPage() {
                         <Button asChild variant="ghost" size="sm" className="h-8 px-2">
                           <Link href={`/dashboard/cursos/${course.id}`}>
                             <BookOpen className="mr-1 h-3.5 w-3.5" />
-                            Analítica
+                            {t("analytics")}
                           </Link>
                         </Button>
                       </td>

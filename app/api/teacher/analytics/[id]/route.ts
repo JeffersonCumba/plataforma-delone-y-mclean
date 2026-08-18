@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchMoodle } from "@/lib/moodle";
 import { pool } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import type { RowDataPacket } from "mysql2";
 
 interface TeacherCourseRow extends RowDataPacket {
@@ -26,6 +28,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const locale = await getServerLocale();
   try {
     const session = await requireSession();
     if (session instanceof Response) return session;
@@ -34,11 +37,17 @@ export async function GET(
     const targetTeacherId = Number(id);
 
     if (!Number.isInteger(targetTeacherId) || targetTeacherId <= 0) {
-      return NextResponse.json({ error: "ID de profesor inválido" }, { status: 400 });
+      return NextResponse.json(
+        { error: translateError(locale, "admin.invalidTeacherId") },
+        { status: 400 },
+      );
     }
 
     if (session.role !== "ADMIN" && session.userId !== targetTeacherId) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+      return NextResponse.json(
+        { error: translateError(locale, "api.unauthorized") },
+        { status: 403 },
+      );
     }
 
     const courseIds = await getTeacherCourses(targetTeacherId);
@@ -64,6 +73,9 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching teacher analytics:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: translateError(locale, "api.internalError") },
+      { status: 500 },
+    );
   }
 }

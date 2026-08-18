@@ -5,6 +5,8 @@ import MultivariateLinearRegression from "ml-regression-multivariate-linear";
 import { type RowDataPacket } from "mysql2";
 
 import { pool } from "@/lib/db";
+import { translateError } from "@/lib/errors";
+import { type Locale } from "@/i18n/locales";
 import { MOODLE_TEACHER_ROLE_ID } from "@/lib/constants";
 import { obtenerEncuestadosPorCurso } from "@/services/respondentService";
 import { getCachedAnalytics, setCachedAnalytics } from "@/lib/analytics-cache";
@@ -1011,9 +1013,10 @@ async function getCompletedCountForCourse(courseId: number): Promise<number> {
 
 export async function getCourseAnalyticsData(
   courseId: number,
+  locale: Locale = "es",
 ): Promise<AnalyticsData> {
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    throw new Error("El courseId no es valido para consultar analitica");
+    throw new Error(translateError(locale, "analytics.invalidCourseId"));
   }
 
   const currentCount = await getCompletedCountForCourse(courseId);
@@ -1041,7 +1044,7 @@ export async function getCourseAnalyticsData(
   );
 
   const summary = buildAnalyticsData(rows);
-  const totalRespondents = (await obtenerEncuestadosPorCurso(courseId)).length;
+  const totalRespondents = (await obtenerEncuestadosPorCurso(courseId, locale)).length;
   const responseRate =
     totalRespondents > 0
       ? Number(

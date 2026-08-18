@@ -1,43 +1,10 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { parseCookies, setCookie } from "nookies";
+import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
-const COOKIE_NAME = "googtrans";
-
-function readLanguageFromCookie(rawCookieValue?: string): string | undefined {
-  if (!rawCookieValue) return undefined;
-
-  const cleaned = rawCookieValue.replace(/^"|"$/g, "");
-  const decoded = cleaned.includes("%") ? decodeURIComponent(cleaned) : cleaned;
-  const parts = decoded.split("/").filter(Boolean);
-  const language = parts[parts.length - 1];
-
-  return language || undefined;
-}
-
-function persistGoogleTranslateCookie(lang: string) {
-  const cookieValue = `/es/${lang}`;
-  const maxAge = 60 * 60 * 24 * 365;
-
-  document.cookie = `${COOKIE_NAME}=${cookieValue}; path=/; max-age=${maxAge}; samesite=lax`;
-
-  const { hostname } = window.location;
-  const firstDot = hostname.indexOf(".");
-  if (firstDot > 0 && hostname.split(".").length >= 3) {
-    const parentDomain = hostname.slice(firstDot);
-    document.cookie = `${COOKIE_NAME}=${cookieValue}; path=/; domain=${parentDomain}; max-age=${maxAge}; samesite=lax`;
-  }
-}
-
-export function isTranslationActive(): boolean {
-  if (typeof document === "undefined") return false;
-  const cookies = document.cookie;
-  const match = cookies.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]*)`));
-  if (!match) return false;
-  const language = readLanguageFromCookie(match[1]);
-  return Boolean(language) && language !== "es";
-}
+import { LOCALE_COOKIE, SUPPORTED_LOCALES } from "@/i18n/locales";
 
 function hasActiveSession(): boolean {
   if (typeof document === "undefined") return false;
@@ -55,127 +22,33 @@ function syncFeedbackLanguage(lang: string): void {
   }
 }
 
+function persistLocaleCookie(lang: string) {
+  const maxAge = 60 * 60 * 24 * 365;
+  document.cookie = `${LOCALE_COOKIE}=${lang}; path=/; max-age=${maxAge}; samesite=lax`;
+}
+
 interface LanguageDescriptor {
   name: string;
   title: string;
 }
 
-const FLAG_COMPONENT: Record<string, () => ReactNode> = {
+const FLAG_COMPONENT: Record<string, () => React.ReactNode> = {
   es: SpainFlag,
   en: EuuFlag,
   pt: PortugalFlag,
 };
 
-declare global {
-  interface GlobalThis {
-    __GOOGLE_TRANSLATION_CONFIG__: {
-      languages: LanguageDescriptor[];
-      defaultLanguage: string;
-    };
-  }
-}
+const LANGUAGES: LanguageDescriptor[] = [
+  { name: "es", title: "Español" },
+  { name: "en", title: "English" },
+  { name: "pt", title: "Português" },
+];
 
-function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
-  const [currentLanguage, setCurrentLanguage] = useState<string | undefined>(
-    undefined,
-  );
-
-  const [languageConfig, setLanguageConfig] = useState<
-    { languages: LanguageDescriptor[]; defaultLanguage: string } | undefined
-  >(undefined);
-
+export function LanguageSwitcher({ hideLabel }: { hideLabel?: boolean }) {
+  const t = useTranslations("language");
+  const activeLocale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const cookies = parseCookies();
-    const existingLanguageCookieValue = cookies[COOKIE_NAME];
-
-    let languageValue = readLanguageFromCookie(existingLanguageCookieValue);
-    const gw = globalThis as unknown as {
-      __GOOGLE_TRANSLATION_CONFIG__?: {
-        languages: LanguageDescriptor[];
-        defaultLanguage: string;
-      };
-    };
-    const cfg:
-      | { languages: LanguageDescriptor[]; defaultLanguage: string }
-      | undefined = gw.__GOOGLE_TRANSLATION_CONFIG__;
-
-    const applyCfg = (
-      c:
-        | { languages: LanguageDescriptor[]; defaultLanguage: string }
-        | undefined,
-    ) => {
-      if (c && !languageValue) {
-        languageValue = c.defaultLanguage;
-      }
-      if (languageValue) setCurrentLanguage(languageValue);
-      setLanguageConfig(c);
-    };
-
-    if (!existingLanguageCookieValue) {
-      persistGoogleTranslateCookie("es");
-    }
-
-    const injectScript = (id: string, src: string) =>
-      new Promise<void>((resolve, reject) => {
-        const existing = document.getElementById(
-          id,
-        ) as HTMLScriptElement | null;
-
-        if (existing) {
-          if (existing.dataset.loaded === "true") {
-            resolve();
-            return;
-          }
-
-          existing.addEventListener("load", () => resolve(), { once: true });
-          existing.addEventListener("error", () => reject(), { once: true });
-          return;
-        }
-
-        const script = document.createElement("script");
-        script.id = id;
-        script.src = src;
-        script.async = true;
-        script.onload = () => {
-          script.dataset.loaded = "true";
-          resolve();
-        };
-        script.onerror = () => reject();
-        document.body.appendChild(script);
-      });
-
-    const ensureGoogleTranslateScripts = async () => {
-      try {
-        if (!gw.__GOOGLE_TRANSLATION_CONFIG__) {
-          await injectScript("gt-lang-config-script", "/assets/lang-config.js");
-        }
-
-        const nextCfg = gw.__GOOGLE_TRANSLATION_CONFIG__;
-        if (nextCfg) {
-          applyCfg(nextCfg);
-        }
-
-        await injectScript("gt-translation-script", "/assets/translation.js");
-        await injectScript(
-          "gt-google-translate-script",
-          "https://translate.google.com/translate_a/element.js?cb=TranslateInit",
-        );
-      } catch {
-        console.warn(
-          "GoogleTranslateWidget: failed to initialize translate scripts",
-        );
-      }
-    };
-
-    if (cfg) {
-      applyCfg(cfg);
-    }
-
-    void ensureGoogleTranslateScripts();
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -203,35 +76,29 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
     };
   }, [isOpen]);
 
-  if (!currentLanguage || !languageConfig) {
-    return null;
-  }
-
   const switchLanguage = (lang: string) => {
     setIsOpen(false);
-    setCurrentLanguage(lang);
-    persistGoogleTranslateCookie(lang);
+    persistLocaleCookie(lang);
     syncFeedbackLanguage(lang);
     if (typeof window !== "undefined") window.location.reload();
   };
 
-  const CurrentFlag = FLAG_COMPONENT[currentLanguage];
-  const currentTitle = languageConfig.languages.find(
-    (ld) => ld.name === currentLanguage,
-  )?.title;
+  const CurrentFlag = FLAG_COMPONENT[activeLocale];
+  const currentTitle =
+    LANGUAGES.find((ld) => ld.name === activeLocale)?.title ?? activeLocale;
 
   return (
-    <div className="notranslate flex items-center gap-3">
+    <div className="flex items-center gap-3">
       {!hideLabel && (
         <span className="hidden text-xs font-medium uppercase tracking-[0.18em] text-slate-500 sm:inline">
-          Idioma
+          {t("label")}
         </span>
       )}
 
       <div ref={containerRef} className="relative">
         <button
           type="button"
-          aria-label="Seleccionar idioma"
+          aria-label={t("select")}
           aria-haspopup="listbox"
           onClick={() => setIsOpen((current) => !current)}
           className="flex h-9 w-45 items-center gap-2 rounded-md border border-slate-200 bg-white pl-2 pr-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200 hover:cursor-pointer"
@@ -261,22 +128,24 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
         {isOpen ? (
           <ul
             role="listbox"
-            aria-label="Idiomas disponibles"
+            aria-label={t("select")}
             className="absolute right-0 z-50 mt-1 w-45 overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-lg pt-1"
           >
-            {languageConfig.languages.map((ld) => {
-              const Flag = FLAG_COMPONENT[ld.name];
-              const isActive = currentLanguage === ld.name;
+            {SUPPORTED_LOCALES.map((lang) => {
+              const Flag = FLAG_COMPONENT[lang];
+              const title =
+                LANGUAGES.find((ld) => ld.name === lang)?.title ?? lang;
+              const isActive = activeLocale === lang;
               return (
                 <li
-                  key={ld.name}
+                  key={lang}
                   role="option"
                   aria-selected={isActive}
                   className="mb-1"
                 >
                   <button
                     type="button"
-                    onClick={() => switchLanguage(ld.name)}
+                    onClick={() => switchLanguage(lang)}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:cursor-pointer ${
                       isActive
                         ? "bg-slate-200/50 font-semibold text-slate-900"
@@ -286,9 +155,7 @@ function GoogleTranslateWidget({ hideLabel }: { hideLabel?: boolean }) {
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm [&_svg]:h-5 [&_svg]:w-5">
                       {Flag ? <Flag /> : null}
                     </span>
-                    <span className="flex-1 truncate text-left">
-                      {ld.title}
-                    </span>
+                    <span className="flex-1 truncate text-left">{title}</span>
                     {isActive ? (
                       <svg
                         aria-hidden="true"
@@ -342,7 +209,11 @@ function SpainFlag() {
         opacity=".2"
       ></path>
       <path
-        d="M12.614,13.091c.066-.031,.055-.14-.016-.157,.057-.047,.02-.15-.055-.148,.04-.057-.012-.144-.082-.13,.021-.062-.042-.127-.104-.105,.01-.068-.071-.119-.127-.081,.004-.068-.081-.112-.134-.069-.01-.071-.11-.095-.15-.035-.014-.068-.111-.087-.149-.028-.027-.055-.114-.057-.144-.004-.03-.047-.107-.045-.136,.002-.018-.028-.057-.044-.09-.034,.009-.065-.066-.115-.122-.082,.002-.07-.087-.111-.138-.064-.013-.064-.103-.087-.144-.036-.02-.063-.114-.075-.148-.017-.036-.056-.129-.042-.147,.022-.041-.055-.135-.031-.146,.036-.011-.008-.023-.014-.037-.016,.006-.008,.01-.016,.015-.025h.002c.058-.107,.004-.256-.106-.298v-.098h.099v-.154h-.099v-.101h-.151v.101h-.099v.154h.099v.096c-.113,.04-.169,.191-.11,.299h.002c.004,.008,.009,.017,.014,.024-.015,.002-.029,.008-.04,.017-.011-.067-.106-.091-.146-.036-.018-.064-.111-.078-.147-.022-.034-.057-.128-.046-.148,.017-.041-.052-.131-.028-.144,.036-.051-.047-.139-.006-.138,.064-.056-.033-.131,.017-.122,.082-.034-.01-.072,.006-.091,.034-.029-.047-.106-.049-.136-.002-.03-.054-.117-.051-.143,.004-.037-.059-.135-.04-.149,.028-.039-.06-.14-.037-.15,.035-.053-.043-.138,0-.134,.069-.056-.038-.137,.013-.127,.081-.062-.021-.125,.044-.104,.105-.05-.009-.096,.033-.096,.084h0c0,.017,.005,.033,.014,.047-.075-.002-.111,.101-.055,.148-.071,.017-.082,.125-.016,.157-.061,.035-.047,.138,.022,.154-.013,.015-.021,.034-.021,.055h0c0,.042,.03,.077,.069,.084-.023,.048,.009,.11,.06,.118-.013,.03-.012,.073-.012,.106,.09-.019,.2,.006,.239,.11-.015,.068,.065,.156,.138,.146,.06,.085,.133,.165,.251,.197-.021,.093,.064,.093,.123,.118-.013,.016-.043,.063-.055,.081,.024,.013,.087,.041,.113,.051,.005,.019,.004,.028,.004,.031,.091,.501,2.534,.502,2.616-.001v-.002s.004,.003,.004,.004c0-.003-.001-.011,.004-.031l.118-.042-.062-.09c.056-.028,.145-.025,.123-.119,.119-.032,.193-.112,.253-.198,.073,.01,.153-.078,.138-.146,.039-.104,.15-.129,.239-.11,0-.035,.002-.078-.013-.109,.044-.014,.07-.071,.049-.115,.062-.009,.091-.093,.048-.139,.069-.016,.083-.12,.022-.154Zm-.296-.114c0,.049-.012,.098-.034,.141-.198-.137-.477-.238-.694-.214-.002-.009-.006-.017-.011-.024,0,0,0-.001,0-.002,.064-.021,.074-.12,.015-.153,0,0,0,0,0,0,.048-.032,.045-.113-.005-.141,.328-.039,.728,.09,.728,.393Zm-.956-.275c0,.063-.02,.124-.054,.175-.274-.059-.412-.169-.717-.185-.007-.082-.005-.171-.011-.254,.246-.19,.81-.062,.783,.264Zm-1.191-.164c-.002,.05-.003,.102-.007,.151-.302,.013-.449,.122-.719,.185-.26-.406,.415-.676,.73-.436-.002,.033-.005,.067-.004,.101Zm-1.046,.117c0,.028,.014,.053,.034,.069,0,0,0,0,0,0-.058,.033-.049,.132,.015,.152,0,0,0,.001,0,.002-.005,.007-.008,.015-.011,.024-.219-.024-.495,.067-.698,.206-.155-.377,.323-.576,.698-.525-.023,.015-.039,.041-.039,.072Zm3.065-.115s0,0,0,0c0,0,0,0,0,0,0,0,0,0,0,0Zm-3.113,1.798v.002s-.002,0-.003,.002c0-.001,.002-.003,.003-.003Z"
+        d="M12.614,13.091c.066-.031,.055-.14-.016-.157,.057-.047,.02-.15-.055-.148,.04-.057-.012-.144-.082-.13,.021-.062-.042-.127-.104-.105,.01-.068-.071-.119-.127-.081,.004-.068-.081-.112-.134-.069-.01-.071-.11-.095-.15-.035-.014-.068-.111-.087-.149-.028-.027-.055-.114-.057-.144-.004-.03-.047-.107-.045-.136,.002-.018-.028-.057-.044-.09-.034,.009-.065-.066-.115-.122-.082,.002-.07-.087-.111-.138-.064-.013-.064-.103-.087-.144-.036-.02-.063-.114-.075-.148-.017-.036-.056-.129-.042-.147,.022-.041-.055-.135-.031-.146,.036-.011-.008-.023-.014-.037-.016,.006-.008,.01-.016,.015-.025h.002c.058-.107,.004-.256-.106-.298v-.098h.099v-.154h-.099v-.101h-.151v.101h-.099v.154h.099v.096c-.113,.04-.169,.191-.11,.299h.002c.004,.008,.009,.017,.014,.024-.015,.002-.029,.008-.04,.017-.011-.067-.106-.091-.146-.036-.018-.064-.111-.078-.147-.022-.034-.057-.128-.046-.148,.017-.041-.052-.131-.028-.144,.036-.051-.047-.139-.006-.138,.064-.056-.033-.131,.017-.122,.082-.034-.01-.072,.006-.091,.034-.029-.047-.106-.049-.136-.002-.03-.054-.117-.051-.143,.004-.037-.059-.135-.04-.149,.028-.039-.06-.14-.037-.15,.035-.053-.043-.138,0-.134,.069-.056-.038-.137,.013-.127,.081-.062-.021-.125,.044-.104,.105-.05-.009-.096,.033-.096,.084h0c0,.017,.005,.033,.014,.047-.075-.002-.111,.101-.055,.148-.071,.017-.082,.125-.016,.157-.061,.035-.047,.138,.022,.154-.013,.015-.021,.034-.021,.055h0c0,.042,.03,.077,.069,.084-.023,.048,.009,.11,.06,.118-.013,.03-.012,.073-.012,.106,.09-.019,.2,.006,.239,.11-.015,.068,.065,.156,.138,.146,.06,.085,.133,.165,.251,.197-.021,.093,.064,.093,.123,.118-.013,.016-.043,.063-.055,.081,.024,.013,.087,.041,.113,.051,.005,.019,.004,.028,.004,.031,.091,.501,2.534,.502,2.616-.001v-.002s.004,.003,.004,.004c0-.003-.001-.011,.004-.031l.118-.042-.062-.09c.056-.028,.145-.025,.123-.119,.119-.032,.193-.112,.253-.198,.073,.01,.153-.078,.138-.146,.039-.104,.15-.129,.239-.11,0-.035,.002-.078-.013-.109,.044-.014,.07-.071,.049-.115,.062-.009,.091-.093,.048-.139,.069-.016,.083-.12,.022-.154Zm-.296-.114c0-.017-.001-.033-.005-.049l.002-.002-.003,.003c.003,.016,.005,.032,.006,.048Z"
+        fill="#9b8028"
+      ></path>
+      <path
+        d="M9.965,12.3c.1-.047,.083-.21-.023-.235,.085-.07,.03-.225-.088-.221,.06-.086-.018-.216-.119-.195,.032-.093-.063-.19-.154-.154,.015-.102-.107-.179-.189-.122,.005-.102-.122-.168-.189-.101-.017-.105-.147-.154-.203-.073-.03-.1-.156-.131-.199-.051-.045-.086-.171-.086-.216-.005-.045-.07-.161-.067-.204,.002-.027-.042-.086-.066-.135-.051,.014-.098-.099-.173-.183-.123,.003-.105-.131-.167-.207-.096-.02-.096-.155-.13-.216-.074-.03-.095-.171-.113-.222-.045-.054-.084-.194-.063-.221,.033-.062-.083-.203-.047-.219,.054-.017-.012-.035-.021-.056-.022,.009-.012,.015-.024,.023-.038h.003c.087-.16,.006-.384-.159-.447v-.147h.148v-.231h-.148v-.152h-.227v.152h-.148v.231h.148v.144c-.17,.06-.253,.287-.165,.45h.003c.006,.012,.013,.024,.021,.036-.022,.013-.043,.024-.06,.036-.017-.101-.159-.137-.219-.054-.027-.096-.167-.117-.221-.033-.051-.086-.192-.069-.222,.026-.062-.078-.197-.042-.216,.054-.077-.071-.209-.009-.207,.096-.084-.05-.196,.026-.183,.123-.051-.015-.108,.009-.137,.051-.044-.07-.159-.074-.204-.003-.045-.081-.176-.077-.215,.006-.056-.089-.203-.06-.224,.042-.059-.064-.21-.056-.225,.053-.08-.065-.207,0-.201,.104-.084-.057-.206,.02-.19,.122-.093-.031-.188,.066-.156,.158-.075-.014-.144,.05-.144,.126h0c0,.026,.008,.05,.021,.071-.113-.003-.167,.152-.083,.222-.107,.026-.123,.188-.024,.236-.092,.053-.071,.207,.033,.231-.02,.023-.032,.051-.032,.083h0c0,.063,.045,.116,.104,.126-.035,.072,.014,.165,.09,.177-.02,.045-.018,.11-.018,.159,.135-.029,.3,.009,.359,.165-.023,.102,.098,.234,.207,.219,.09,.128,.2,.248,.377,.296-.032,.14,.096,.14,.185,.177-.02,.024-.065,.095-.083,.122,.036,.02,.13,.062,.17,.077,.008,.029,.006,.042,.006,.047,.137,.751,3.801,.753,3.924-.002v-.003s.006,.005,.006,.006c0-.005-.002-.017,.006-.047l.177-.063-.093-.135c.084-.042,.218-.038,.185-.179,.179-.048,.29-.168,.38-.298,.11,.015,.23-.117,.207-.219,.059-.156,.225-.194,.359-.165,0-.053,.003-.117-.02-.162,.066-.021,.105-.107,.073-.178,.093-.014,.137-.107,.072-.175,.104-.024,.125-.18,.033-.231Zm-.444-.171c0,.005,0,.011,0,.016v.008c0-.005,0-.011,0-.016v-.008Z"
         fill="#9b8028"
       ></path>
       <path
@@ -425,7 +296,7 @@ function EuuFlag() {
       ></path>
       <path
         fill="#fff"
-        d="M6.066 12.924L6.658 12.494 5.927 12.494 5.701 11.799 5.475 12.494 4.744 12.494 5.335 12.924 5.109 13.619 5.701 13.19 6.292 13.619 6.066 12.924z"
+        d="M6.066 12.924L6.658 12.494 5.927 12.494 5.701 11.799 5.475 12.494 4.744 12.494 5.335 12.924 5.109 13.619 5.68 13.19 6.292 13.619 6.066 12.924z"
       ></path>
       <path
         fill="#fff"
@@ -509,5 +380,3 @@ function PortugalFlag() {
     </svg>
   );
 }
-
-export { GoogleTranslateWidget, COOKIE_NAME };

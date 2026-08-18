@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { actualizarProfesorAction } from "@/app/dashboard/admin/actions";
 import type { ProfesorRow } from "@/types/admin";
+import { useTranslations } from "next-intl";
 
 interface EditarProfesorDialogProps {
   profesor: ProfesorRow;
@@ -29,8 +30,8 @@ export function EditarProfesorDialog({
   profesor,
   open,
   onOpenChange,
-  title = "Editar Profesor",
 }: EditarProfesorDialogProps) {
+  const t = useTranslations("profesorDialogs");
   const [username, setUsername] = useState(profesor.username);
   const [firstname, setFirstname] = useState(profesor.firstname);
   const [lastname, setLastname] = useState(profesor.lastname);
@@ -51,7 +52,7 @@ export function EditarProfesorDialog({
       if (password) input.password = password;
 
       if (Object.keys(input).length === 0) {
-        toast.info("No hay cambios para guardar.");
+        toast.info(t("noChanges"));
         return;
       }
 
@@ -66,7 +67,7 @@ export function EditarProfesorDialog({
       onOpenChange(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error al actualizar profesor",
+        error instanceof Error ? error.message : t("updateError"),
       );
     } finally {
       setLoading(false);
@@ -79,16 +80,16 @@ export function EditarProfesorDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Save className="h-5 w-5 text-cyan-700" />
-            {title}
+            {t("editProfesor")}
           </DialogTitle>
           <DialogDescription>
-            Modifica los datos de {profesor.fullname} en Moodle.
+            {t("editProfesorDescription", { name: profesor.fullname })}
           </DialogDescription>
         </DialogHeader>
 
         <form className="mt-2 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="ep-username">Nombre de usuario</Label>
+            <Label htmlFor="ep-username">{t("usernameLabel")}</Label>
             <Input
               id="ep-username"
               value={username}
@@ -100,7 +101,7 @@ export function EditarProfesorDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="ep-firstname">Nombre</Label>
+              <Label htmlFor="ep-firstname">{t("firstNameLabel")}</Label>
               <Input
                 id="ep-firstname"
                 value={firstname}
@@ -110,7 +111,7 @@ export function EditarProfesorDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ep-lastname">Apellido</Label>
+              <Label htmlFor="ep-lastname">{t("lastNameLabel")}</Label>
               <Input
                 id="ep-lastname"
                 value={lastname}
@@ -122,7 +123,7 @@ export function EditarProfesorDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ep-email">Correo electrónico</Label>
+            <Label htmlFor="ep-email">{t("emailLabel")}</Label>
             <Input
               id="ep-email"
               type="email"
@@ -135,9 +136,9 @@ export function EditarProfesorDialog({
 
           <div className="space-y-2">
             <Label htmlFor="ep-password">
-              Contraseña{" "}
+              {t("passwordLabel")}{" "}
               <span className="text-xs text-slate-400">
-                (dejar vacío para mantener la actual)
+                {t("passwordHint")}
               </span>
             </Label>
             <Input
@@ -145,7 +146,7 @@ export function EditarProfesorDialog({
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nueva contraseña"
+              placeholder={t("newPasswordPlaceholder")}
               disabled={loading}
             />
           </div>
@@ -165,7 +166,7 @@ export function EditarProfesorDialog({
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              {loading ? "Guardando..." : "Guardar cambios"}
+              {loading ? t("creatingProfesor") : t("editProfesor")}
             </Button>
           </DialogFooter>
         </form>

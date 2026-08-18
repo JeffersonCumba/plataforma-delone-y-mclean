@@ -25,6 +25,7 @@ import {
 import type { MoodleCourse } from "@/types/course";
 import type { EncuestadoRow, UnenrollTarget } from "@/types/encuestado";
 import { desmatricularUsuarioAction } from "@/app/dashboard/encuestados/actions";
+import { useTranslations } from "next-intl";
 
 interface EncuestadosTableProps {
   rows: EncuestadoRow[];
@@ -40,6 +41,7 @@ export function EncuestadosTable({
   teacherMap,
 }: EncuestadosTableProps) {
   const router = useRouter();
+  const t = useTranslations("encuestados");
   const [selectedCourse, setSelectedCourse] = useState<string>(ALL_COURSES);
   const [deleteTarget, setDeleteTarget] = useState<UnenrollTarget | null>(null);
   const [isDeleting, startDelete] = useTransition();
@@ -77,20 +79,19 @@ export function EncuestadosTable({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-slate-700">
-            Filtrar por curso
+            {t("filterByCourse")}
           </p>
           <p className="text-xs text-slate-500">
-            Mostrando {filteredRows.length} de {rows.length} encuestados
-            matriculados.
+            {t("showingRespondents", { shown: filteredRows.length, total: rows.length })}
           </p>
         </div>
         <div className="w-full sm:w-80">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona un curso" />
+              <SelectValue placeholder={t("selectCourse")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_COURSES}>Todos los cursos</SelectItem>
+              <SelectItem value={ALL_COURSES}>{t("allCourses")}</SelectItem>
               {courses.map((course) => (
                 <SelectItem key={course.id} value={String(course.id)}>
                   {course.fullname}
@@ -103,18 +104,18 @@ export function EncuestadosTable({
 
       {filteredRows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-          No hay encuestados matriculados en el curso seleccionado.
+          {t("noRespondentsInCourse")}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full min-w-220 text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Usuario</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Curso</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
+                <th className="px-4 py-3 font-medium">{t("name")}</th>
+                <th className="px-4 py-3 font-medium">{t("user")}</th>
+                <th className="px-4 py-3 font-medium">{t("email")}</th>
+                <th className="px-4 py-3 font-medium">{t("course")}</th>
+                <th className="px-4 py-3 font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -130,7 +131,7 @@ export function EncuestadosTable({
                   <td className="px-4 py-3">
                     {teacherMap?.get(row.courseId)?.has(row.id) ? (
                       <span className="text-xs text-slate-400 italic">
-                        Profesor
+                        {t("teacher")}
                       </span>
                     ) : (
                       <Button
@@ -147,7 +148,7 @@ export function EncuestadosTable({
                         }
                       >
                         <LogOut className="mr-1 h-3.5 w-3.5" />
-                        Eliminar Matrícula
+                        {t("removeEnrollment")}
                       </Button>
                     )}
                   </td>
@@ -166,12 +167,13 @@ export function EncuestadosTable({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar matrícula</DialogTitle>
+            <DialogTitle>{t("deleteEnrollmentTitle")}</DialogTitle>
             <DialogDescription>
-              Esta acción desmatriculará a{" "}
-              <strong>{deleteTarget?.fullname}</strong> del curso{" "}
-              <strong>{deleteTarget?.courseName}</strong>. Podrá volver a
-              matricularse más adelante.
+              {t.rich("deleteEnrollmentDescription", {
+                fullname: deleteTarget?.fullname ?? "",
+                courseName: deleteTarget?.courseName ?? "",
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -190,10 +192,10 @@ export function EncuestadosTable({
               {isDeleting ? (
                 <>
                   <Spinner className="mr-2" />
-                  Desmatriculando...
+                  {t("unenrolling")}
                 </>
               ) : (
-                "Eliminar matricula"
+                t("deleteEnrollment")
               )}
             </Button>
           </DialogFooter>

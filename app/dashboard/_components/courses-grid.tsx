@@ -1,14 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { MoodleCourse } from "@/types/course";
 import { CourseCard } from "@/app/dashboard/_components/course-card";
+import { getTranslations } from "next-intl/server";
 
-export function CoursesGrid({
+export async function CoursesGrid({
   courses,
   limit,
 }: {
   courses: MoodleCourse[];
   limit?: number;
 }) {
+  const t = await getTranslations("courses");
   const visibleCourses =
     typeof limit === "number" ? courses.slice(0, limit) : courses;
 
@@ -16,7 +18,7 @@ export function CoursesGrid({
     return (
       <Card className="border-dashed border-slate-300 bg-white/80">
         <CardContent className="py-10 text-center text-slate-600">
-          No tienes cursos aun.
+          {t("noCourses")}
         </CardContent>
       </Card>
     );

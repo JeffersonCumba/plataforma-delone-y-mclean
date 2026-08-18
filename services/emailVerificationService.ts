@@ -1,5 +1,7 @@
 import { type RowDataPacket, type ResultSetHeader } from "mysql2";
 import { pool } from "@/lib/db";
+import { type Locale } from "@/i18n/locales";
+import { translateError } from "@/lib/errors";
 import { sendEmail } from "@/services/emailService";
 
 function generateCode(): string {
@@ -32,6 +34,7 @@ export async function initializeEmailVerification(
 
 export async function sendVerificationCode(
   userId: number,
+  locale: Locale,
 ): Promise<{ ok: boolean; message: string }> {
   const [rows] = await pool.execute<VerificationRow[]>(
     `SELECT * FROM mdl_user_email_verification WHERE user_id = ?`,
@@ -40,11 +43,11 @@ export async function sendVerificationCode(
 
   const record = rows[0];
   if (!record) {
-    return { ok: false, message: "No se encontró registro de verificación." };
+    return { ok: false, message: translateError(locale, "emailVerify.recordNotFound") };
   }
 
   if (record.verified) {
-    return { ok: false, message: "El correo ya está verificado." };
+    return { ok: false, message: translateError(locale, "emailVerify.alreadyVerified") };
   }
 
   const code = generateCode();
@@ -58,11 +61,12 @@ export async function sendVerificationCode(
     );
 
   try {
-    await sendEmail({
-      to: record.email,
-      subject: "Código de verificación — Plataforma DeLone y McLean",
-      text: `Tu código de verificación es: ${code}\n\nEste código expira en 10 minutos.\n\nSi no solicitaste este código, ignora este mensaje.`,
-      html: `
+    await sendEmail(
+      {
+        to: record.email,
+        subject: "Código de verificación — Plataforma DeLone y McLean",
+        text: `Tu código de verificación es: ${code}\n\nEste código expira en 10 minutos.\n\nSi no solicitaste este código, ignora este mensaje.`,
+        html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);">
             <div style="background: #f8fafc; padding: 32px 32px 20px; text-align: center; border-bottom: 1px solid #e2e8f0;">
@@ -105,17 +109,20 @@ export async function sendVerificationCode(
           </p>
         </div>
       `,
-    });
-    return { ok: true, message: "Código enviado a tu correo." };
+      },
+      locale,
+    );
+    return { ok: true, message: translateError(locale, "emailVerify.codeSent") };
   } catch (error) {
     console.error("[sendVerificationCode] Error sending email:", error);
-    return { ok: false, message: "No se pudo enviar el código. Intenta de nuevo." };
+    return { ok: false, message: translateError(locale, "emailVerify.sendFailed") };
   }
 }
 
 export async function verifyEmailCode(
   userId: number,
   code: string,
+  locale: Locale,
 ): Promise<{ ok: boolean; message: string }> {
   const [rows] = await pool.execute<VerificationRow[]>(
     `SELECT * FROM mdl_user_email_verification WHERE user_id = ?`,
@@ -124,19 +131,19 @@ export async function verifyEmailCode(
 
   const record = rows[0];
   if (!record) {
-    return { ok: false, message: "No se encontró registro de verificación." };
+    return { ok: false, message: translateError(locale, "emailVerify.recordNotFound") };
   }
 
   if (record.verified) {
-    return { ok: true, message: "El correo ya está verificado." };
+    return { ok: true, message: translateError(locale, "emailVerify.alreadyVerified") };
   }
 
   if (!record.verification_code || !record.code_expires_at) {
-    return { ok: false, message: "No se ha solicitado un código. Envía uno primero." };
+    return { ok: false, message: translateError(locale, "emailVerify.noCodeRequested") };
   }
 
   if (new Date() > new Date(record.code_expires_at)) {
-    return { ok: false, message: "El código ha expirado. Solicita uno nuevo." };
+    return { ok: false, message: translateError(locale, "emailVerify.codeExpired") };
   }
 
   if (record.attempts >= MAX_ATTEMPTS) {
@@ -146,7 +153,7 @@ export async function verifyEmailCode(
        WHERE user_id = ?`,
       [userId],
     );
-    return { ok: false, message: "Demasiados intentos fallidos. Solicita un nuevo código." };
+    return { ok: false, message: translateError(locale, "emailVerify.tooManyAttempts") };
   }
 
   if (record.verification_code !== code) {
@@ -159,7 +166,7 @@ export async function verifyEmailCode(
          WHERE user_id = ?`,
         [newAttempts, userId],
       );
-      return { ok: false, message: "Demasiados intentos fallidos. Solicita un nuevo código." };
+      return { ok: false, message: translateError(locale, "emailVerify.tooManyAttempts") };
     }
 
     await pool.execute(
@@ -168,7 +175,7 @@ export async function verifyEmailCode(
        WHERE user_id = ?`,
       [newAttempts, userId],
     );
-    return { ok: false, message: "Código incorrecto. Verifica e intenta de nuevo." };
+    return { ok: false, message: translateError(locale, "emailVerify.wrongCode") };
   }
 
   await pool.execute(
@@ -178,7 +185,7 @@ export async function verifyEmailCode(
     [userId],
   );
 
-  return { ok: true, message: "Correo verificado correctamente." };
+  return { ok: true, message: translateError(locale, "emailVerify.verifiedOk") };
 }
 
 export async function isEmailVerified(userId: number): Promise<boolean> {

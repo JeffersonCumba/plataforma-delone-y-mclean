@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { requireAuth } from "@/lib/auth";
+import { getServerLocale } from "@/lib/server-locale";
+import { getTranslations } from "next-intl/server";
 
 export default async function DashboardEncuestadosMatricularPage() {
   const { userId } = await requireAuth();
+  const locale = await getServerLocale();
+  const t = await getTranslations("matricular");
 
-  const courses = await obtenerCursosProfesor(userId);
+  const courses = await obtenerCursosProfesor(userId, locale);
 
   return (
     <section className="space-y-6">
@@ -16,17 +20,16 @@ export default async function DashboardEncuestadosMatricularPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-2xl">Matricular Encuestados</CardTitle>
+              <CardTitle className="text-2xl">{t("title")}</CardTitle>
               <p className="text-sm text-slate-600">
-                Carga un CSV para registrar estudiantes y matricularlos al curso
-                seleccionado.
+                {t("description")}
               </p>
             </div>
             <div>
               <a href="/documentos/ejemplo.csv" download>
                 <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
-                  Descargar ejemplo CSV
+                  {t("downloadExampleCsv")}
                 </Button>
               </a>
             </div>

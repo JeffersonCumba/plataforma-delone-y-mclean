@@ -1,5 +1,8 @@
 import "server-only";
 
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
+
 const MOODLE_URL = process.env.NEXT_PUBLIC_MOODLE_BASE_URL;
 const MOODLE_TOKEN = process.env.MOODLE_TOKEN;
 const FETCH_TIMEOUT_MS = 15_000;
@@ -70,7 +73,10 @@ export async function fetchMoodle<T>(
 
     if (!response.ok) {
       throw new Error(
-        `Error en la solicitud a Moodle: estado ${response.status} ${response.statusText}`,
+        translateError(await getServerLocale(), "moodle.requestFailed", {
+          status: response.status,
+          statusText: response.statusText,
+        }),
       );
     }
 
@@ -79,7 +85,7 @@ export async function fetchMoodle<T>(
     try {
       payload = (await response.json()) as unknown;
     } catch {
-      throw new Error("La respuesta de Moodle no es JSON valido");
+      throw new Error(translateError(await getServerLocale(), "moodle.invalidJson"));
     }
 
     if (isMoodleError(payload)) {

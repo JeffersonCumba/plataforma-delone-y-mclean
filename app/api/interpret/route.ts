@@ -1,4 +1,6 @@
 import { buildSystemPrompt } from "@/lib/ai/system-prompt";
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import { type AnalyticsData } from "@/types/analytics";
 import {
   createClient,
@@ -17,6 +19,7 @@ interface InterpretRequestBody {
 const OPENROUTER_MODEL = "openai/gpt-oss-120b";
 
 export async function POST(request: Request): Promise<Response> {
+  const locale = await getServerLocale();
   const session = await requireSession();
   if (session instanceof Response) return session;
 
@@ -24,31 +27,35 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = (await request.json()) as InterpretRequestBody;
   } catch {
-    return badRequest("Cuerpo de la solicitud invalido");
+    return badRequest(translateError(locale, "api.invalidBody"));
   }
 
   const { courseId, courseName, analytics, prompt } = body;
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    return badRequest("courseId invalido");
+    return badRequest(translateError(locale, "api.invalidCourseId"));
   }
 
   if (typeof courseName !== "string" || courseName.length === 0) {
-    return badRequest("courseName requerido");
+    return badRequest(translateError(locale, "api.courseNameRequired"));
   }
 
   if (typeof prompt !== "string" || prompt.trim().length === 0) {
-    return badRequest("prompt requerido");
+    return badRequest(translateError(locale, "api.promptRequired"));
   }
 
   if (!analytics) {
-    return badRequest("analytics requerido");
+    return badRequest(translateError(locale, "api.analyticsRequired"));
   }
 
-  const accessError = await validateCourseAccess(session.userId, courseId);
+  const accessError = await validateCourseAccess(
+    session.userId,
+    courseId,
+    locale,
+  );
   if (accessError) return accessError;
 
-  const clientResult = createClient();
+  const clientResult = createClient(locale);
   if (clientResult instanceof Response) return clientResult;
 
   const completion = await clientResult.client.chat.completions.create({
@@ -61,5 +68,5 @@ export async function POST(request: Request): Promise<Response> {
     ],
   });
 
-  return createStreamResponse(completion);
+  return createStreamResponse(completion, locale);
 }

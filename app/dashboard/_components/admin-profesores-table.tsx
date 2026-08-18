@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Pencil, UserRoundPlus, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +32,7 @@ export function AdminProfesoresTable({
   profesores,
 }: AdminProfesoresTableProps) {
   const router = useRouter();
+  const t = useTranslations("adminProfesores");
   const [editTarget, setEditTarget] = useState<ProfesorRow | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<{
     user: ProfesorRow;
@@ -52,7 +54,7 @@ export function AdminProfesoresTable({
         toast.error(result.message);
       }
     } catch {
-      toast.error("Error al simular.");
+      toast.error(t("simulateError"));
     } finally {
       setLoading(false);
     }
@@ -62,13 +64,13 @@ export function AdminProfesoresTable({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600">
-          Total de profesores registrados: {profesores.length}
+          {t("totalRegistered", { count: profesores.length })}
         </p>
         <CrearProfesorDialog
           trigger={
             <Button>
               <UserRoundPlus className="mr-2 h-4 w-4" />
-              Crear Profesor
+              {t("createProfesor")}
             </Button>
           }
         />
@@ -76,19 +78,19 @@ export function AdminProfesoresTable({
 
       {profesores.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-          No hay profesores registrados en la plataforma.
+          {t("noRegistered")}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full min-w-200 text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-4 py-3 font-medium">Usuario</th>
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Correo</th>
-                <th className="px-4 py-3 font-medium">Cursos</th>
-                <th className="px-4 py-3 font-medium">Prueba</th>
-                <th className="px-4 py-3 font-medium">Acciones</th>
+                <th className="px-4 py-3 font-medium">{t("user")}</th>
+                <th className="px-4 py-3 font-medium">{t("name")}</th>
+                <th className="px-4 py-3 font-medium">{t("email")}</th>
+                <th className="px-4 py-3 font-medium">{t("courses")}</th>
+                <th className="px-4 py-3 font-medium">{t("trial")}</th>
+                <th className="px-4 py-3 font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -132,7 +134,7 @@ export function AdminProfesoresTable({
                           href={`/dashboard/admin/profesores/${profesor.id}`}
                         >
                           <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                          Ver
+                          {t("view")}
                         </Link>
                       </Button>
                       <Button
@@ -142,7 +144,7 @@ export function AdminProfesoresTable({
                         onClick={() => setEditTarget(profesor)}
                       >
                         <Pencil className="mr-1 h-3.5 w-3.5" />
-                        Editar
+                        {t("edit")}
                       </Button>
                       {profesor.username !== "admin" && (
                         <>
@@ -155,7 +157,7 @@ export function AdminProfesoresTable({
                             }
                           >
                             <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-                            Warn
+                            {t("warning")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -169,7 +171,7 @@ export function AdminProfesoresTable({
                             }
                           >
                             <Trash2 className="mr-1 h-3.5 w-3.5" />
-                            Expirar
+                            {t("expire")}
                           </Button>
                         </>
                       )}
@@ -210,26 +212,23 @@ export function AdminProfesoresTable({
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               )}
               {confirmTarget?.type === "warning"
-                ? "Simular advertencia"
-                : "Simular expiracion"}
+                ? t("simulateWarning")
+                : t("simulateExpiration")}
             </DialogTitle>
             <DialogDescription>
               {confirmTarget?.type === "warning" ? (
-                <>
-                  El trial de{" "}
-                  <strong>{confirmTarget?.user.fullname}</strong> se movera a 3
-                  dias de expirar. Aparecera el banner de advertencia en su
-                  panel.
-                </>
+                t.rich("simulateWarningDescription", {
+                  name: confirmTarget?.user.fullname ?? "",
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })
               ) : (
-                <>
-                  Se eliminaran permanentemente los cursos y datos de{" "}
-                  <strong>{confirmTarget?.user.fullname}</strong> de Moodle, y su
-                  prueba se marcara como expirada.{" "}
-                  <span className="font-semibold text-rose-600">
-                    Esta accion no se puede deshacer.
-                  </span>
-                </>
+                t.rich("simulateExpirationDescription", {
+                  name: confirmTarget?.user.fullname ?? "",
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                  em: (chunks) => (
+                    <span className="font-semibold text-rose-600">{chunks}</span>
+                  ),
+                })
               )}
             </DialogDescription>
           </DialogHeader>
@@ -250,10 +249,10 @@ export function AdminProfesoresTable({
               disabled={loading}
             >
               {loading
-                ? "Simulando..."
+                ? t("simulating")
                 : confirmTarget?.type === "warning"
-                  ? "Simular advertencia"
-                  : "Si, eliminar y expirar"}
+                  ? t("simulateWarning")
+                  : t("confirmDeleteExpire")}
             </Button>
           </DialogFooter>
         </DialogContent>

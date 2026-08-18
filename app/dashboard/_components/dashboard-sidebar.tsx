@@ -22,6 +22,7 @@ import {
   sidebarMenuButtonVariants,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { SidebarUserFooter } from "@/app/dashboard/_components/sidebar-user-footer";
 
 export function DashboardSidebar({
@@ -33,6 +34,7 @@ export function DashboardSidebar({
   userName: string;
   userId: number;
 }) {
+  const t = useTranslations("sidebar");
   const linkClass = cn(
     sidebarMenuButtonVariants(),
     "[&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
@@ -43,33 +45,33 @@ export function DashboardSidebar({
       <SidebarHeader>
         <div className="flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent px-2 py-2">
           <GraduationCap className="h-4 w-4" />
-          <span className="text-sm font-medium">Dashboard</span>
+          <span className="text-sm font-medium">{t("dashboard")}</span>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegacion</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("navigation")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {role !== "ADMIN" && (
                 <SidebarMenuItem>
                   <Link href="/dashboard" className={linkClass}>
                     <LayoutDashboard className="h-4 w-4" />
-                    <span>Resumen</span>
+                    <span>{t("summary")}</span>
                   </Link>
                 </SidebarMenuItem>
               )}
               <SidebarMenuItem>
                 <Link href="/dashboard/cursos" className={linkClass}>
                   <FolderClosed className="h-4 w-4" />
-                  <span>Cursos</span>
+                  <span>{t("courses")}</span>
                 </Link>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <Link href="/dashboard/encuestados" className={linkClass}>
                   <UsersRound className="h-4 w-4" />
-                  <span>Encuestados</span>
+                  <span>{t("encuestados")}</span>
                 </Link>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -78,31 +80,31 @@ export function DashboardSidebar({
 
         {role === "ADMIN" && (
           <SidebarGroup>
-            <SidebarGroupLabel>Administración</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("administration")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/dashboard/admin" className={linkClass}>
                     <LayoutDashboard className="h-4 w-4" />
-                    <span>Panel General</span>
+                    <span>{t("adminPanel")}</span>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/dashboard/admin/profesores" className={linkClass}>
                     <GraduationCap className="h-4 w-4" />
-                    <span>Profesores</span>
+                    <span>{t("profesores")}</span>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/dashboard/admin/alumnos" className={linkClass}>
                     <UserCheck className="h-4 w-4" />
-                    <span>Alumnos</span>
+                    <span>{t("alumnos")}</span>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/dashboard/admin/cursos" className={linkClass}>
                     <BookOpen className="h-4 w-4" />
-                    <span>Cursos</span>
+                    <span>{t("courses")}</span>
                   </Link>
                 </SidebarMenuItem>
               </SidebarMenu>

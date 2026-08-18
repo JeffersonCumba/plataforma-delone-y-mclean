@@ -44,6 +44,7 @@ import {
   buildDescriptivePrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
 import { useInterpretation } from "@/hooks/use-interpretation";
+import { useTranslations } from "next-intl";
 
 
 const DLM_R2_TARGETS: DimensionKey[] = [
@@ -91,6 +92,7 @@ function formatScore(value: number): string {
 }
 
 function AlertRow({ item }: { item: AnalyticsQuestionAlert }) {
+  const t = useTranslations("analytics");
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -99,7 +101,7 @@ function AlertRow({ item }: { item: AnalyticsQuestionAlert }) {
             {item.question}
           </p>
           <p className="text-sm text-slate-600">
-            Dimensión: {DIMENSIONS_MAP[item.dimension]}
+            {t("dimension", { dimension: DIMENSIONS_MAP[item.dimension] })}
           </p>
         </div>
         <div className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-amber-700 ring-1 ring-amber-200">
@@ -138,6 +140,7 @@ function CourseAnalyticsContent({
   analytics: AnalyticsData;
 }) {
   const router = useRouter();
+  const t = useTranslations("analytics");
   const interpretationContext = { courseId, courseName, analytics };
   const satisfactionInterp = useInterpretation({
     ...interpretationContext,
@@ -202,19 +205,18 @@ function CourseAnalyticsContent({
             >
               <Link href="/dashboard/cursos">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver a Cursos
+                {t("backToCourses")}
               </Link>
             </Button>
             <div className="space-y-1">
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-700">
-                Reporte analítico
+                {t("reportEyebrow")}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 lg:text-4xl">
                 {courseName}
               </h1>
               <p className="max-w-2xl text-sm text-slate-600">
-                Vista integral de calidad, satisfacción, causalidad y alertas
-                críticas del cuestionario DeLone y McLean.
+                {t("reportDescription")}
               </p>
             </div>
           </div>
@@ -231,7 +233,7 @@ function CourseAnalyticsContent({
             />
             <Button variant="outline" onClick={() => router.refresh()}>
               <RotateCw className="mr-2 h-4 w-4" />
-              Sincronizar Datos
+              {t("syncData")}
             </Button>
           </div>
         </CardContent>
@@ -240,16 +242,19 @@ function CourseAnalyticsContent({
       <div className="grid gap-4 xl:grid-cols-4 md:grid-cols-2">
         <KpiCard
           icon={<Users className="h-5 w-5" />}
-          label="Muestra Actual"
+          label={t("currentSample")}
           value={analytics.totalSurveys}
-          description="Encuestas completadas y disponibles para el análisis."
+          description={t("currentSampleDesc")}
         />
 
         <KpiCard
           icon={<Percent className="h-5 w-5" />}
-          label="Participación"
+          label={t("participation")}
           value={`${analytics.responseRate.toFixed(1)}%`}
-          description={`Respondieron ${analytics.totalSurveys} de ${analytics.totalRespondents} participantes.`}
+          description={t("participationDesc", {
+            surveys: analytics.totalSurveys,
+            respondents: analytics.totalRespondents,
+          })}
         >
           <div className="space-y-2">
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -271,16 +276,16 @@ function CourseAnalyticsContent({
               </div>
             </div>
             <p className="text-xs text-slate-500">
-              Cobertura de respuesta sobre la población matriculada.
+              {t("coverageHint")}
             </p>
           </div>
         </KpiCard>
 
         <KpiCard
           icon={<ShieldCheck className="h-5 w-5" />}
-          label="Fiabilidad General (alfa de Cronbach)"
+          label={t("cronbach")}
           value={analytics.cronbachAlpha.toFixed(3)}
-          description="Consistencia interna global del cuestionario."
+          description={t("cronbachDesc")}
         >
           <span
             className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
@@ -289,15 +294,15 @@ function CourseAnalyticsContent({
                 : "bg-amber-50 text-amber-700 ring-amber-200"
             }`}
           >
-            {analytics.cronbachAlpha >= 0.7 ? "Adecuada" : "Revisar"}
+            {analytics.cronbachAlpha >= 0.7 ? t("adequate") : t("review")}
           </span>
         </KpiCard>
 
         <KpiCard
           icon={<Smile className="h-5 w-5" />}
-          label="Satisfacción Promedio"
+          label={t("avgSatisfaction")}
           value={`${formatScore(analytics.promediosDimensiones.satis_user)} / 5.0`}
-          description="Valor medio de la dimensión de satisfacción del usuario."
+          description={t("avgSatisfactionDesc")}
         />
       </div>
 
@@ -314,7 +319,7 @@ function CourseAnalyticsContent({
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="space-y-2">
             <div className="flex items-start justify-between gap-3">
-              <CardTitle className="text-xl">Análisis Descriptivo</CardTitle>
+              <CardTitle className="text-xl">{t("descriptiveAnalysis")}</CardTitle>
               <InterpretChartButton
                 onClick={() =>
                   descriptiveInterp.interpret(
@@ -327,7 +332,7 @@ function CourseAnalyticsContent({
               />
             </div>
             <p className="text-sm text-slate-600">
-              Promedio por dimensión DeLone y McLean (escala Likert 1-5).
+              {t("descriptiveAnalysisDesc")}
             </p>
           </CardHeader>
           <CardContent>
@@ -355,7 +360,7 @@ function CourseAnalyticsContent({
                   <Tooltip
                     formatter={(value) => [
                       Number(value).toFixed(2),
-                      "Promedio",
+                      t("average"),
                     ]}
                   />
                   <Bar dataKey="score" radius={[8, 8, 0, 0]} maxBarSize={72}>
@@ -379,7 +384,7 @@ function CourseAnalyticsContent({
           <CardHeader className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <CardTitle className="text-xl">
-                Análisis Predictivo / Causal
+                {t("predictiveAnalysis")}
               </CardTitle>
               <InterpretChartButton
                 onClick={() =>
@@ -389,8 +394,7 @@ function CourseAnalyticsContent({
               />
             </div>
             <p className="text-sm text-slate-600">
-              Coeficientes beta ordenados de mayor a menor impacto sobre la
-              satisfacción.
+              {t("predictiveAnalysisDesc")}
             </p>
           </CardHeader>
           <CardContent>
@@ -409,7 +413,7 @@ function CourseAnalyticsContent({
                   />
                   <YAxis type="category" dataKey="name" width={180} />
                   <Tooltip
-                    formatter={(value) => [Number(value).toFixed(3), "Beta"]}
+                    formatter={(value) => [Number(value).toFixed(3), t("beta")]}
                   />
                   <Bar dataKey="value" radius={[0, 12, 12, 0]}>
                     {analytics.betaCoefficients.map((entry) => (
@@ -441,7 +445,7 @@ function CourseAnalyticsContent({
         <CardHeader className="space-y-2">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-xl">
-              Modelo DeLone y McLean (completo)
+              {t("dlmComplete")}
             </CardTitle>
             <InterpretChartButton
               onClick={() =>
@@ -456,8 +460,7 @@ function CourseAnalyticsContent({
             />
           </div>
           <p className="text-sm text-slate-600">
-            Rutas estandarizadas con bootstrap, fiabilidad de constructos,
-            validez discriminante y varianza explicada (R²).
+            {t("dlmCompleteDesc")}
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -483,16 +486,16 @@ function CourseAnalyticsContent({
           <div className="grid gap-6 xl:grid-cols-2">
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">
-                Rutas estructurales
+                {t("structuralPaths")}
               </h3>
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-100 text-left text-slate-700">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Ruta</th>
+                      <th className="px-3 py-2 font-medium">{t("path")}</th>
                       <th className="px-3 py-2 font-medium">β</th>
-                      <th className="px-3 py-2 font-medium">IC 95%</th>
-                      <th className="px-3 py-2 font-medium">Signif.</th>
+                      <th className="px-3 py-2 font-medium">{t("ci95")}</th>
+                      <th className="px-3 py-2 font-medium">{t("significance")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -513,7 +516,7 @@ function CourseAnalyticsContent({
                                 : "bg-amber-100 text-amber-700"
                             }`}
                           >
-                            {path.significant ? "Sí" : "No"}
+                            {path.significant ? t("yes") : t("no")}
                           </span>
                         </td>
                       </tr>
@@ -525,14 +528,14 @@ function CourseAnalyticsContent({
 
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">
-                Fiabilidad por constructo
+                {t("constructReliability")}
               </h3>
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-100 text-left text-slate-700">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Constructo</th>
-                      <th className="px-3 py-2 font-medium">Ítems</th>
+                      <th className="px-3 py-2 font-medium">{t("construct")}</th>
+                      <th className="px-3 py-2 font-medium">{t("items")}</th>
                       <th className="px-3 py-2 font-medium">α</th>
                       <th className="px-3 py-2 font-medium">CR</th>
                       <th className="px-3 py-2 font-medium">AVE</th>
@@ -569,25 +572,30 @@ function CourseAnalyticsContent({
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
             <p className="text-sm font-medium text-slate-800">
-              Validez discriminante (Fornell-Larcker)
+              {t("discriminantValidity")}
             </p>
             <p className="mt-1 text-sm text-slate-600">
-              Pares evaluados:{" "}
-              {analytics.deloneMcleanModel.discriminantValidity.length}. Incumplen
-              criterio: {discriminantFailures.length}.
+              {t("pairsEvaluated", {
+                evaluated:
+                  analytics.deloneMcleanModel.discriminantValidity.length,
+                failures: discriminantFailures.length,
+              })}
             </p>
             {discriminantFailures.length > 0 ? (
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">
                 {discriminantFailures.slice(0, 5).map((item) => (
                   <li key={`${item.left}-${item.right}`}>
-                    {item.leftName} vs {item.rightName} (corr=
-                    {item.correlation.toFixed(3)})
+                    {t("pairsViolation", {
+                      left: item.leftName,
+                      right: item.rightName,
+                      correlation: item.correlation.toFixed(3),
+                    })}
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="mt-2 text-sm text-emerald-700">
-                Todos los pares cumplen Fornell-Larcker.
+                {t("allPairsComply")}
               </p>
             )}
           </div>
@@ -603,7 +611,7 @@ function CourseAnalyticsContent({
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">
         <CardHeader className="space-y-2">
           <div className="flex items-start justify-between gap-3">
-            <CardTitle className="text-xl">Preguntas Críticas</CardTitle>
+            <CardTitle className="text-xl">{t("criticalQuestions")}</CardTitle>
             <InterpretChartButton
               onClick={() =>
                 criticalInterp.interpret(
@@ -617,7 +625,7 @@ function CourseAnalyticsContent({
             />
           </div>
           <p className="text-sm text-slate-600">
-            Las tres preguntas con promedio individual por debajo de 3.0.
+            {t("criticalQuestionsDesc")}
           </p>
         </CardHeader>
         <CardContent>
@@ -631,7 +639,7 @@ function CourseAnalyticsContent({
               ))
             ) : (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-800">
-                No se detectaron preguntas críticas por debajo del umbral.
+                {t("noCriticalQuestions")}
               </div>
             )}
           </div>

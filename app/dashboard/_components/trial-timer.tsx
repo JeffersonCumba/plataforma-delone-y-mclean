@@ -3,6 +3,7 @@
 import { AlertTriangle, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TRIAL_DAYS } from "@/lib/constants";
+import { useLocale, useTranslations } from "next-intl";
 
 interface TrialTimerProps {
   daysRemaining: number;
@@ -82,6 +83,8 @@ export function TrialTimer({
   className,
   trialDays = TRIAL_DAYS,
 }: TrialTimerProps) {
+  const t = useTranslations("trial");
+  const locale = useLocale();
   const progress = isExpired
     ? 0
     : Math.max(0, Math.min(1, daysRemaining / trialDays));
@@ -122,22 +125,22 @@ export function TrialTimer({
       >
         {getIcon(isExpired, isWarningPeriod, cfg.iconSize)}
         <span className={cn(cfg.font, "tabular-nums")}>
-          {isExpired ? "Expirado" : `${daysRemaining}d`}
+          {isExpired ? t("expired") : t("daysShort", { days: daysRemaining })}
         </span>
       </div>
       {showLabel && (
         <span className="text-xs text-slate-400 hidden sm:inline-block whitespace-nowrap">
           {isExpired
-            ? "Prueba finalizada"
+            ? t("trialFinished")
             : isWarningPeriod
-              ? `¡Quedan ${daysRemaining} días!`
-              : "Días restantes"}
+              ? t("daysRemainingWarning", { days: daysRemaining })
+              : t("daysRemaining")}
         </span>
       )}
       {trialEndsAt && !isExpired && showLabel && (
         <span className="text-[10px] text-slate-400 hidden md:inline-block ml-1 whitespace-nowrap">
-          Expira:{" "}
-          {trialEndsAt.toLocaleDateString("es-AR", {
+          {t("expiresOn")}{" "}
+          {trialEndsAt.toLocaleDateString(locale, {
             day: "numeric",
             month: "short",
             year: "numeric",
@@ -156,6 +159,7 @@ export function TrialTimerHorizontal({
   className,
   trialDays = TRIAL_DAYS,
 }: Omit<TrialTimerProps, "size">) {
+  const t = useTranslations("trial");
   const progress = isExpired
     ? 0
     : Math.max(0, Math.min(1, daysRemaining / trialDays));
@@ -178,16 +182,16 @@ export function TrialTimerHorizontal({
       <div className={cn("flex items-center gap-1.5", textColorClass)}>
         {getIcon(isExpired, isWarningPeriod, "md")}
         <span className="text-sm font-medium">
-          {isExpired ? "Expirado" : `${daysRemaining}d`}
+          {isExpired ? t("expired") : t("daysShort", { days: daysRemaining })}
         </span>
       </div>
       {showLabel && (
         <span className="text-xs text-slate-400 hidden sm:inline">
           {isExpired
-            ? "Prueba finalizada"
+            ? t("trialFinished")
             : isWarningPeriod
-              ? `¡Quedan ${daysRemaining} días!`
-              : "Días restantes"}
+              ? t("daysRemainingWarning", { days: daysRemaining })
+              : t("daysRemaining")}
         </span>
       )}
     </div>

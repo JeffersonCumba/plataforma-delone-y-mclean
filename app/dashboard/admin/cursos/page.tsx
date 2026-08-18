@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminCursosTable } from "@/app/dashboard/_components/admin-cursos-table";
 import { obtenerTodosLosCursos } from "@/services/adminService";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminCursosPage() {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
+  const t = await getTranslations("adminCursos");
 
   if (role !== "ADMIN") {
     redirect("/dashboard/cursos");
@@ -18,15 +20,13 @@ export default async function AdminCursosPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Cursos</h1>
-        <p className="text-sm text-slate-600">
-          Gestión de todos los cursos creados en Moodle.
-        </p>
+        <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
+        <p className="text-sm text-slate-600">{t("description")}</p>
       </div>
 
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Listado de Cursos</CardTitle>
+          <CardTitle className="text-lg">{t("listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <AdminCursosTable cursos={cursos} />

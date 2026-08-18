@@ -18,6 +18,7 @@ import type { AnalyticsData } from "@/types/analytics";
 import type { ExportVariant } from "@/types/export";
 import { type InterpretationHandle } from "@/hooks/use-interpretation";
 import { canExport } from "@/app/dashboard/_components/export-guard";
+import { useTranslations } from "next-intl";
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
@@ -70,6 +71,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
   },
   ref,
 ) {
+  const t = useTranslations("export");
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -100,7 +102,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
       });
 
       if (!response.ok) {
-        throw new Error("No se pudo generar el reporte PDF");
+        throw new Error(t("pdfError"));
       }
 
       const blob = await response.blob();
@@ -113,12 +115,12 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(objectUrl);
-      toast.success("PDF exportado correctamente");
+      toast.success(t("pdfExported"));
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        toast.error("La exportación tardó demasiado, intenta de nuevo");
+        toast.error(t("timeoutError"));
       } else {
-        toast.error("No se pudo generar el reporte PDF");
+        toast.error(t("pdfError"));
       }
     } finally {
       clearTimeout(timeoutId);
@@ -128,7 +130,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
   }
 
   function handleDirectClick(): void {
-    if (!canExport(analytics.totalSurveys)) {
+    if (!canExport(analytics.totalSurveys, t)) {
       return;
     }
 
@@ -156,7 +158,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
       });
       await triggerDownload(payload);
     } catch {
-      toast.error("Error al generar interpretaciones");
+      toast.error(t("interpretationError"));
     } finally {
       setIsGenerating(false);
     }
@@ -169,7 +171,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
   }
 
   function handleClick(): void {
-    if (!canExport(analytics.totalSurveys)) {
+    if (!canExport(analytics.totalSurveys, t)) {
       return;
     }
 
@@ -195,7 +197,7 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
           ) : (
             <FileText className="mr-2 h-4 w-4" />
           )}
-          {isExporting ? "Generando PDF..." : isGenerating ? "Generando interpretaciones..." : "Descargar reporte (PDF)"}
+          {isExporting ? t("generatingPdf") : isGenerating ? t("generatingInterpretations") : t("exportPdf")}
         </Button>
       )}
       <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!isGenerating) setShowConfirmDialog(open); }}>
@@ -203,11 +205,12 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-cyan-600" />
-              Faltan interpretaciones de IA
+              {t("missingIaTitle")}
             </DialogTitle>
             <DialogDescription>
-              Aun no has generado las interpretaciones de IA para los 5 analisis de este curso.
-              {" "}¿Deseas generarlas ahora e incluirlas en el reporte PDF?
+              {t.rich("missingIaDescription", {
+                format: "PDF",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -215,13 +218,13 @@ export const ExportPdfButton = forwardRef<ExportPdfHandle, ExportPdfButtonProps>
               Cancelar
             </Button>
             <Button variant="outline" onClick={handleExportWithoutIA} disabled={isGenerating}>
-              Exportar sin IA
+              {t("exportWithoutIa")}
             </Button>
             <Button onClick={handleGenerateAndExport} disabled={isGenerating} className="bg-cyan-600 text-white hover:bg-cyan-700">
               {isGenerating ? (
-                <><Spinner className="mr-2 h-4 w-4" /> Generando...</>
+                <><Spinner className="mr-2 h-4 w-4" /> {t("generating")}</>
               ) : (
-                <><Sparkles className="mr-2 h-4 w-4" /> Generar y exportar</>
+                <><Sparkles className="mr-2 h-4 w-4" /> {t("generateAndExport")}</>
               )}
             </Button>
           </DialogFooter>

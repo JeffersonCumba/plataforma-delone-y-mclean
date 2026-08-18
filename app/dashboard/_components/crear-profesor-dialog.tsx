@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { crearProfesorAction } from "@/app/dashboard/admin/actions";
+import { useTranslations } from "next-intl";
 
 interface CrearProfesorDialogProps {
   trigger?: React.ReactNode;
@@ -39,6 +40,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
+  const t = useTranslations("profesorDialogs");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
       setOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error al crear profesor",
+        error instanceof Error ? error.message : t("createError"),
       );
     } finally {
       setLoading(false);
@@ -80,21 +82,21 @@ export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserRoundPlus className="h-5 w-5 text-cyan-700" />
-            Nuevo Profesor
+            {t("newProfesor")}
           </DialogTitle>
           <DialogDescription>
-            Crea un nuevo usuario con perfil de profesor en Moodle.
+            {t("newProfesorDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <form className="mt-2 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="ap-username">Nombre de usuario</Label>
+            <Label htmlFor="ap-username">{t("usernameLabel")}</Label>
             <Input
               id="ap-username"
               value={form.username}
               onChange={handleChange("username")}
-              placeholder="usuario123"
+              placeholder={t("usernamePlaceholder")}
               disabled={loading}
               required
             />
@@ -102,23 +104,23 @@ export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="ap-firstname">Nombre</Label>
+              <Label htmlFor="ap-firstname">{t("firstNameLabel")}</Label>
               <Input
                 id="ap-firstname"
                 value={form.firstname}
                 onChange={handleChange("firstname")}
-                placeholder="Nombre"
+                placeholder={t("firstNamePlaceholder")}
                 disabled={loading}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ap-lastname">Apellido</Label>
+              <Label htmlFor="ap-lastname">{t("lastNameLabel")}</Label>
               <Input
                 id="ap-lastname"
                 value={form.lastname}
                 onChange={handleChange("lastname")}
-                placeholder="Apellido"
+                placeholder={t("lastNamePlaceholder")}
                 disabled={loading}
                 required
               />
@@ -126,26 +128,26 @@ export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ap-email">Correo electrónico</Label>
+            <Label htmlFor="ap-email">{t("emailLabel")}</Label>
             <Input
               id="ap-email"
               type="email"
               value={form.email}
               onChange={handleChange("email")}
-              placeholder="nombre@dominio.com"
+              placeholder={t("emailPlaceholder")}
               disabled={loading}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ap-password">Contraseña</Label>
+            <Label htmlFor="ap-password">{t("passwordLabel")}</Label>
             <Input
               id="ap-password"
               type="password"
               value={form.password}
               onChange={handleChange("password")}
-              placeholder="Mínimo 8 caracteres"
+              placeholder={t("passwordPlaceholder")}
               disabled={loading}
               required
             />
@@ -166,7 +168,7 @@ export function CrearProfesorDialog({ trigger }: CrearProfesorDialogProps) {
               ) : (
                 <UserRoundPlus className="mr-2 h-4 w-4" />
               )}
-              {loading ? "Creando..." : "Crear Profesor"}
+              {loading ? t("creatingProfesor") : t("createProfesor")}
             </Button>
           </DialogFooter>
         </form>

@@ -10,6 +10,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 type Step = "idle" | "sending" | "sent" | "verifying" | "verified" | "error";
 
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function EmailVerificationBanner({ email }: Props) {
+  const t = useTranslations("emailVerify");
   const [step, setStep] = useState<Step>("idle");
   const [code, setCode] = useState("");
   const [cooldown, setCooldown] = useState(0);
@@ -65,7 +67,7 @@ export function EmailVerificationBanner({ email }: Props) {
       setStep("sent");
       startCooldown();
     } catch {
-      toast.error("Error al enviar el código.");
+      toast.error(t("sendError"));
       setStep("error");
     }
   }
@@ -85,11 +87,11 @@ export function EmailVerificationBanner({ email }: Props) {
         setStep("sent");
         return;
       }
-      toast.success("¡Correo verificado!");
+      toast.success(t("verifiedSuccess"));
       await new Promise((r) => setTimeout(r, 800));
       setStep("verified");
     } catch {
-      toast.error("Error al verificar el código.");
+      toast.error(t("verifyError"));
       setStep("sent");
     }
   }
@@ -99,10 +101,10 @@ export function EmailVerificationBanner({ email }: Props) {
   const showOtp = step === "sent" || step === "verifying";
 
   function sendButtonLabel() {
-    if (step === "sending") return "Enviando...";
-    if (cooldown > 0) return `Reenviar en ${cooldown}s`;
-    if (showOtp) return "Reenviar código";
-    return "Enviar código";
+    if (step === "sending") return t("sending");
+    if (cooldown > 0) return t("resendIn", { seconds: cooldown });
+    if (showOtp) return t("resendCode");
+    return t("sendCode");
   }
 
   return (
@@ -117,15 +119,18 @@ export function EmailVerificationBanner({ email }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-neutral-800">
-            Confirma tu correo electrónico
+            {t("title")}
           </h3>
           <p className="mt-1 text-sm text-neutral-700">
-            Enviamos un código de verificación a <strong>{email}</strong>.
-            {step === "idle" && " Haz clic en \"Enviar código\" para recibirlo."}
+            {t.rich("description", {
+              email,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
+            {step === "idle" && t("idleHint")}
           </p>
           {showOtp && (
             <p className="mt-1 text-xs text-gray-600">
-              Revisa tu bandeja de spam si no ves el código.
+              {t("spamHint")}
             </p>
           )}
 
@@ -174,10 +179,10 @@ export function EmailVerificationBanner({ email }: Props) {
                     {step === "verifying" ? (
                       <>
                         <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        Validando...
+                        {t("validating")}
                       </>
                     ) : (
-                      "Verificar"
+                      t("verify")
                     )}
                   </Button>
                 </div>
@@ -190,7 +195,7 @@ export function EmailVerificationBanner({ email }: Props) {
               href="/dashboard/perfil"
               className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
             >
-              ¿Correo incorrecto? Editar perfil
+              {t("wrongEmail")}
             </a>
           </div>
         </div>

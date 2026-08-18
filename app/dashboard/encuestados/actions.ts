@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import { studentInputSchema, type StudentInput } from "@/lib/validations/user";
 import {
   buscarUsuariosMoodle,
@@ -26,7 +28,7 @@ async function requireUserId(): Promise<number> {
   const userId = Number(userIdCookie);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error("Sesion invalida. Vuelve a iniciar sesion.");
+    throw new Error(translateError(await getServerLocale(), "enc.invalidSession"));
   }
 
   return userId;
@@ -36,32 +38,35 @@ async function ensureCourseOwnership(
   userId: number,
   courseId: number,
 ): Promise<void> {
+  const locale = await getServerLocale();
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    throw new Error("Curso invalido.");
+    throw new Error(translateError(locale, "enc.invalidCourse"));
   }
 
   const courses = await obtenerCursosProfesor(userId);
   const allowed = courses.find((course) => course.id === courseId);
 
   if (!allowed) {
-    throw new Error("No tienes permisos para matricular en este curso.");
+    throw new Error(translateError(locale, "enc.noEnrollPermission"));
   }
 }
 
 export async function buscarUsuariosAction(
   query: string,
 ): Promise<BuscarUsuariosActionResult> {
+  const locale = await getServerLocale();
   try {
     await requireUserId();
-    const users = await buscarUsuariosMoodle(query);
+    const users = await buscarUsuariosMoodle(query, locale);
     return { ok: true, message: "OK", users };
   } catch (error) {
     console.error("[buscarUsuariosAction]", error);
     return {
       ok: false,
-      message: error instanceof Error && error.message.includes("Sesion")
-        ? "Sesion invalida. Vuelve a iniciar sesion."
-        : "No fue posible buscar usuarios.",
+      message:
+        error instanceof Error && error.message.includes("Sesion")
+          ? translateError(locale, "enc.invalidSession")
+          : translateError(locale, "enc.searchFailed"),
       users: [],
     };
   }
@@ -77,18 +82,19 @@ interface MatricularUsuarioPayload {
 export async function matricularUsuarioAction(
   payload: MatricularUsuarioPayload,
 ): Promise<MatricularUsuarioActionResult> {
+  const locale = await getServerLocale();
   let userId: number;
   try {
     userId = await requireUserId();
   } catch {
     return {
       ok: false,
-      message: "Sesion invalida. Vuelve a iniciar sesion.",
+      message: translateError(locale, "enc.invalidSession"),
     };
   }
 
   if (!payload || (payload.mode !== "existing" && payload.mode !== "new")) {
-    return { ok: false, message: "Solicitud invalida." };
+    return { ok: false, message: translateError(locale, "enc.invalidRequest") };
   }
 
   if (payload.mode === "existing") {
@@ -97,7 +103,7 @@ export async function matricularUsuarioAction(
       !payload.existingUserId ||
       payload.existingUserId <= 0
     ) {
-      return { ok: false, message: "Selecciona un usuario existente." };
+      return { ok: false, message: translateError(locale, "enc.selectExistingUser") };
     }
   }
 
@@ -105,16 +111,16 @@ export async function matricularUsuarioAction(
     if (!payload.newUser) {
       return {
         ok: false,
-        message: "Datos del nuevo usuario son obligatorios.",
+        message: translateError(locale, "enc.newUserDataRequired"),
       };
     }
-    const parsed = studentInputSchema.safeParse(payload.newUser);
+    const parsed = studentInputSchema(locale).safeParse(payload.newUser);
     if (!parsed.success) {
       return {
         ok: false,
         message:
           parsed.error.issues[0]?.message ??
-          "Datos del nuevo usuario invalidos.",
+          translateError(locale, "enc.newUserInvalidData"),
       };
     }
     payload.newUser = parsed.data;
@@ -125,12 +131,13 @@ export async function matricularUsuarioAction(
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "No tienes permisos.",
+      message:
+        error instanceof Error ? error.message : translateError(locale, "enc.noPermissions"),
     };
   }
 
   try {
-    const result = await matricularUsuarioIndividual(payload);
+    const result = await matricularUsuarioIndividual(payload, locale);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/encuestados");
@@ -148,7 +155,7 @@ export async function matricularUsuarioAction(
     console.error("[matricularUsuarioAction]", error);
     return {
       ok: false,
-      message: "No se pudo matricular al usuario. Verifica los datos e intenta de nuevo.",
+      message: translateError(locale, "enc.enrollFailed"),
     };
   }
 }
@@ -157,22 +164,23 @@ export async function desmatricularUsuarioAction(
   courseId: number,
   targetUserId: number,
 ): Promise<MatricularUsuarioActionResult> {
+  const locale = await getServerLocale();
   let userId: number;
   try {
     userId = await requireUserId();
   } catch {
     return {
       ok: false,
-      message: "Sesion invalida. Vuelve a iniciar sesion.",
+      message: translateError(locale, "enc.invalidSession"),
     };
   }
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    return { ok: false, message: "Curso invalido." };
+    return { ok: false, message: translateError(locale, "enc.invalidCourse") };
   }
 
   if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
-    return { ok: false, message: "Usuario invalido." };
+    return { ok: false, message: translateError(locale, "enc.invalidUser") };
   }
 
   const cookieStore = await cookies();
@@ -184,7 +192,8 @@ export async function desmatricularUsuarioAction(
     } catch (error) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "No tienes permisos.",
+        message:
+          error instanceof Error ? error.message : translateError(locale, "enc.noPermissions"),
       };
     }
   }
@@ -193,8 +202,7 @@ export async function desmatricularUsuarioAction(
   if (isTeacher) {
     return {
       ok: false,
-      message:
-        "No se puede desmatricular a un profesor del curso. Elimine su rol de profesor primero.",
+      message: translateError(locale, "enc.cannotUnenrollTeacher"),
     };
   }
 
@@ -208,13 +216,13 @@ export async function desmatricularUsuarioAction(
 
     return {
       ok: true,
-      message: "Usuario desmatriculado correctamente.",
+      message: translateError(locale, "enc.unenrolled"),
     };
   } catch (error) {
     console.error("[desmatricularUsuarioAction]", error);
     return {
       ok: false,
-      message: "No se pudo desmatricular al usuario. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "enc.unenrollFailed"),
     };
   }
 }
@@ -223,18 +231,19 @@ export async function registrarEstudiantesCsvAction(
   courseId: number,
   users: StudentInput[],
 ): Promise<{ ok: boolean; message: string; result?: BatchRegistrationResult }> {
+  const locale = await getServerLocale();
   try {
     const userId = await requireUserId();
     await ensureCourseOwnership(userId, courseId);
 
-    const result = await registrarEstudiantesCsv(users, courseId);
+    const result = await registrarEstudiantesCsv(users, courseId, locale);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/encuestados");
     revalidatePath("/dashboard/encuestados/matricular");
     revalidatePath(`/dashboard/cursos/${courseId}`);
 
-    return { ok: true, message: "Matriculacion masiva completada.", result };
+    return { ok: true, message: translateError(locale, "enc.batchCompleted"), result };
   } catch (error) {
     console.error("[registrarEstudiantesCsvAction]", error);
     return {
@@ -242,7 +251,7 @@ export async function registrarEstudiantesCsvAction(
       message:
         error instanceof Error
           ? error.message
-          : "No se pudo completar la matriculacion masiva.",
+          : translateError(locale, "enc.batchFailed"),
     };
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
 
@@ -13,10 +14,13 @@ interface InterpretChartButtonProps {
 
 export function InterpretChartButton({
   onClick,
-  label = "Interpretar con IA",
+  label,
   className,
   hidden = false,
 }: InterpretChartButtonProps) {
+  const t = useTranslations("ia");
+  const resolvedLabel = label ?? t("interpretWithIa");
+
   if (hidden) {
     return null;
   }
@@ -25,8 +29,8 @@ export function InterpretChartButton({
     <button
       type="button"
       onClick={onClick}
-      title={label}
-      aria-label={label}
+      title={resolvedLabel}
+      aria-label={resolvedLabel}
       className={cn(
         "ring ring-zinc-200 text-xs px-2.5",
         "inline-flex h-7 gap-1 items-center justify-center rounded-full text-black transition-all",
@@ -35,7 +39,7 @@ export function InterpretChartButton({
         className,
       )}
     >
-      Interpretar con IA
+      {resolvedLabel}
       <Sparkles strokeWidth={1} className="h-4 w-4" />
     </button>
   );

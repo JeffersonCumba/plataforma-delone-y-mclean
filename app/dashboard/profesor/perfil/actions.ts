@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { translateError } from "@/lib/errors";
+import { getServerLocale } from "@/lib/server-locale";
 import { actualizarUsuarioMoodle } from "@/services/adminService";
 import { resetVerificationIfEmailChanged } from "@/services/emailVerificationService";
 
@@ -14,11 +16,12 @@ export interface PerfilActionResult {
 export async function actualizarPerfilAction(
   input: Record<string, string>,
 ): Promise<PerfilActionResult> {
+  const locale = await getServerLocale();
   const cookieStore = await cookies();
   const userId = Number(cookieStore.get("user_id")?.value);
 
   if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: "Sesion invalida." };
+    return { ok: false, message: translateError(locale, "perfil.invalidSession") };
   }
 
   const changed: Record<string, string> = {};
@@ -29,7 +32,7 @@ export async function actualizarPerfilAction(
   }
 
   if (Object.keys(changed).length === 0) {
-    return { ok: false, message: "No hay campos para actualizar." };
+    return { ok: false, message: translateError(locale, "perfil.noFields") };
   }
 
   try {
@@ -47,12 +50,12 @@ export async function actualizarPerfilAction(
     revalidatePath("/dashboard/perfil");
     revalidatePath("/dashboard/profesor/perfil");
     revalidatePath("/dashboard");
-    return { ok: true, message: "Perfil actualizado correctamente." };
+    return { ok: true, message: translateError(locale, "perfil.updated") };
   } catch (error) {
     console.error("[actualizarPerfilAction]", error);
     return {
       ok: false,
-      message: "No se pudo actualizar el perfil. Intenta de nuevo mas tarde.",
+      message: translateError(locale, "perfil.updateFailed"),
     };
   }
 }

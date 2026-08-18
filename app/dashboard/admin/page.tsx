@@ -6,10 +6,12 @@ import { BookOpen, ClipboardList, GraduationCap, UserCheck, Users } from "lucide
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { obtenerEstadisticasGenerales } from "@/services/adminService";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminOverviewPage() {
   const cookieStore = await cookies();
   const role = cookieStore.get("user_role")?.value;
+  const t = await getTranslations("admin");
 
   if (role !== "ADMIN") {
     redirect("/dashboard/cursos");
@@ -21,10 +23,10 @@ export default async function AdminOverviewPage() {
     <section className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">
-          Panel de Administración
+          {t("panelTitle")}
         </h1>
         <p className="text-sm text-slate-600">
-          Resumen general de la plataforma DeLone y McLean.
+          {t("panelDescription")}
         </p>
       </div>
 
@@ -32,7 +34,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Profesores
+              {t("profesores")}
             </CardTitle>
             <GraduationCap className="h-5 w-5 text-slate-400" />
           </CardHeader>
@@ -46,7 +48,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Cursos
+              {t("courses")}
             </CardTitle>
             <BookOpen className="h-5 w-5 text-slate-400" />
           </CardHeader>
@@ -60,7 +62,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Estudiantes
+              {t("estudiantes")}
             </CardTitle>
             <Users className="h-5 w-5 text-slate-400" />
           </CardHeader>
@@ -74,7 +76,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Encuestas
+              {t("encuestas")}
             </CardTitle>
             <ClipboardList className="h-5 w-5 text-slate-400" />
           </CardHeader>
@@ -89,17 +91,16 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Gestión de Alumnos</CardTitle>
+            <CardTitle className="text-lg">{t("alumnosManagement")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-slate-600">
-              Administra los alumnos registrados en la plataforma: crea,
-              consulta y elimina cuentas de estudiante.
+              {t("alumnosManagementDesc")}
             </p>
             <Button asChild>
               <Link href="/dashboard/admin/alumnos">
                 <UserCheck className="mr-2 h-4 w-4" />
-                Ir a Alumnos
+                {t("goToAlumnos")}
               </Link>
             </Button>
           </CardContent>
@@ -107,17 +108,16 @@ export default async function AdminOverviewPage() {
 
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Gestión de Profesores</CardTitle>
+            <CardTitle className="text-lg">{t("profesoresManagement")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-slate-600">
-              Administra los profesores registrados en la plataforma: crea,
-              consulta y elimina cuentas de profesor.
+              {t("profesoresManagementDesc")}
             </p>
             <Button asChild>
               <Link href="/dashboard/admin/profesores">
                 <GraduationCap className="mr-2 h-4 w-4" />
-                Ir a Profesores
+                {t("goToProfesores")}
               </Link>
             </Button>
           </CardContent>
@@ -125,17 +125,16 @@ export default async function AdminOverviewPage() {
 
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Gestión de Cursos</CardTitle>
+            <CardTitle className="text-lg">{t("coursesManagement")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-slate-600">
-              Visualiza todos los cursos creados en Moodle, sus profesores
-              asignados y métricas de participación.
+              {t("coursesManagementDesc")}
             </p>
             <Button asChild>
               <Link href="/dashboard/admin/cursos">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Ir a Cursos
+                {t("goToCourses")}
               </Link>
             </Button>
           </CardContent>

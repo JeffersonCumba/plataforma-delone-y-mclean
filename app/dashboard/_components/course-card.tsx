@@ -21,18 +21,20 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderClosed } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { MoodleCourse } from "@/types/course";
 
-function cleanSummary(summary?: string): string {
+function cleanSummary(summary: string | undefined, noDescription: string): string {
   if (!summary) {
-    return "Sin descripcion disponible";
+    return noDescription;
   }
 
-  return summary.replace(/<[^>]*>/g, "").trim() || "Sin descripcion disponible";
+  return summary.replace(/<[^>]*>/g, "").trim() || noDescription;
 }
 
 export function CourseCard({ course }: { course: MoodleCourse }) {
   const router = useRouter();
+  const t = useTranslations("courseCard");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
@@ -71,7 +73,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
       <button
         type="button"
         className="absolute right-3 top-3 z-20 p-2 rounded-md text-slate-600 hover:shadow-sm hover:cursor-pointer hover:text-slate-950"
-        aria-label={`Opciones de ${course.fullname}`}
+        aria-label={t("optionsFor", { name: course.fullname })}
         onClick={() => setIsMenuOpen((current) => !current)}
       >
         <MoreVertical className="h-4 w-4" />
@@ -85,7 +87,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950"
           >
             <ExternalLink className="h-4 w-4" />
-            Ver curso
+            {t("viewCourse")}
           </Link>
           <button
             type="button"
@@ -96,7 +98,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             }}
           >
             <UserPlus className="h-4 w-4" />
-            Matricular usuario
+            {t("matricularUser")}
           </button>
           <button
             type="button"
@@ -107,7 +109,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             }}
           >
             <Link2 className="h-4 w-4" />
-            Copiar enlace
+            {t("copyLink")}
           </button>
           <button
             type="button"
@@ -118,7 +120,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             }}
           >
             <Trash2 className="h-4 w-4" />
-            Eliminar curso
+            {t("deleteCourse")}
           </button>
         </div>
       ) : null}
@@ -139,9 +141,9 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="line-clamp-3 text-sm text-slate-600">
-              {cleanSummary(course.summary)}
+              {cleanSummary(course.summary, t("noDescription"))}
             </p>
-            <p className="text-sm font-medium text-slate-700 hover:underline hover:text-cyan-700">Ver resumen</p>
+            <p className="text-sm font-medium text-slate-700 hover:underline hover:text-cyan-700">{t("viewSummary")}</p>
           </CardContent>
         </Card>
       </Link>
@@ -149,10 +151,9 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar curso</DialogTitle>
+            <DialogTitle>{t("deleteDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Esta accion eliminara el curso {course.fullname} de Moodle y del
-              dashboard.
+              {t("deleteDialogDescription", { name: course.fullname })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -171,10 +172,10 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
               {isDeleting ? (
                 <>
                   <Spinner className="mr-2" />
-                  Eliminando...
+                  {t("deleting")}
                 </>
               ) : (
-                "Eliminar curso"
+                t("deleteDialogTitle")
               )}
             </Button>
           </DialogFooter>

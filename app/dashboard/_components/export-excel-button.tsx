@@ -10,6 +10,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { AnalyticsData } from "@/types/analytics";
 import type { ExportVariant } from "@/types/export";
 import { canExport } from "@/app/dashboard/_components/export-guard";
+import { useTranslations } from "next-intl";
 
 const PYTHON_API_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL ?? "http://localhost:8000";
 const EXPORT_TIMEOUT = 30000;
@@ -29,10 +30,11 @@ export function ExportExcelButton({
   variant = "button",
   onStatusChange,
 }: ExportExcelButtonProps) {
+  const t = useTranslations("export");
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
-    if (!canExport(analytics.totalSurveys)) {
+    if (!canExport(analytics.totalSurveys, t)) {
       return;
     }
 
@@ -51,7 +53,7 @@ export function ExportExcelButton({
       });
 
       if (!response.ok) {
-        throw new Error("No se pudo exportar el Excel");
+        throw new Error(t("exportExcelError"));
       }
 
       const blob = await response.blob();
@@ -65,12 +67,12 @@ export function ExportExcelButton({
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
 
-      toast.success("Excel exportado correctamente");
+      toast.success(t("excelExported"));
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        toast.error("La exportación tardó demasiado, intenta de nuevo");
+        toast.error(t("timeoutError"));
       } else {
-        toast.error("No se pudo exportar el Excel");
+        toast.error(t("exportExcelError"));
       }
     } finally {
       clearTimeout(timeoutId);
@@ -83,7 +85,7 @@ export function ExportExcelButton({
     return (
       <DropdownMenuItem onSelect={handleExport} disabled={isExporting}>
         <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-        Excel
+        {t("excel")}
       </DropdownMenuItem>
     );
   }
@@ -91,7 +93,7 @@ export function ExportExcelButton({
   return (
     <Button onClick={handleExport} disabled={isExporting}>
       {isExporting ? <Spinner className="mr-2 h-4 w-4" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
-      {isExporting ? "Exportando..." : "Exportar reporte (Excel)"}
+      {isExporting ? t("exporting") : t("exportExcel")}
     </Button>
   );
 }

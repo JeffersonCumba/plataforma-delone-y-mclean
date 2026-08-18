@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 import { TRIAL_DAYS } from "@/lib/constants";
+import { DEFAULT_LOCALE, type Locale } from "@/i18n/locales";
+import { translateError } from "@/lib/errors";
 
 interface EmailOptions {
   to: string;
@@ -37,7 +39,10 @@ function getTransporter(): nodemailer.Transporter {
   return transporter;
 }
 
-export async function sendEmail(options: EmailOptions): Promise<{ ok: boolean; message: string }> {
+export async function sendEmail(
+  options: EmailOptions,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<{ ok: boolean; message: string }> {
   try {
     const transport = getTransporter();
     const from = process.env.SMTP_FROM ?? `"Plataforma DeLone & McLean" <noreply@delone-mclean.com>`;
@@ -51,9 +56,12 @@ export async function sendEmail(options: EmailOptions): Promise<{ ok: boolean; m
       attachments: options.attachments,
     });
 
-    return { ok: true, message: "Email sent successfully" };
+    return { ok: true, message: translateError(locale, "email.sendSuccess") };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error sending email";
+    const message =
+      error instanceof Error
+        ? error.message
+        : translateError(locale, "email.sendFailed");
     console.error("Email send error:", error);
     return { ok: false, message };
   }

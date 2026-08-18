@@ -1,50 +1,61 @@
 import { z } from "zod";
 
+import { type Locale } from "@/i18n/locales";
+import { translateError } from "@/lib/errors";
+
 const MOODLE_PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
-export const moodlePasswordSchema = z
-  .string()
-  .regex(
-    MOODLE_PASSWORD_REGEX,
-    "La contraseña debe tener al menos 8 caracteres, mayúscula, minúscula, número y carácter especial",
-  );
-
 const MOODLE_USERNAME_REGEX = /^[a-z0-9\-_.@]+$/;
 
-const usernameField = z
-  .string()
-  .trim()
-  .min(1, "El usuario es obligatorio")
-  .regex(
-    MOODLE_USERNAME_REGEX,
-    "El usuario solo puede contener minúsculas, números y los caracteres - _ . @",
-  );
+export function moodlePasswordSchema(locale: Locale) {
+  return z
+    .string()
+    .regex(
+      MOODLE_PASSWORD_REGEX,
+      translateError(locale, "validation.passwordRequirements"),
+    );
+}
 
-export const registerUserSchema = z.object({
-  username: usernameField,
-  firstname: z.string().trim().min(1, "El nombre es obligatorio"),
-  lastname: z.string().trim().min(1, "El apellido es obligatorio"),
-  email: z
+export function registerUserSchema(locale: Locale) {
+  return z.object({
+    username: usernameField(locale),
+    firstname: z.string().trim().min(1, translateError(locale, "validation.firstnameRequired")),
+    lastname: z.string().trim().min(1, translateError(locale, "validation.lastnameRequired")),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email(translateError(locale, "validation.emailInvalid")),
+    password: moodlePasswordSchema(locale),
+  });
+}
+
+export type RegisterUserInput = z.infer<ReturnType<typeof registerUserSchema>>;
+
+export function studentInputSchema(locale: Locale) {
+  return z.object({
+    username: usernameField(locale),
+    firstname: z.string().trim().min(1, translateError(locale, "validation.firstnameRequired")),
+    lastname: z.string().trim().min(1, translateError(locale, "validation.lastnameRequired")),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email(translateError(locale, "validation.emailInvalid")),
+    password: moodlePasswordSchema(locale),
+  });
+}
+
+export type StudentInput = z.infer<ReturnType<typeof studentInputSchema>>;
+
+function usernameField(locale: Locale) {
+  return z
     .string()
     .trim()
-    .toLowerCase()
-    .email("Ingresa un correo electrónico válido"),
-  password: moodlePasswordSchema,
-});
-
-export type RegisterUserInput = z.infer<typeof registerUserSchema>;
-
-export const studentInputSchema = z.object({
-  username: usernameField,
-  firstname: z.string().trim().min(1, "El nombre es obligatorio"),
-  lastname: z.string().trim().min(1, "El apellido es obligatorio"),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Ingresa un correo electrónico válido"),
-  password: moodlePasswordSchema,
-});
-
-export type StudentInput = z.infer<typeof studentInputSchema>;
+    .min(1, translateError(locale, "validation.usernameRequired"))
+    .regex(
+      MOODLE_USERNAME_REGEX,
+      translateError(locale, "validation.usernameInvalidChars"),
+    );
+}

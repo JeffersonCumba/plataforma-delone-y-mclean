@@ -4,6 +4,7 @@ import { type RowDataPacket } from "mysql2";
 import { z } from "zod";
 
 import { pool } from "@/lib/db";
+import { translateError } from "@/lib/errors";
 import { fetchMoodle, MoodleApiError } from "@/lib/moodle";
 import { initializeTrialForTeacher } from "@/services/trialService";
 import { initializeEmailVerification } from "@/services/emailVerificationService";
@@ -14,6 +15,7 @@ import {
   type StudentInput,
   type RegisterUserInput,
 } from "@/lib/validations/user";
+import type { Locale } from "@/i18n/locales";
 import type { MoodleUserSummary } from "@/types/encuestado";
 
 interface CreateUsersResponse {
@@ -72,13 +74,16 @@ export interface BatchRegistrationResult {
   errors: Array<{ email: string; message: string }>;
 }
 
-function normalizeStudentInput(input: StudentInput): StudentInput {
+function normalizeStudentInput(
+  input: StudentInput,
+  locale: Locale,
+): StudentInput {
   try {
-    return studentInputSchema.parse(input);
+    return studentInputSchema(locale).parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        error.issues[0]?.message ?? "Datos del estudiante inválidos",
+        error.issues[0]?.message ?? translateError(locale, "user.invalidStudentData"),
       );
     }
 
@@ -86,13 +91,16 @@ function normalizeStudentInput(input: StudentInput): StudentInput {
   }
 }
 
-function validateRegisterInput(input: RegisterUserInput): RegisterUserInput {
+function validateRegisterInput(
+  input: RegisterUserInput,
+  locale: Locale,
+): RegisterUserInput {
   try {
-    return registerUserSchema.parse(input);
+    return registerUserSchema(locale).parse(input);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        error.issues[0]?.message ?? "Datos de registro inválidos",
+        error.issues[0]?.message ?? translateError(locale, "user.invalidRegisterData"),
       );
     }
 
@@ -171,7 +179,7 @@ async function eliminarUsuarioMoodle(userId: number): Promise<void> {
   }
 }
 
-function parseRegistroError(error: unknown): string | null {
+function parseRegistroError(error: unknown, locale: Locale): string | null {
   if (!(error instanceof MoodleApiError)) {
     return null;
   }
@@ -188,7 +196,7 @@ function parseRegistroError(error: unknown): string | null {
       msg.includes("duplicado") ||
       msg.includes("duplicate")
     ) {
-      return "Ese nombre de usuario ya está en uso. Elige otro.";
+      return translateError(locale, "user.usernameTaken");
     }
 
     if (
@@ -198,14 +206,17 @@ function parseRegistroError(error: unknown): string | null {
       msg.includes("email already registered") ||
       msg.includes("mail ya existe")
     ) {
-      return "Ese correo electrónico ya está registrado. Usa otro o inicia sesión.";
+      return translateError(locale, "user.emailTaken");
     }
   }
 
   return null;
 }
 
-async function createMoodleUser(input: StudentInput): Promise<number> {
+async function createMoodleUser(
+  input: StudentInput,
+  locale: Locale,
+): Promise<number> {
   const createdUsers = await fetchMoodle<CreateUsersResponse[]>(
     "core_user_create_users",
     {
@@ -221,7 +232,7 @@ async function createMoodleUser(input: StudentInput): Promise<number> {
   const createdUserId = createdUsers?.[0]?.id;
 
   if (!createdUserId) {
-    throw new Error("No fue posible crear el usuario en Moodle");
+    throw new Error(translateError(locale, "user.createMoodleFailed"));
   }
 
   return createdUserId;
@@ -243,15 +254,16 @@ async function enrolUserInCourse(
 export async function registrarEstudianteCsv(
   input: StudentInput,
   courseId: number,
+  locale: Locale,
 ): Promise<StudentRegistrationResult> {
-  const data = normalizeStudentInput(input);
+  const data = normalizeStudentInput(input, locale);
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
-    throw new Error("El courseId no es valido para matricular estudiantes");
+    throw new Error(translateError(locale, "user.invalidCourseIdEnroll"));
   }
 
   const existingUser = await findUserByEmail(data.email);
-  const userId = existingUser?.id ?? (await createMoodleUser(data));
+  const userId = existingUser?.id ?? (await createMoodleUser(data, locale));
 
   await enrolUserInCourse(userId, courseId);
 
@@ -262,7 +274,7 @@ export async function registrarEstudianteCsv(
     created: !existingUser,
     enrolled: true,
     skipped: existingUser
-      ? "El usuario ya existia y se matriculo en el curso"
+      ? translateError(locale, "user.existingEnrolledCourse")
       : undefined,
   };
 }
@@ -270,9 +282,10 @@ export async function registrarEstudianteCsv(
 export async function registrarEstudiantesCsv(
   users: StudentInput[],
   courseId: number,
+  locale: Locale,
 ): Promise<BatchRegistrationResult> {
   if (!Array.isArray(users) || users.length === 0) {
-    throw new Error("No hay estudiantes para registrar");
+    throw new Error(translateError(locale, "user.noStudents"));
   }
 
   const results: StudentRegistrationResult[] = [];
@@ -285,7 +298,7 @@ export async function registrarEstudiantesCsv(
 
   for (const student of users) {
     try {
-      const result = await registrarEstudianteCsv(student, courseId);
+      const result = await registrarEstudianteCsv(student, courseId, locale);
       results.push(result);
       processed += 1;
       if (result.created) {
@@ -301,7 +314,9 @@ export async function registrarEstudiantesCsv(
       processed += 1;
       console.error("[registrarEstudianteCsv]", error);
       const message =
-        error instanceof Error ? error.message : "Error inesperado";
+        error instanceof Error
+          ? error.message
+          : translateError(locale, "user.unexpectedError");
       errors.push({
         email: student.email,
         message,
@@ -325,6 +340,7 @@ async function crearCursoInicialProfesor(
   userId: number,
   firstname: string,
   lastname: string,
+  locale: Locale,
 ): Promise<number> {
   const categoryId = Number(process.env.MOODLE_DEFAULT_CATEGORY_ID ?? 1);
   const teacherRoleId = Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4);
@@ -346,7 +362,7 @@ async function crearCursoInicialProfesor(
 
   const createdCourse = createdCourses?.[0];
   if (!createdCourse?.id) {
-    throw new Error("No se pudo crear el curso inicial en Moodle");
+    throw new Error(translateError(locale, "user.initialCourseFailed"));
   }
 
   await fetchMoodle<unknown>("enrol_manual_enrol_users", {
@@ -355,21 +371,29 @@ async function crearCursoInicialProfesor(
     "enrolments[0][courseid]": String(createdCourse.id),
   });
 
-  await createDefaultFeedbackInCourse(createdCourse.id, shortname);
+    await createDefaultFeedbackInCourse(
+      createdCourse.id,
+      shortname,
+      locale,
+    );
 
   return createdCourse.id;
 }
 
 export async function registrarUsuario(
   input: RegisterUserInput,
+  locale: Locale,
 ): Promise<{ ok: true; userId: number } | { ok: false; message: string }> {
   let data: RegisterUserInput;
   try {
-    data = validateRegisterInput(input);
+    data = validateRegisterInput(input, locale);
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "Datos de registro inválidos",
+      message:
+        error instanceof Error
+          ? error.message
+          : translateError(locale, "user.invalidRegisterData"),
     };
   }
 
@@ -379,21 +403,21 @@ export async function registrarUsuario(
   );
 
   if (usernameExists) {
-    return { ok: false, message: "Ese nombre de usuario ya está en uso. Elige otro." };
+    return { ok: false, message: translateError(locale, "user.usernameTaken") };
   }
 
   const emailExists = await checkUserExistsByField("email", data.email);
-  
+
   if (emailExists) {
-    return { ok: false, message: "Ese correo electrónico ya está registrado. Usa otro o inicia sesión." };
+    return { ok: false, message: translateError(locale, "user.emailTaken") };
   }
 
   let userId = 0;
 
   try {
-    userId = await createMoodleUser(data);
+    userId = await createMoodleUser(data, locale);
 
-    await crearCursoInicialProfesor(userId, data.firstname, data.lastname);
+    await crearCursoInicialProfesor(userId, data.firstname, data.lastname, locale);
 
     await initializeTrialForTeacher(userId);
     await initializeEmailVerification(userId, data.email);
@@ -412,7 +436,7 @@ export async function registrarUsuario(
       await eliminarUsuarioMoodle(userId);
     }
 
-    const friendly = parseRegistroError(error);
+    const friendly = parseRegistroError(error, locale);
     if (friendly) {
       return { ok: false, message: friendly };
     }
@@ -420,20 +444,24 @@ export async function registrarUsuario(
     if (userId === 0) {
       const usernameInDb = await findUserByUsername(data.username);
       if (usernameInDb) {
-        return { ok: false, message: "Ese nombre de usuario ya está en uso. Elige otro." };
+        return { ok: false, message: translateError(locale, "user.usernameTaken") };
       }
       const emailInDb = await findUserByEmail(data.email);
       if (emailInDb) {
-        return { ok: false, message: "Ese correo electrónico ya está registrado. Usa otro o inicia sesión." };
+        return { ok: false, message: translateError(locale, "user.emailTaken") };
       }
     }
 
-    return { ok: false, message: "No se pudo completar el registro. Verifica los datos e inténtalo de nuevo." };
+    return {
+      ok: false,
+      message: translateError(locale, "user.registerGenericFailed"),
+    };
   }
 }
 
 export async function buscarUsuariosMoodle(
   query: string,
+  locale: Locale,
 ): Promise<MoodleUserSummary[]> {
   const trimmed = query.trim();
 
@@ -475,7 +503,7 @@ export async function buscarUsuariosMoodle(
     const message =
       error instanceof Error
         ? error.message
-        : "No fue posible buscar usuarios en Moodle";
+        : translateError(locale, "user.searchMoodleFailed");
     throw new Error(message);
   }
 }
@@ -524,31 +552,33 @@ export async function matricularUsuarioIndividual(input: {
   mode: "existing" | "new";
   existingUserId?: number;
   newUser?: StudentInput;
-}): Promise<IndividualEnrollmentResult> {
+}, locale: Locale): Promise<IndividualEnrollmentResult> {
   if (!Number.isInteger(input.courseId) || input.courseId <= 0) {
-    throw new Error("El courseId no es valido para matricular");
+    throw new Error(translateError(locale, "user.invalidCourseIdMatriculate"));
   }
 
   if (input.mode === "existing") {
     if (!input.existingUserId) {
-      throw new Error("El existingUserId es obligatorio para el modo 'existing'");
+      throw new Error(translateError(locale, "user.existingUserIdRequired"));
     }
 
     const existingUserId: number = input.existingUserId;
 
     if (!Number.isInteger(existingUserId) || existingUserId <= 0) {
-      throw new Error("Selecciona un usuario existente para matricular");
+      throw new Error(translateError(locale, "user.selectExistingUser"));
     }
 
     const user = await getMoodleUserById(existingUserId);
     if (!user) {
-      throw new Error("El usuario seleccionado no existe o fue eliminado");
+      throw new Error(translateError(locale, "user.userNotExists"));
     }
 
     if (await isUserEnrolledInCourse(user.id, input.courseId)) {
       return {
         status: "already_enrolled",
-        message: `${user.fullname || user.username} ya esta matriculado en este curso`,
+        message: translateError(locale, "user.alreadyEnrolled", {
+          name: user.fullname || user.username,
+        }),
         user,
         courseId: input.courseId,
       };
@@ -558,7 +588,9 @@ export async function matricularUsuarioIndividual(input: {
 
     return {
       status: "enrolled",
-      message: `${user.fullname || user.username} matriculado correctamente`,
+      message: translateError(locale, "user.enrolledSuccess", {
+        name: user.fullname || user.username,
+      }),
       user,
       courseId: input.courseId,
     };
@@ -566,10 +598,10 @@ export async function matricularUsuarioIndividual(input: {
 
   if (input.mode === "new") {
     if (!input.newUser) {
-      throw new Error("Datos del nuevo usuario son obligatorios");
+      throw new Error(translateError(locale, "user.newUserDataRequired"));
     }
 
-    const data = normalizeStudentInput(input.newUser);
+    const data = normalizeStudentInput(input.newUser, locale);
 
     const existing = await findUserByEmail(data.email);
     let user: MoodleUserSummary;
@@ -577,14 +609,14 @@ export async function matricularUsuarioIndividual(input: {
     if (existing) {
       const summary = await getMoodleUserById(existing.id);
       if (!summary) {
-        throw new Error("Usuario existente en BD pero no se pudo recuperar");
+        throw new Error(translateError(locale, "user.existingUserRecoveryFailed"));
       }
       user = summary;
     } else {
-      const createdId = await createMoodleUser(data);
+      const createdId = await createMoodleUser(data, locale);
       const summary = await getMoodleUserById(createdId);
       if (!summary) {
-        throw new Error("Usuario creado pero no se pudo recuperar");
+        throw new Error(translateError(locale, "user.createdUserRecoveryFailed"));
       }
       user = summary;
     }
@@ -592,7 +624,9 @@ export async function matricularUsuarioIndividual(input: {
     if (await isUserEnrolledInCourse(user.id, input.courseId)) {
       return {
         status: "already_enrolled",
-        message: `${user.fullname || user.username} ya esta matriculado en este curso`,
+        message: translateError(locale, "user.alreadyEnrolled", {
+          name: user.fullname || user.username,
+        }),
         user,
         courseId: input.courseId,
       };
@@ -603,12 +637,16 @@ export async function matricularUsuarioIndividual(input: {
     return {
       status: existing ? "enrolled" : "created_and_enrolled",
       message: existing
-        ? `${user.fullname || user.username} ya existia y fue matriculado`
-        : `${user.fullname || user.username} creado y matriculado correctamente`,
+        ? translateError(locale, "user.existingEnrolled", {
+            name: user.fullname || user.username,
+          })
+        : translateError(locale, "user.createdEnrolled", {
+            name: user.fullname || user.username,
+          }),
       user,
       courseId: input.courseId,
     };
   }
 
-  throw new Error("Modo de matriculacion invalido");
+  throw new Error(translateError(locale, "user.invalidEnrollMode"));
 }

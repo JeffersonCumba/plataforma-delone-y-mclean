@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,18 +20,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { AnimatedHeading } from "@/components/animated-heading";
-import { GoogleTranslateWidget } from "@/components/google-translate-widget";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { login } from "@/services/authService";
+import type { Locale } from "@/i18n/locales";
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, "Ingresa un correo electrónico válido")
-    .email("Ingresa un correo electrónico válido"),
-  password: z.string().min(1, "Ingresa una contraseña válida"),
-});
+const loginSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1, t("invalidEmail"))
+      .email(t("invalidEmail")),
+    password: z.string().min(1, t("invalidPassword")),
+  });
 
 type FieldErrors = Partial<Record<"email" | "password", string>>;
 
@@ -43,6 +46,8 @@ export default function LoginPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const router = useRouter();
+  const locale = useLocale() as Locale;
+  const t = useTranslations("login");
   const { email: emailParam } = use(searchParams);
 
   const [email, setEmail] = useState(emailParam ?? "");
@@ -61,7 +66,7 @@ export default function LoginPage({
     event.preventDefault();
     setErrors({});
 
-    const parsed = loginSchema.safeParse({ email, password });
+    const parsed = loginSchema(t).safeParse({ email, password });
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const field = issue.path[0] as keyof FieldErrors;
@@ -72,16 +77,18 @@ export default function LoginPage({
 
     setLoading(true);
 
-    const result = await login(parsed.data.email, parsed.data.password);
+    const result = await login(parsed.data.email, parsed.data.password, locale);
 
     if (!result.ok) {
       const message = result.message;
 
-      const field = message.toLowerCase().includes("correo")
-        ? "email"
-        : message.toLowerCase().includes("contraseña")
-          ? "password"
-          : null;
+      const lower = message.toLowerCase();
+      const field =
+        lower.includes("correo") || lower.includes("e-mail") || lower.includes("email")
+          ? "email"
+          : lower.includes("contrase") || lower.includes("pass") || lower.includes("senha")
+            ? "password"
+            : null;
 
       toast.error(message);
 
@@ -115,21 +122,19 @@ export default function LoginPage({
       <section className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="max-w-2xl text-slate-950">
           <div className="mb-8">
-            <GoogleTranslateWidget hideLabel />
+            <LanguageSwitcher hideLabel />
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-slate-900" />
-            Acceso seguro a la plataforma de evaluación
+            {t("badge")}
           </div>
 
           <AnimatedHeading className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[55px]">
-            Inicia sesión para continuar con tu evaluación o revisar los datos
-            del estudio.
+            {t("heading")}
           </AnimatedHeading>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-slate-600 sm:text-xl">
-            Usa tus credenciales para entrar al entorno de encuestas,
-            dashboards y análisis del modelo DeLone y McLean.
+            {t("description")}
           </p>
         </div>
 
@@ -140,13 +145,13 @@ export default function LoginPage({
               <div className="mb-8 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-500">
-                    Login
+                    {t("cardEyebrow")}
                   </p>
                   <CardTitle className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                    Bienvenido de nuevo
+                    {t("cardTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Ingresa con tus credenciales para continuar.
+                    {t("cardDescription")}
                   </CardDescription>
                 </div>
               </div>
@@ -155,7 +160,7 @@ export default function LoginPage({
             <CardContent className="px-8 pb-8 sm:px-10 sm:pb-10">
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electrónico</Label>
+                  <Label htmlFor="email">{t("emailLabel")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -171,7 +176,7 @@ export default function LoginPage({
                       }
                     }}
                     autoComplete="email"
-                    placeholder="nombre@dominio.com"
+                    placeholder={t("emailPlaceholder")}
                     disabled={loading}
                     required
                     aria-invalid={!!errors.email}
@@ -179,7 +184,7 @@ export default function LoginPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="password">{t("passwordLabel")}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -195,7 +200,7 @@ export default function LoginPage({
                       }
                     }}
                     autoComplete="current-password"
-                    placeholder="Tu contraseña"
+                    placeholder={t("passwordPlaceholder")}
                     disabled={loading}
                     required
                     aria-invalid={!!errors.password}
@@ -214,7 +219,7 @@ export default function LoginPage({
                       rel="noreferrer"
                       className="text-sm font-medium text-blue-500 transition-colors hover:text-blue-600 hover:underline"
                     >
-                      Olvidé mi contraseña
+                      {t("forgotPassword")}
                     </a>
                   </div>
                 ) : null}
@@ -226,7 +231,7 @@ export default function LoginPage({
                     ) : (
                       <ChevronRight className="mr-2 h-4 w-4 transition-transform duration-300 group-hover/button:translate-x-1" />
                     )}
-                    {loading ? "Ingresando..." : "Ingresar"}
+                    {loading ? t("submitLoading") : t("submit")}
                   </button>
                 </Button>
 
@@ -237,12 +242,12 @@ export default function LoginPage({
                     className="w-full"
                     size="lg"
                   >
-                    <Link href="/register">Crear cuenta</Link>
+                    <Link href="/register">{t("createAccount")}</Link>
                   </Button>
                   <Button asChild variant="ghost" className="w-full" size="lg">
                     <Link href="/">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Volver al inicio
+                      {t("backHome")}
                     </Link>
                   </Button>
                 </div>

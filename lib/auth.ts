@@ -2,6 +2,8 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { getServerSession, type ServerSession } from "./session";
+import { translateError } from "./errors";
+import { getServerLocale } from "@/lib/server-locale";
 
 export function unauthorized(message: string): Response {
   return new Response(JSON.stringify({ message }), {
@@ -39,6 +41,7 @@ export async function requireAuth(): Promise<ServerSession> {
 
 export async function requireSession(): Promise<ServerSession | Response> {
   const session = await getServerSession();
-  if (!session) return unauthorized("Sesión inválida");
+  if (!session)
+    return unauthorized(translateError(await getServerLocale(), "session.invalid"));
   return session;
 }
