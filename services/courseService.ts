@@ -49,8 +49,20 @@ interface DefaultQuestion {
 
 type SurveyLanguage = "es" | "en" | "pt";
 
-const LIKERT_PRESENTATION =
+const LIKERT_PRESENTATION_ES =
   "r>>>>>1>>Totalmente en desacuerdo\r|2>>En desacuerdo\r|3>>Ni de acuerdo ni en desacuerdo\r|4>>De acuerdo\r|5>>Totalmente de acuerdo";
+
+const LIKERT_PRESENTATION_EN =
+  "r>>>>>1>>Strongly disagree\r|2>>Disagree\r|3>>Neither agree nor disagree\r|4>>Agree\r|5>>Strongly agree";
+
+const LIKERT_PRESENTATION_PT =
+  "r>>>>>1>>Discordo totalmente\r|2>>Discordo\r|3>>Nem concordo nem discordo\r|4>>Concordo\r|5>>Concordo totalmente";
+
+const LIKERT_PRESENTATION: Record<SurveyLanguage, string> = {
+  es: LIKERT_PRESENTATION_ES,
+  en: LIKERT_PRESENTATION_EN,
+  pt: LIKERT_PRESENTATION_PT,
+};
 
 const ES_QUESTIONS: DefaultQuestion[] = [
   { dimension: "calidad_sys", text: "¿Es el sistema fácil de usar?" },
@@ -316,6 +328,12 @@ function getSurveyQuestions(lang: string): DefaultQuestion[] {
   return SURVEY_QUESTIONS[language];
 }
 
+function getSurveyPresentation(lang: string): string {
+  const language: SurveyLanguage =
+    lang === "en" || lang === "pt" ? lang : "es";
+  return LIKERT_PRESENTATION[language];
+}
+
 export function normalizeLanguage(lang: string | undefined | null): string {
   const value = (lang ?? "")
     .trim()
@@ -402,6 +420,7 @@ export async function createDefaultFeedbackInCourse(
   const connection = await pool.getConnection();
   const now = Math.floor(Date.now() / 1000);
   const questions = getSurveyQuestions(lang ?? "es");
+  const presentation = getSurveyPresentation(lang ?? "es");
 
   try {
     await connection.beginTransaction();
@@ -428,7 +447,7 @@ export async function createDefaultFeedbackInCourse(
           feedbackId,
           question.text,
           question.dimension,
-          LIKERT_PRESENTATION,
+          presentation,
           position,
         ],
       );
@@ -613,6 +632,7 @@ export async function syncFeedbackLanguageInCourse(
 ): Promise<number> {
   const connection = await pool.getConnection();
   const questions = getSurveyQuestions(lang ?? "es");
+  const presentation = getSurveyPresentation(lang ?? "es");
 
   try {
     await connection.beginTransaction();
@@ -636,8 +656,8 @@ export async function syncFeedbackLanguageInCourse(
         if (!expected) continue;
         if (item.label !== expected.dimension) continue;
         await connection.execute(
-          "UPDATE mdl_feedback_item SET name = ? WHERE id = ?",
-          [expected.text, item.id],
+          "UPDATE mdl_feedback_item SET name = ?, presentation = ? WHERE id = ?",
+          [expected.text, presentation, item.id],
         );
         updated += 1;
       }
