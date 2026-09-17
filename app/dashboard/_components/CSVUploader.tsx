@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -120,6 +119,7 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
     if (file) {
       parseFile(file);
     }
+    event.target.value = "";
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -235,16 +235,38 @@ export function CSVUploader({ courses }: { courses: MoodleCourse[] }) {
             </Select>
           </div>
 
-          <div>
-            <Label>{t("csvFile")}</Label>
-            <Input
+          <div className="min-w-0">
+            <Label htmlFor="enrollment-csv-button">{t("csvFile")}</Label>
+            <input
               ref={fileInputRef}
               type="file"
               accept=".csv,text/csv"
               onChange={handleInputChange}
               disabled={processing}
-              className="mt-2"
+              hidden
             />
+            <div className="mt-2 flex min-h-11 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-slate-300 bg-white p-1 sm:flex-nowrap">
+              <Button
+                id="enrollment-csv-button"
+                type="button"
+                variant="outline"
+                disabled={processing}
+                onClick={() => fileInputRef.current?.click()}
+                aria-describedby="enrollment-csv-name"
+                className="h-8 gap-2 border-slate-300 bg-slate-100 px-3 text-slate-900 hover:bg-slate-200"
+              >
+                <Upload aria-hidden="true" className="size-4" />
+                {t("selectFile")}
+              </Button>
+              <span
+                id="enrollment-csv-name"
+                className="min-w-0 truncate text-sm text-slate-600"
+                title={fileName ?? undefined}
+                aria-live="polite"
+              >
+                {fileName ?? t("noFileSelected")}
+              </span>
+            </div>
           </div>
         </div>
 

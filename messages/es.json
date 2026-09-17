@@ -223,6 +223,8 @@
     "description": "Arrastra un archivo CSV con estudiantes, selecciona el curso y procesa la carga.",
     "courseDestination": "Curso destino",
     "csvFile": "Archivo CSV",
+    "selectFile": "Seleccionar archivo",
+    "noFileSelected": "Ningún archivo seleccionado",
     "courses": "Cursos",
     "dragDropHint": "Arrastra y suelta tu archivo CSV aquí o haz clic para seleccionarlo",
     "requiredHint": "Columnas requeridas: username, firstname, lastname, email, password",

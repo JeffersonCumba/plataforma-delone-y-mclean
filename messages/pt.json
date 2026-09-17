@@ -223,6 +223,8 @@
     "description": "Arraste um arquivo CSV com alunos, selecione o curso e processe o carregamento.",
     "courseDestination": "Curso de destino",
     "csvFile": "Arquivo CSV",
+    "selectFile": "Selecionar arquivo",
+    "noFileSelected": "Nenhum arquivo selecionado",
     "courses": "Cursos",
     "dragDropHint": "Arraste e solte seu arquivo CSV aqui ou clique para selecioná-lo",
     "requiredHint": "Colunas obrigatórias: username, firstname, lastname, email, password",

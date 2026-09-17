@@ -223,6 +223,8 @@
     "description": "Drag a CSV file with students, select the course and process the upload.",
     "courseDestination": "Destination course",
     "csvFile": "CSV file",
+    "selectFile": "Choose file",
+    "noFileSelected": "No file selected",
     "courses": "Courses",
     "dragDropHint": "Drag and drop your CSV file here or click to select it",
     "requiredHint": "Required columns: username, firstname, lastname, email, password",
