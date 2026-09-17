@@ -29,6 +29,10 @@ pnpm dev
 
 Abrir `http://localhost:3000`.
 
+## Scripts administrativos privados
+
+Los scripts de reset y datos demo contienen su propia configuración y la carpeta `scripts` está excluida de Git. Deben conservarse en una ubicación privada del servidor, fuera del directorio público. El reset requiere que `cleanup-db.js` y `reset-moodle-data.php` permanezcan juntos; el seed requiere Node.js 20 y el paquete `mysql2` disponible desde su ubicación.
+
 ## Flujo de login implementado
 
 1. El usuario accede a `/login`.
