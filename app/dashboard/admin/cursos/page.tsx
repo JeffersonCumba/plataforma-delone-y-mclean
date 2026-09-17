@@ -1,14 +1,13 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminCursosTable } from "@/app/dashboard/_components/admin-cursos-table";
 import { obtenerTodosLosCursos } from "@/services/adminService";
 import { getTranslations } from "next-intl/server";
+import { requireAuth } from "@/lib/auth";
 
 export default async function AdminCursosPage() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
+  const { role } = await requireAuth();
   const t = await getTranslations("adminCursos");
 
   if (role !== "ADMIN") {

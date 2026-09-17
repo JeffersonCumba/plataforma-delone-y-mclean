@@ -1,10 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
+import { getServerSession } from "@/lib/session";
 import { actualizarUsuarioMoodle } from "@/services/adminService";
 import { resetVerificationIfEmailChanged } from "@/services/emailVerificationService";
 
@@ -17,10 +17,8 @@ export async function actualizarPerfilAction(
   input: Record<string, string>,
 ): Promise<PerfilActionResult> {
   const locale = await getServerLocale();
-  const cookieStore = await cookies();
-  const userId = Number(cookieStore.get("user_id")?.value);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
+  const session = await getServerSession();
+  if (!session) {
     return { ok: false, message: translateError(locale, "perfil.invalidSession") };
   }
 
@@ -36,15 +34,10 @@ export async function actualizarPerfilAction(
   }
 
   try {
-    await actualizarUsuarioMoodle(userId, changed);
+    await actualizarUsuarioMoodle(session.userId, changed);
 
     if (changed.email) {
-      await resetVerificationIfEmailChanged(userId, changed.email);
-      cookieStore.set("user_email", encodeURIComponent(changed.email), {
-        path: "/",
-        maxAge: 86400,
-        sameSite: "lax",
-      });
+      await resetVerificationIfEmailChanged(session.userId, changed.email);
     }
 
     revalidatePath("/dashboard/perfil");

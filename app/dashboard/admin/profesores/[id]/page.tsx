@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, BookOpen, Clock } from "lucide-react";
@@ -11,6 +10,7 @@ import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { RowDataPacket } from "mysql2";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
 import { getTranslations } from "next-intl/server";
+import { requireAuth } from "@/lib/auth";
 
 interface ProfesorInfoRow extends RowDataPacket {
   id: number;
@@ -25,8 +25,7 @@ export default async function AdminProfesorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
+  const { role } = await requireAuth();
   const t = await getTranslations("profesorDetail");
 
   if (role !== "ADMIN") {

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, ClipboardList, GraduationCap, UserCheck, Users } from "lucide-react";
@@ -7,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { obtenerEstadisticasGenerales } from "@/services/adminService";
 import { getTranslations } from "next-intl/server";
+import { requireAuth } from "@/lib/auth";
 
 export default async function AdminOverviewPage() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
+  const { role } = await requireAuth();
   const t = await getTranslations("admin");
 
   if (role !== "ADMIN") {

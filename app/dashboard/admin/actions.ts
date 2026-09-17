@@ -1,6 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { type RowDataPacket } from "mysql2";
@@ -8,6 +7,7 @@ import { fetchMoodle } from "@/lib/moodle";
 import { pool } from "@/lib/db";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
+import { getServerSession } from "@/lib/session";
 import { registerUserSchema } from "@/lib/validations/user";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { registrarUsuario } from "@/services/userService";
@@ -25,9 +25,8 @@ export interface AdminActionResult {
 }
 
 async function requireAdmin(): Promise<void> {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
-  if (role !== "ADMIN") {
+  const session = await getServerSession();
+  if (session?.role !== "ADMIN") {
     throw new Error(translateError(await getServerLocale(), "admin.accessDenied"));
   }
 }

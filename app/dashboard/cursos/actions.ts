@@ -1,11 +1,11 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { fetchMoodle } from "@/lib/moodle";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
+import { getServerSession } from "@/lib/session";
 import { createCourseSchema } from "@/lib/validations/course";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
 import {
@@ -27,11 +27,8 @@ export async function createCourseAction(
   payload: unknown,
 ): Promise<CreateCourseActionResult> {
   const locale = await getServerLocale();
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
+  const session = await getServerSession();
+  if (!session) {
     return {
       ok: false,
       message: translateError(locale, "session.invalid"),
@@ -48,10 +45,8 @@ export async function createCourseAction(
     };
   }
 
-  const roleCookie = cookieStore.get("user_role")?.value;
-
-  if (roleCookie === "EVALUADOR") {
-    const courses = await obtenerCursosProfesor(userId, locale);
+  if (session.role === "EVALUADOR") {
+    const courses = await obtenerCursosProfesor(session.userId, locale);
     if (courses.length >= MAX_COURSES_PER_USER) {
       return {
         ok: false,
@@ -63,7 +58,7 @@ export async function createCourseAction(
   }
 
   try {
-    const course = await crearCursoProfesor(userId, parsed.data, locale);
+    const course = await crearCursoProfesor(session.userId, parsed.data, locale);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/cursos");
@@ -89,11 +84,8 @@ export async function deleteCourseAction(
   courseId: number,
 ): Promise<DeleteCourseActionResult> {
   const locale = await getServerLocale();
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
+  const session = await getServerSession();
+  if (!session) {
     return {
       ok: false,
       message: translateError(locale, "session.invalid"),
@@ -107,7 +99,7 @@ export async function deleteCourseAction(
     };
   }
 
-  const courses = await obtenerCursosProfesor(userId, locale);
+  const courses = await obtenerCursosProfesor(session.userId, locale);
   const allowedCourse = courses.find((course) => course.id === courseId);
 
   if (!allowedCourse) {

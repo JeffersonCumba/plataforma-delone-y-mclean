@@ -1,10 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
+import { getServerSession } from "@/lib/session";
 import { studentInputSchema, type StudentInput } from "@/lib/validations/user";
 import {
   buscarUsuariosMoodle,
@@ -23,15 +23,11 @@ import type {
 } from "@/types/encuestado";
 
 async function requireUserId(): Promise<number> {
-  const cookieStore = await cookies();
-  const userIdCookie = cookieStore.get("user_id")?.value;
-  const userId = Number(userIdCookie);
-
-  if (!Number.isInteger(userId) || userId <= 0) {
+  const session = await getServerSession();
+  if (!session) {
     throw new Error(translateError(await getServerLocale(), "enc.invalidSession"));
   }
-
-  return userId;
+  return session.userId;
 }
 
 async function ensureCourseOwnership(
@@ -183,10 +179,12 @@ export async function desmatricularUsuarioAction(
     return { ok: false, message: translateError(locale, "enc.invalidUser") };
   }
 
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
+  const session = await getServerSession();
+  if (!session) {
+    return { ok: false, message: translateError(locale, "enc.invalidSession") };
+  }
 
-  if (role !== "ADMIN") {
+  if (session.role !== "ADMIN") {
     try {
       await ensureCourseOwnership(userId, courseId);
     } catch (error) {

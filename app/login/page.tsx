@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -55,13 +55,6 @@ export default function LoginPage({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const match = document.cookie.match(/(?:^|;\s*)user_id=(\d+)/);
-    if (match && Number.isInteger(Number(match[1])) && Number(match[1]) > 0) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrors({});
@@ -101,16 +94,6 @@ export default function LoginPage({
       setLoading(false);
       return;
     }
-
-    localStorage.setItem("user_role", result.role);
-    localStorage.setItem("user_name", result.user.fullname);
-    localStorage.setItem("user_id", String(result.user.id));
-    localStorage.setItem("user_email", result.user.email);
-
-    document.cookie = `user_role=${result.role}; path=/; max-age=86400; samesite=lax`;
-    document.cookie = `user_name=${encodeURIComponent(result.user.fullname)}; path=/; max-age=86400; samesite=lax`;
-    document.cookie = `user_id=${result.user.id}; path=/; max-age=86400; samesite=lax`;
-    document.cookie = `user_email=${encodeURIComponent(result.user.email)}; path=/; max-age=86400; samesite=lax`;
 
     router.push("/dashboard");
     setLoading(false);

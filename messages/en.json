@@ -567,6 +567,7 @@
       "passwordRequired": "Password is required to sign in",
       "userNotFound": "No user was found with that email",
       "invalidCredentials": "Invalid credentials",
+      "platformAccessDenied": "This account can only access Moodle to complete the survey.",
       "genericError": "Failed to sign in. Please try again later."
     },
     "user": {

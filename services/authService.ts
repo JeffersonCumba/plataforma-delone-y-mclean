@@ -4,6 +4,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { type RowDataPacket } from "mysql2";
 
   import {pool} from "@/lib/db";
+  import { createServerSession } from "@/lib/session";
   import { translateError } from "@/lib/errors";
   import type { Locale } from "@/i18n/locales";
 
@@ -30,6 +31,10 @@ interface MoodleUserRow extends RowDataPacket {
   firstname: string;
   lastname: string;
   email: string;
+}
+
+interface CountRow extends RowDataPacket {
+  total: number;
 }
 
 interface ParsedSha512Crypt {
@@ -275,17 +280,41 @@ export async function login(
       MOODLE_ADMIN_EMAIL && user.email.toLowerCase() === MOODLE_ADMIN_EMAIL,
     );
 
-    const role: UserRole =
-      isAdminByUsername || isAdminByEmail ? "ADMIN" : "EVALUADOR";
+    let role: UserRole;
+    if (isAdminByUsername || isAdminByEmail) {
+      role = "ADMIN";
+    } else {
+      const [teacherRoleRows] = await pool.execute<CountRow[]>(
+        `SELECT COUNT(*) AS total
+           FROM mdl_role_assignments ra
+           JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+          WHERE ra.userid = ? AND ra.roleid = ?`,
+        [user.id, Number(process.env.MOODLE_TEACHER_ROLE_ID ?? 4)],
+      );
+
+      if ((teacherRoleRows[0]?.total ?? 0) === 0) {
+        return { ok: false, message: translateError(locale, "auth.platformAccessDenied") };
+      }
+      role = "EVALUADOR";
+    }
+
+    const loginUser = {
+      id: user.id,
+      username: user.username,
+      fullname: fullname || user.username,
+      email: user.email,
+    };
+
+    await createServerSession({
+      userId: loginUser.id,
+      role,
+      userName: loginUser.fullname,
+      email: loginUser.email,
+    });
 
     return {
       ok: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        fullname: fullname || user.username,
-        email: user.email,
-      },
+      user: loginUser,
       role,
     };
   } catch (error) {

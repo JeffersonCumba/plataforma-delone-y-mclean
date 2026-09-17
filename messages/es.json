@@ -567,6 +567,7 @@
       "passwordRequired": "La contraseña es obligatoria para iniciar sesión",
       "userNotFound": "No se encontró un usuario con ese correo electrónico",
       "invalidCredentials": "Credenciales incorrectas",
+      "platformAccessDenied": "Esta cuenta solo tiene acceso a Moodle para responder la encuesta.",
       "genericError": "Error al iniciar sesión. Intentalo de nuevo más tarde."
     },
     "user": {

@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -11,18 +10,17 @@ import { obtenerCursosDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { MoodleCourse } from "@/types/course";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { requireAuth } from "@/lib/auth";
 
 export default async function ProfesorDashboardPage() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get("user_role")?.value;
-  const userId = cookieStore.get("user_id")?.value;
+  const { role, userId } = await requireAuth();
   const t = await getTranslations("profesorPanel");
 
-  if (role !== "EVALUADOR" || !userId) {
+  if (role !== "EVALUADOR") {
     redirect("/dashboard/cursos");
   }
 
-  const teacherId = Number(userId);
+  const teacherId = userId;
 
   const [courses, trialInfo, TRIAL_DAYS] = await Promise.all([
     obtenerCursosDeProfesor(teacherId),

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useLocale, useTranslations } from "next-intl";
@@ -61,13 +61,6 @@ export default function RegisterPage() {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const match = document.cookie.match(/(?:^|;\s*)user_id=(\d+)/);
-    if (match && Number.isInteger(Number(match[1])) && Number(match[1]) > 0) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
 
   const handleChange =
     (field: keyof RegisterFormState) =>

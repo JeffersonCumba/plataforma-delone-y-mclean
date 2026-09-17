@@ -567,6 +567,7 @@
       "passwordRequired": "A senha é obrigatória para entrar",
       "userNotFound": "Nenhum usuário encontrado com esse e-mail",
       "invalidCredentials": "Credenciais incorretas",
+      "platformAccessDenied": "Esta conta só pode acessar o Moodle para responder à pesquisa.",
       "genericError": "Erro ao entrar. Tente novamente mais tarde."
     },
     "user": {
