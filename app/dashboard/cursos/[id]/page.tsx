@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { CourseAnalyticsPanel } from "@/app/dashboard/_components/course-analytics-panel";
+import { QuestionnaireLanguageControl } from "@/app/dashboard/_components/questionnaire-language-control";
 import { getCourseAnalyticsData } from "@/services/courseAnalyticsService";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { obtenerTodosLosCursos } from "@/services/adminService";
@@ -50,10 +51,13 @@ export default async function CourseOverviewPage({
   }
 
   return (
-    <CourseAnalyticsPanel
-      courseId={courseId}
-      courseName={courseName}
-      analytics={analytics}
-    />
+    <section className="space-y-6">
+      <QuestionnaireLanguageControl courseId={courseId} />
+      <CourseAnalyticsPanel
+        courseId={courseId}
+        courseName={courseName}
+        analytics={analytics}
+      />
+    </section>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
@@ -42,6 +43,7 @@ interface CreateCourseFormState {
   fullname: string;
   shortname: string;
   summary: string;
+  surveyLanguage: "es" | "en" | "pt";
 }
 
 export function CreateCourseForm({
@@ -59,6 +61,7 @@ export function CreateCourseForm({
     fullname: generatedDefaults.fullname,
     shortname: generatedDefaults.shortname,
     summary: "",
+    surveyLanguage: "es",
   });
 
   const limitReached =
@@ -81,7 +84,7 @@ export function CreateCourseForm({
         return;
       }
 
-      setForm({ fullname: "", shortname: "", summary: "" });
+      setForm({ fullname: "", shortname: "", summary: "", surveyLanguage: "es" });
       toast.success(result.message);
       setOpen(false);
       onSuccess?.();
@@ -153,6 +156,28 @@ export function CreateCourseForm({
                 placeholder={t("summaryPlaceholder")}
                 disabled={isPending}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="course-survey-language">{t("surveyLanguageLabel")}</Label>
+              <Select
+                value={form.surveyLanguage}
+                onValueChange={(value) => setForm((current) => ({
+                  ...current,
+                  surveyLanguage: value as CreateCourseFormState["surveyLanguage"],
+                }))}
+                disabled={isPending}
+              >
+                <SelectTrigger id="course-survey-language" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="es">{t("surveyLanguages.es")}</SelectItem>
+                  <SelectItem value="en">{t("surveyLanguages.en")}</SelectItem>
+                  <SelectItem value="pt">{t("surveyLanguages.pt")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500">{t("surveyLanguageHint")}</p>
             </div>
 
             <div className="flex justify-end">

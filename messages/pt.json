@@ -143,6 +143,12 @@
     "shortCodePlaceholder": "DLM-2026",
     "summaryLabel": "Descrição (opcional)",
     "summaryPlaceholder": "Curso para avaliação com o modelo DeLone e McLean",
+    "surveyLanguageLabel": "Idioma do questionário",
+    "surveyLanguageHint": "Define o idioma das perguntas criadas no Moodle.",
+    "surveyLanguages": { "es": "Espanhol", "en": "Inglês", "pt": "Português" },
+    "questionnaireLanguageTitle": "Idioma do questionário",
+    "questionnaireLanguageDescription": "Atualiza apenas as perguntas deste curso. As respostas existentes não são alteradas.",
+    "updateQuestionnaireLanguage": "Atualizar questionário",
     "creatingCourse": "Criando curso...",
     "limitReached": "Limite atingido: exclua um curso para poder criar outro."
   },
@@ -616,7 +622,10 @@
       "deleted": "Curso {name} excluído com sucesso.",
       "deleteFailed": "Não foi possível excluir o curso. Tente novamente mais tarde.",
       "invalid": "Curso inválido.",
-      "deleteForbidden": "Você não tem permissão para excluir este curso."
+      "deleteForbidden": "Você não tem permissão para excluir este curso.",
+      "languageForbidden": "Você não tem permissão para modificar o questionário deste curso.",
+      "languageUpdated": "Questionário atualizado: {count} perguntas modificadas.",
+      "languageUpdateFailed": "Não foi possível atualizar o idioma do questionário."
     },
     "analytics": {
       "invalidCourseId": "O courseId não é válido para consultar a análise"

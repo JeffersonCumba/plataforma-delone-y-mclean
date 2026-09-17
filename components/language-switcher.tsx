@@ -6,22 +6,6 @@ import { useLocale } from "next-intl";
 
 import { LOCALE_COOKIE, SUPPORTED_LOCALES } from "@/i18n/locales";
 
-function hasActiveSession(): boolean {
-  if (typeof document === "undefined") return false;
-  return /(?:^|;\s*)user_id=/.test(document.cookie);
-}
-
-function syncFeedbackLanguage(lang: string): void {
-  if (typeof navigator === "undefined" || !hasActiveSession()) return;
-  try {
-    const payload = JSON.stringify({ lang });
-    const blob = new Blob([payload], { type: "application/json" });
-    navigator.sendBeacon("/api/moodle/feedback-language", blob);
-  } catch {
-    // silencioso: la retraduccion de encuestas es best-effort
-  }
-}
-
 function persistLocaleCookie(lang: string) {
   const maxAge = 60 * 60 * 24 * 365;
   document.cookie = `${LOCALE_COOKIE}=${lang}; path=/; max-age=${maxAge}; samesite=lax`;
@@ -79,7 +63,6 @@ export function LanguageSwitcher({ hideLabel }: { hideLabel?: boolean }) {
   const switchLanguage = (lang: string) => {
     setIsOpen(false);
     persistLocaleCookie(lang);
-    syncFeedbackLanguage(lang);
     if (typeof window !== "undefined") window.location.reload();
   };
 

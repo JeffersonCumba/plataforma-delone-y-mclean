@@ -21,6 +21,7 @@ export function createCourseSchema(locale: Locale) {
       .max(2000, translateError(locale, "validation.courseSummaryMax"))
       .optional()
       .default(""),
+    surveyLanguage: z.enum(["es", "en", "pt"]),
   });
 }
 

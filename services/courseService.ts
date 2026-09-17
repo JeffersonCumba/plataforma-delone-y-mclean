@@ -571,7 +571,7 @@ export async function crearCursoProfesor(
     await createDefaultFeedbackInCourse(
       createdCourse.id,
       createdCourse.shortname,
-      lang,
+      data.surveyLanguage,
     );
 
     return {
@@ -659,18 +659,4 @@ export async function syncFeedbackLanguageInCourse(
   } finally {
     connection.release();
   }
-}
-
-export async function syncFeedbackLanguageForTeacher(
-  userId: number,
-  lang: string,
-): Promise<number> {
-  const courses = await obtenerCursosProfesor(userId);
-  let total = 0;
-
-  for (const course of courses) {
-    total += await syncFeedbackLanguageInCourse(course.id, lang);
-  }
-
-  return total;
 }

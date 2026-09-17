@@ -11,7 +11,9 @@ import { MAX_COURSES_PER_USER } from "@/lib/constants";
 import {
   crearCursoProfesor,
   obtenerCursosProfesor,
+  syncFeedbackLanguageInCourse,
 } from "@/services/courseService";
+import { obtenerTodosLosCursos } from "@/services/adminService";
 
 export interface CreateCourseActionResult {
   ok: boolean;
@@ -21,6 +23,40 @@ export interface CreateCourseActionResult {
 export interface DeleteCourseActionResult {
   ok: boolean;
   message: string;
+}
+
+export async function updateCourseSurveyLanguageAction(
+  courseId: number,
+  language: "es" | "en" | "pt",
+): Promise<{ ok: boolean; message: string }> {
+  const locale = await getServerLocale();
+  const session = await getServerSession();
+  if (!session) return { ok: false, message: translateError(locale, "session.invalid") };
+  if (!Number.isInteger(courseId) || courseId <= 0) {
+    return { ok: false, message: translateError(locale, "course.invalid") };
+  }
+  if (!(["es", "en", "pt"] as const).includes(language)) {
+    return { ok: false, message: translateError(locale, "course.invalidData") };
+  }
+
+  const courses = session.role === "ADMIN"
+    ? await obtenerTodosLosCursos()
+    : await obtenerCursosProfesor(session.userId, locale);
+  if (!courses.some((course) => course.id === courseId)) {
+    return { ok: false, message: translateError(locale, "course.languageForbidden") };
+  }
+
+  try {
+    const updated = await syncFeedbackLanguageInCourse(courseId, language);
+    revalidatePath(`/dashboard/cursos/${courseId}`);
+    return {
+      ok: true,
+      message: translateError(locale, "course.languageUpdated", { count: updated }),
+    };
+  } catch (error) {
+    console.error("[updateCourseSurveyLanguageAction]", error);
+    return { ok: false, message: translateError(locale, "course.languageUpdateFailed") };
+  }
 }
 
 export async function createCourseAction(
