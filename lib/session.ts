@@ -42,10 +42,20 @@ function decodeSession(value: string): ServerSession | null {
 
   try {
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as Partial<SessionPayload>;
-    if (!Number.isInteger(payload.userId) || (payload.role !== "ADMIN" && payload.role !== "EVALUADOR") || typeof payload.userName !== "string" || typeof payload.email !== "string" || !Number.isInteger(payload.expiresAt) || payload.expiresAt <= Date.now()) {
+    const { userId, role, userName, email, expiresAt } = payload;
+    if (
+      typeof userId !== "number" ||
+      !Number.isInteger(userId) ||
+      (role !== "ADMIN" && role !== "EVALUADOR") ||
+      typeof userName !== "string" ||
+      typeof email !== "string" ||
+      typeof expiresAt !== "number" ||
+      !Number.isInteger(expiresAt) ||
+      expiresAt <= Date.now()
+    ) {
       return null;
     }
-    return { userId: payload.userId, role: payload.role, userName: payload.userName, email: payload.email };
+    return { userId, role, userName, email };
   } catch {
     return null;
   }
