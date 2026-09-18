@@ -179,6 +179,7 @@
     "user": "Usuario",
     "email": "Email",
     "course": "Curso",
+    "actions": "Acciones",
     "teacher": "Profesor",
     "removeEnrollment": "Eliminar Matrícula",
     "deleteEnrollmentTitle": "Eliminar matrícula",

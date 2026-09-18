@@ -179,6 +179,7 @@
     "user": "User",
     "email": "Email",
     "course": "Course",
+    "actions": "Actions",
     "teacher": "Teacher",
     "removeEnrollment": "Remove Enrollment",
     "deleteEnrollmentTitle": "Remove enrollment",
