@@ -3,7 +3,11 @@ import es from "@/messages/es.json";
 import en from "@/messages/en.json";
 import pt from "@/messages/pt.json";
 
-const DICTIONARIES: Record<Locale, typeof es> = { es, en, pt };
+type ErrorDictionary = {
+  errors?: Record<string, unknown>;
+};
+
+const DICTIONARIES: Record<Locale, ErrorDictionary> = { es, en, pt };
 const DEFAULT_LOCALE: Locale = "es";
 
 export type { Locale } from "@/i18n/locales";
