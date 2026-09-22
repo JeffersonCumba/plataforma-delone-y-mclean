@@ -22,10 +22,13 @@ import type {
   BuscarUsuariosActionResult,
 } from "@/types/encuestado";
 
-async function requireUserId(): Promise<number> {
+async function requireTeacherId(): Promise<number> {
   const session = await getServerSession();
   if (!session) {
     throw new Error(translateError(await getServerLocale(), "enc.invalidSession"));
+  }
+  if (session.role !== "EVALUADOR") {
+    throw new Error(translateError(await getServerLocale(), "enc.noPermissions"));
   }
   return session.userId;
 }
@@ -52,7 +55,7 @@ export async function buscarUsuariosAction(
 ): Promise<BuscarUsuariosActionResult> {
   const locale = await getServerLocale();
   try {
-    await requireUserId();
+    await requireTeacherId();
     const users = await buscarUsuariosMoodle(query, locale);
     return { ok: true, message: "OK", users };
   } catch (error) {
@@ -60,8 +63,8 @@ export async function buscarUsuariosAction(
     return {
       ok: false,
       message:
-        error instanceof Error && error.message.includes("Sesion")
-          ? translateError(locale, "enc.invalidSession")
+        error instanceof Error
+          ? error.message
           : translateError(locale, "enc.searchFailed"),
       users: [],
     };
@@ -81,11 +84,14 @@ export async function matricularUsuarioAction(
   const locale = await getServerLocale();
   let userId: number;
   try {
-    userId = await requireUserId();
-  } catch {
+    userId = await requireTeacherId();
+  } catch (error) {
     return {
       ok: false,
-      message: translateError(locale, "enc.invalidSession"),
+      message:
+        error instanceof Error
+          ? error.message
+          : translateError(locale, "enc.invalidSession"),
     };
   }
 
@@ -163,11 +169,14 @@ export async function desmatricularUsuarioAction(
   const locale = await getServerLocale();
   let userId: number;
   try {
-    userId = await requireUserId();
-  } catch {
+    userId = await requireTeacherId();
+  } catch (error) {
     return {
       ok: false,
-      message: translateError(locale, "enc.invalidSession"),
+      message:
+        error instanceof Error
+          ? error.message
+          : translateError(locale, "enc.invalidSession"),
     };
   }
 
@@ -179,21 +188,14 @@ export async function desmatricularUsuarioAction(
     return { ok: false, message: translateError(locale, "enc.invalidUser") };
   }
 
-  const session = await getServerSession();
-  if (!session) {
-    return { ok: false, message: translateError(locale, "enc.invalidSession") };
-  }
-
-  if (session.role !== "ADMIN") {
-    try {
-      await ensureCourseOwnership(userId, courseId);
-    } catch (error) {
-      return {
-        ok: false,
-        message:
-          error instanceof Error ? error.message : translateError(locale, "enc.noPermissions"),
-      };
-    }
+  try {
+    await ensureCourseOwnership(userId, courseId);
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof Error ? error.message : translateError(locale, "enc.noPermissions"),
+    };
   }
 
   const isTeacher = await esProfesorEnCurso(targetUserId, courseId);
@@ -231,7 +233,7 @@ export async function registrarEstudiantesCsvAction(
 ): Promise<{ ok: boolean; message: string; result?: BatchRegistrationResult }> {
   const locale = await getServerLocale();
   try {
-    const userId = await requireUserId();
+    const userId = await requireTeacherId();
     await ensureCourseOwnership(userId, courseId);
 
     const result = await registrarEstudiantesCsv(users, courseId, locale);

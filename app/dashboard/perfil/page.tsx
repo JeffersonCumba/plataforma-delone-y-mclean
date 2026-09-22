@@ -42,6 +42,7 @@ export default async function PerfilPage() {
 
     return (
       <ProfileClient
+        isTeacher
         courses={courses}
         trialDays={TRIAL_DAYS}
         trialInfo={{ daysRemaining, isExpired, isWarningPeriod, trialEndsAt }}
@@ -58,6 +59,7 @@ export default async function PerfilPage() {
 
   return (
     <ProfileClient
+      isTeacher={false}
       courses={[]}
       trialDays={0}
       trialInfo={{

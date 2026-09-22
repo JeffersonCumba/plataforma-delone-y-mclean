@@ -55,31 +55,29 @@ export function DashboardSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("navigation")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {role !== "ADMIN" && (
+        {role === "EVALUADOR" && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("navigation")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/dashboard" className={linkClass}>
                     <LayoutDashboard className="h-4 w-4" />
                     <span>{t("summary")}</span>
                   </Link>
                 </SidebarMenuItem>
-              )}
-              <SidebarMenuItem>
-                <Link href="/dashboard/cursos" className={linkClass}>
-                  <FolderClosed className="h-4 w-4" />
-                  <span>{t("courses")}</span>
-                </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link href="/dashboard/encuestados" className={linkClass}>
-                  <UsersRound className="h-4 w-4" />
-                  <span>{t("encuestados")}</span>
-                </Link>
-              </SidebarMenuItem>
-              {role === "EVALUADOR" && (
+                <SidebarMenuItem>
+                  <Link href="/dashboard/cursos" className={linkClass}>
+                    <FolderClosed className="h-4 w-4" />
+                    <span>{t("courses")}</span>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/dashboard/encuestados" className={linkClass}>
+                    <UsersRound className="h-4 w-4" />
+                    <span>{t("encuestados")}</span>
+                  </Link>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link
                     href={`/dashboard/ayuda?from=${encodeURIComponent(pathname)}`}
@@ -89,10 +87,10 @@ export function DashboardSidebar({
                     <span>{t("help")}</span>
                   </Link>
                 </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {role === "ADMIN" && (
           <SidebarGroup>

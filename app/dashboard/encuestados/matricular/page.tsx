@@ -6,9 +6,12 @@ import { obtenerCursosProfesor } from "@/services/courseService";
 import { requireAuth } from "@/lib/auth";
 import { getServerLocale } from "@/lib/server-locale";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 
 export default async function DashboardEncuestadosMatricularPage() {
-  const { userId } = await requireAuth();
+  const { userId, role } = await requireAuth();
+  if (role === "ADMIN") redirect("/dashboard/admin");
+
   const locale = await getServerLocale();
   const t = await getTranslations("matricular");
 

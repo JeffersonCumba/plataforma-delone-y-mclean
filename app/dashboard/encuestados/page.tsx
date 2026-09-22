@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Upload, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,9 @@ import { getServerLocale } from "@/lib/server-locale";
 import { getTranslations } from "next-intl/server";
 
 export default async function DashboardEncuestadosPage() {
-  const { userId } = await requireAuth();
+  const { userId, role } = await requireAuth();
+  if (role === "ADMIN") redirect("/dashboard/admin");
+
   const locale = await getServerLocale();
   const t = await getTranslations("encuestados");
 

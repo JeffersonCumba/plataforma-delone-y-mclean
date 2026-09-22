@@ -15,6 +15,7 @@ import type { MoodleCourse } from "@/types/course";
 import { useLocale, useTranslations } from "next-intl";
 
 interface ProfileClientProps {
+  isTeacher: boolean;
   courses: MoodleCourse[];
   trialDays: number;
   trialInfo: {
@@ -33,6 +34,7 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({
+  isTeacher,
   courses,
   trialDays,
   trialInfo,
@@ -350,25 +352,27 @@ export function ProfileClient({
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200/80 bg-white/95 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("actionsTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild variant="outline" className="w-full justify-start gap-2">
-                <Link href="/dashboard/cursos">
-                  <BookOpen className="h-4 w-4" />
-                  {t("viewAllCourses")}
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start gap-2">
-                <Link href="/dashboard/encuestados">
-                  <UsersRound className="h-4 w-4" />
-                  {t("manageRespondents")}
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          {isTeacher && (
+            <Card className="border-slate-200/80 bg-white/95 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">{t("actionsTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button asChild variant="outline" className="w-full justify-start gap-2">
+                  <Link href="/dashboard/cursos">
+                    <BookOpen className="h-4 w-4" />
+                    {t("viewAllCourses")}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-start gap-2">
+                  <Link href="/dashboard/encuestados">
+                    <UsersRound className="h-4 w-4" />
+                    {t("manageRespondents")}
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </section>
