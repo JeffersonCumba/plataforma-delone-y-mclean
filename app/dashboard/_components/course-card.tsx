@@ -3,16 +3,18 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Link2, MoreVertical, Pencil, Trash2, UserPlus } from "lucide-react";
+import { ExternalLink, Languages, Link2, MoreVertical, Pencil, Trash2, UserPlus } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { copyMoodleLoginLink } from "@/lib/survey-link";
+import { cn } from "@/lib/utils";
 import {
   deleteCourseAction,
   updateCourseNameAction,
 } from "@/app/dashboard/cursos/actions";
 import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
+import { QuestionnaireLanguageDialog } from "@/app/dashboard/_components/questionnaire-language-control";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +46,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isLanguageDialogOpen, setIsLanguageDialogOpen] = useState(false);
   const [renamedCourse, setRenamedCourse] = useState<{
     originalName: string;
     updatedName: string;
@@ -110,7 +113,10 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
   };
 
   return (
-    <div ref={menuRef} className="relative group">
+    <div
+      ref={menuRef}
+      className={cn("relative group", isMenuOpen ? "z-50" : "z-0")}
+    >
       <button
         type="button"
         className="absolute right-3 top-3 z-20 p-2 rounded-md text-slate-600 hover:shadow-sm hover:cursor-pointer hover:text-slate-950"
@@ -121,7 +127,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
       </button>
 
       {isMenuOpen ? (
-        <div className="absolute right-3 top-12 z-30 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+        <div className="absolute right-3 top-12 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
           <Link
             href={`/dashboard/cursos/${course.id}`}
             onClick={() => setIsMenuOpen(false)}
@@ -141,6 +147,17 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
           >
             <Pencil className="h-4 w-4" />
             {t("renameCourse")}
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
+            onClick={() => {
+              setIsMenuOpen(false);
+              setIsLanguageDialogOpen(true);
+            }}
+          >
+            <Languages className="h-4 w-4" />
+            {t("changeQuestionnaireLanguage")}
           </button>
           <button
             type="button"
@@ -283,6 +300,12 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <QuestionnaireLanguageDialog
+        courseId={course.id}
+        open={isLanguageDialogOpen}
+        onOpenChange={setIsLanguageDialogOpen}
+      />
 
       <MatricularUsuarioDialog
         courses={[course]}

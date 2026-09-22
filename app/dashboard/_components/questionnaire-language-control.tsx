@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
 
 import { updateCourseSurveyLanguageAction } from "@/app/dashboard/cursos/actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -23,8 +29,19 @@ function isSurveyLanguage(value: string): value is SurveyLanguage {
   return value === "es" || value === "en" || value === "pt";
 }
 
-export function QuestionnaireLanguageControl({ courseId }: { courseId: number }) {
+interface QuestionnaireLanguageDialogProps {
+  courseId: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function QuestionnaireLanguageDialog({
+  courseId,
+  open,
+  onOpenChange,
+}: QuestionnaireLanguageDialogProps) {
   const t = useTranslations("courses");
+  const common = useTranslations("common");
   const locale = useLocale();
   const [language, setLanguage] = useState<SurveyLanguage>(
     isSurveyLanguage(locale) ? locale : "es",
@@ -39,24 +56,29 @@ export function QuestionnaireLanguageControl({ courseId }: { courseId: number })
         return;
       }
       toast.success(result.message);
+      onOpenChange(false);
     });
   };
 
   return (
-    <Card className="border-slate-200/80 bg-white/95 shadow-sm">
-      <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-            <Languages className="size-5" />
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900">{t("questionnaireLanguageTitle")}</p>
-            <p className="mt-1 text-sm text-slate-600">{t("questionnaireLanguageDescription")}</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Select value={language} onValueChange={(value) => setLanguage(value as SurveyLanguage)} disabled={isPending}>
-            <SelectTrigger aria-label={t("surveyLanguageLabel")} className="w-full sm:w-40">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("questionnaireLanguageTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("questionnaireLanguageDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Select
+            value={language}
+            onValueChange={(value) => setLanguage(value as SurveyLanguage)}
+            disabled={isPending}
+          >
+            <SelectTrigger
+              aria-label={t("surveyLanguageLabel")}
+              className="w-full"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -65,12 +87,22 @@ export function QuestionnaireLanguageControl({ courseId }: { courseId: number })
               <SelectItem value="pt">{t("surveyLanguages.pt")}</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
+            {common("cancel")}
+          </Button>
           <Button type="button" onClick={updateLanguage} disabled={isPending}>
             {isPending ? <Spinner className="mr-2" /> : null}
             {t("updateQuestionnaireLanguage")}
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

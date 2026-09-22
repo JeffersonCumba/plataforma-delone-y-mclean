@@ -161,6 +161,7 @@
     "viewCourse": "View course",
     "matricularUser": "Enroll user",
     "copyLink": "Copy link",
+    "changeQuestionnaireLanguage": "Questionnaire language",
     "renameCourse": "Rename course",
     "renameDialogTitle": "Rename course",
     "renameDialogDescription": "The new name will be updated directly in Moodle.",
