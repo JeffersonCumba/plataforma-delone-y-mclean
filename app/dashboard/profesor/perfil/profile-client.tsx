@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Calendar, CheckCircle, Clock, GraduationCap, Mail, User, XCircle, AlertTriangle, Save, Loader2, UsersRound } from "lucide-react";
+import { BookOpen, CheckCircle, XCircle, AlertTriangle, Save, Loader2, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
 import { actualizarPerfilAction } from "@/app/dashboard/profesor/perfil/actions";
 import type { MoodleCourse } from "@/types/course";
 import { useLocale, useTranslations } from "next-intl";
@@ -89,13 +89,14 @@ export function ProfileClient({
       </div>
 
       <div className="flex items-center justify-between mb-2">
-        <TrialTimerHorizontal
+        <TrialThermometer
           daysRemaining={daysRemaining}
           isExpired={isExpired}
           isWarningPeriod={isWarningPeriod}
           trialEndsAt={trialEndsAt}
           trialDays={trialDays}
           showLabel={true}
+          className="max-w-xs"
         />
       </div>
 
@@ -319,13 +320,14 @@ export function ProfileClient({
                 </div>
               </div>
 
-              <TrialTimerHorizontal
+              <TrialThermometer
                 daysRemaining={daysRemaining}
                 isExpired={isExpired}
                 isWarningPeriod={isWarningPeriod}
                 trialEndsAt={trialEndsAt}
                 trialDays={trialDays}
                 showLabel={true}
+                className="max-w-xs"
               />
             </CardContent>
           </Card>

@@ -5,16 +5,16 @@ import { cn } from "@/lib/utils";
 import { TRIAL_DAYS } from "@/lib/constants";
 import { useLocale, useTranslations } from "next-intl";
 
-interface TrialTimerProps {
+export interface TrialThermometerProps {
   daysRemaining: number;
   isExpired: boolean;
   isWarningPeriod: boolean;
   trialEndsAt: Date | null;
   showLabel?: boolean;
+  showExpirationDate?: boolean;
   size?: "sm" | "md" | "lg";
   className?: string;
   trialDays?: number;
-  warningDays?: number;
 }
 
 function getColorClasses(
@@ -73,21 +73,23 @@ const sizeConfig = {
   },
 };
 
-export function TrialTimer({
+export function TrialThermometer({
   daysRemaining,
   isExpired,
   isWarningPeriod,
   trialEndsAt,
   showLabel = true,
+  showExpirationDate = false,
   size = "md",
   className,
   trialDays = TRIAL_DAYS,
-}: TrialTimerProps) {
+}: TrialThermometerProps) {
   const t = useTranslations("trial");
   const locale = useLocale();
+  const safeTrialDays = Math.max(1, trialDays);
   const progress = isExpired
     ? 0
-    : Math.max(0, Math.min(1, daysRemaining / trialDays));
+    : Math.max(0, Math.min(1, daysRemaining / safeTrialDays));
   const percentage = Math.round(progress * 100);
 
   const cfg = sizeConfig[size];
@@ -95,7 +97,7 @@ export function TrialTimer({
   const textColorClass = getTextColorClasses(isExpired, isWarningPeriod);
 
   return (
-    <div className={cn("flex items-center", cfg.gap, className)}>
+    <div className={cn("flex w-full min-w-0 items-center", cfg.gap, className)}>
       <div
         className="flex-1 min-w-0 relative"
         style={{
@@ -137,7 +139,7 @@ export function TrialTimer({
               : t("daysRemaining")}
         </span>
       )}
-      {trialEndsAt && !isExpired && showLabel && (
+      {trialEndsAt && !isExpired && showLabel && showExpirationDate && (
         <span className="text-[10px] text-slate-400 hidden md:inline-block ml-1 whitespace-nowrap">
           {t("expiresOn")}{" "}
           {trialEndsAt.toLocaleDateString(locale, {
@@ -145,53 +147,6 @@ export function TrialTimer({
             month: "short",
             year: "numeric",
           })}
-        </span>
-      )}
-    </div>
-  );
-}
-
-export function TrialTimerHorizontal({
-  daysRemaining,
-  isExpired,
-  isWarningPeriod,
-  showLabel = true,
-  className,
-  trialDays = TRIAL_DAYS,
-}: Omit<TrialTimerProps, "size">) {
-  const t = useTranslations("trial");
-  const progress = isExpired
-    ? 0
-    : Math.max(0, Math.min(1, daysRemaining / trialDays));
-  const percentage = Math.round(progress * 100);
-
-  const colorClass = getColorClasses(daysRemaining, isExpired, isWarningPeriod);
-  const textColorClass = getTextColorClasses(isExpired, isWarningPeriod);
-
-  return (
-    <div className={cn("flex items-center gap-3 w-full max-w-xs", className)}>
-      <div className="flex-1 relative h-3 rounded-full bg-slate-200 overflow-hidden">
-        <div
-          className={cn(
-            "absolute top-0 left-0 bottom-0 rounded-full transition-all duration-500",
-            colorClass,
-          )}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-      <div className={cn("flex items-center gap-1.5", textColorClass)}>
-        {getIcon(isExpired, isWarningPeriod, "md")}
-        <span className="text-sm font-medium">
-          {isExpired ? t("expired") : t("daysShort", { days: daysRemaining })}
-        </span>
-      </div>
-      {showLabel && (
-        <span className="text-xs text-slate-400 hidden sm:inline">
-          {isExpired
-            ? t("trialFinished")
-            : isWarningPeriod
-              ? t("daysRemainingWarning", { days: daysRemaining })
-              : t("daysRemaining")}
         </span>
       )}
     </div>

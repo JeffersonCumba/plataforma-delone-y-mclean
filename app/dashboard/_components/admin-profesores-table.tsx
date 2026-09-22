@@ -20,7 +20,7 @@ import {
   simularExpiracionAction,
 } from "@/app/dashboard/admin/actions";
 import type { ProfesorRow } from "@/types/admin";
-import { TrialTimer } from "@/app/dashboard/_components/trial-timer";
+import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
 
 interface AdminProfesoresTableProps {
   profesores: ProfesorRow[];
@@ -99,7 +99,7 @@ export function AdminProfesoresTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <TrialTimer
+                    <TrialThermometer
                       daysRemaining={profesor.trialDaysRemaining}
                       isExpired={profesor.trialIsExpired}
                       isWarningPeriod={profesor.trialIsWarningPeriod}

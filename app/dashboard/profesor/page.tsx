@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { obtenerCursosDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { MoodleCourse } from "@/types/course";
-import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
 import { requireAuth } from "@/lib/auth";
 
 export default async function ProfesorDashboardPage() {
@@ -44,13 +44,14 @@ export default async function ProfesorDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <TrialTimerHorizontal
+            <TrialThermometer
               daysRemaining={daysRemaining}
               isExpired={isExpired}
               isWarningPeriod={isWarningPeriod}
               trialEndsAt={trialEndsAt}
               trialDays={TRIAL_DAYS}
               showLabel={true}
+              className="max-w-xs"
             />
           </div>
         </div>
@@ -119,13 +120,14 @@ export default async function ProfesorDashboardPage() {
                   {isExpired ? t("expired") : isWarningPeriod ? t("aboutToExpire") : t("active")}
                 </p>
               </div>
-              <TrialTimerHorizontal
+              <TrialThermometer
                 daysRemaining={daysRemaining}
                 isExpired={isExpired}
                 isWarningPeriod={isWarningPeriod}
                 trialEndsAt={trialEndsAt}
                 trialDays={TRIAL_DAYS}
                 showLabel={false}
+                className="max-w-40"
               />
             </div>
           </CardContent>

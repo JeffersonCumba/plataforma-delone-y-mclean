@@ -11,7 +11,7 @@ import {
 } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { RowDataPacket } from "mysql2";
-import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
 import { getTranslations } from "next-intl/server";
 import { requireAuth } from "@/lib/auth";
 
@@ -97,18 +97,6 @@ export default async function AdminProfesorDetailPage({
           <p className="text-sm text-slate-600">@{profesor.username}</p>
         </div>
 
-        {trialInfo && (
-          <div className="flex items-center gap-4">
-            <TrialTimerHorizontal
-              daysRemaining={daysRemaining}
-              isExpired={isExpired}
-              isWarningPeriod={isWarningPeriod}
-              trialEndsAt={trialEndsAt}
-              trialDays={TRIAL_DAYS}
-              showLabel={true}
-            />
-          </div>
-        )}
       </div>
 
       {trialInfo && isExpired && (
@@ -169,19 +157,22 @@ export default async function AdminProfesorDetailPage({
               </dt>
               <dd className="mt-1 text-sm text-slate-600">{profesor.email}</dd>
             </div>
-            {trialInfo && (
+            {!isAdminUser && (
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   {t("trialPeriod")}
                 </dt>
                 <dd className="mt-1">
-                  <TrialTimerHorizontal
+                  <TrialThermometer
                     daysRemaining={daysRemaining}
                     isExpired={isExpired}
                     isWarningPeriod={isWarningPeriod}
                     trialEndsAt={trialEndsAt}
                     trialDays={TRIAL_DAYS}
                     showLabel={true}
+                    showExpirationDate={true}
+                    size="lg"
+                    className="max-w-xl"
                   />
                 </dd>
               </div>

@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Clock,
   GraduationCap,
-  Plus,
   UserCheck,
   UsersRound,
   XCircle,
@@ -19,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { obtenerCursosDeProfesor, obtenerEstadisticasGenerales, obtenerEstudiantesDeProfesor, obtenerEncuestasDeProfesor } from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
-import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
+import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
 import { EmailVerificationBanner } from "@/components/email-verification-banner";
 import { isEmailVerified } from "@/services/emailVerificationService";
 
@@ -134,13 +133,14 @@ export default async function DashboardIndexPage() {
           <h1 className="text-2xl font-semibold text-slate-900">{t("myPanelTitle")}</h1>
           <p className="text-sm text-slate-500">{t("myPanelDescription")}</p>
         </div>
-        <TrialTimerHorizontal
+        <TrialThermometer
           daysRemaining={daysRemaining}
           isExpired={isExpired}
           isWarningPeriod={isWarningPeriod}
           trialEndsAt={trialEndsAt}
           trialDays={TRIAL_DAYS}
           showLabel
+          className="max-w-xs"
         />
       </div>
 
