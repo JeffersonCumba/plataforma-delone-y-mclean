@@ -22,13 +22,13 @@ interface ProfileClientProps {
     isExpired: boolean;
     isWarningPeriod: boolean;
     trialEndsAt: Date | null;
-    trialStartDate: Date | null;
   };
   user: {
     username: string;
     firstname: string;
     lastname: string;
     email: string;
+    createdAt: number | null;
   };
 }
 
@@ -40,7 +40,7 @@ export function ProfileClient({
 }: ProfileClientProps) {
   const t = useTranslations("perfil");
   const locale = useLocale();
-  const { daysRemaining, isExpired, isWarningPeriod, trialEndsAt, trialStartDate } = trialInfo;
+  const { daysRemaining, isExpired, isWarningPeriod, trialEndsAt } = trialInfo;
 
   const [profesorData, setProfesorData] = useState({
     firstname: user.firstname,
@@ -307,13 +307,13 @@ export function ProfileClient({
                   <span className="font-semibold text-slate-900">{daysRemaining} / {trialDays}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">{t("trialStart")}</span>
+                  <span className="text-slate-500">{t("accountCreated")}</span>
                   <span className="font-medium text-slate-900">
-                    {trialStartDate ? new Date(trialStartDate).toLocaleDateString(locale) : "—"}
+                    {user.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString(locale) : "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">{t("expiresOn")}</span>
+                  <span className="text-slate-500">{t("accountExpires")}</span>
                   <span className="font-medium text-slate-900">
                     {trialEndsAt ? new Date(trialEndsAt).toLocaleDateString(locale) : "—"}
                   </span>

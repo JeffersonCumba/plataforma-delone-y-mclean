@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Clock, UsersRound } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarClock,
+  CalendarPlus,
+  Clock,
+  UsersRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +19,7 @@ import {
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { RowDataPacket } from "mysql2";
 import { TrialThermometer } from "@/app/dashboard/_components/trial-timer";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireAuth } from "@/lib/auth";
 
 interface ProfesorInfoRow extends RowDataPacket {
@@ -21,6 +28,7 @@ interface ProfesorInfoRow extends RowDataPacket {
   firstname: string;
   lastname: string;
   email: string;
+  timecreated: number;
 }
 
 export default async function AdminProfesorDetailPage({
@@ -30,6 +38,7 @@ export default async function AdminProfesorDetailPage({
 }) {
   const { role } = await requireAuth();
   const t = await getTranslations("profesorDetail");
+  const locale = await getLocale();
 
   if (role !== "ADMIN") {
     redirect("/dashboard/cursos");
@@ -43,7 +52,7 @@ export default async function AdminProfesorDetailPage({
   }
 
   const [rows] = await pool.execute<ProfesorInfoRow[]>(
-    `SELECT id, username, firstname, lastname, email
+    `SELECT id, username, firstname, lastname, email, timecreated
        FROM mdl_user
       WHERE id = ? AND deleted = 0
       LIMIT 1`,
@@ -72,6 +81,8 @@ export default async function AdminProfesorDetailPage({
   const isExpired = trialInfo?.isExpired ?? false;
   const isWarningPeriod = trialInfo?.isWarningPeriod ?? false;
   const trialEndsAt = trialInfo?.trialEndsAt ?? null;
+  const accountCreatedAt = new Date(profesor.timecreated * 1000);
+  const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "long" });
 
   return (
     <section className="space-y-6">
@@ -156,6 +167,24 @@ export default async function AdminProfesorDetailPage({
                 {t("email")}
               </dt>
               <dd className="mt-1 text-sm text-slate-600">{profesor.email}</dd>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <CalendarPlus className="h-4 w-4" />
+                {t("accountCreated")}
+              </dt>
+              <dd className="mt-2 text-sm font-medium text-slate-900">
+                {dateFormatter.format(accountCreatedAt)}
+              </dd>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <CalendarClock className="h-4 w-4" />
+                {t("accountExpires")}
+              </dt>
+              <dd className="mt-2 text-sm font-medium text-slate-900">
+                {trialEndsAt ? dateFormatter.format(trialEndsAt) : "—"}
+              </dd>
             </div>
             {!isAdminUser && (
               <div className="sm:col-span-2">
