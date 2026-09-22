@@ -9,6 +9,7 @@ import {
 import { DashboardSidebar } from "@/app/dashboard/_components/dashboard-sidebar";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { DashboardEntrance } from "@/components/dashboard-entrance";
+import { getOpenSupportTicketCount } from "@/services/supportService";
 
 export default async function DashboardLayout({
   children,
@@ -16,10 +17,16 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { userId, role, userName } = await requireAuth();
+  const openSupportTickets = role === "ADMIN" ? await getOpenSupportTicketCount() : 0;
 
   return (
     <SidebarProvider>
-      <DashboardSidebar role={role} userName={userName} userId={userId} />
+      <DashboardSidebar
+        role={role}
+        userName={userName}
+        userId={userId}
+        openSupportTickets={openSupportTickets}
+      />
 
       <SidebarInset>
         <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/90 backdrop-blur">

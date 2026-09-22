@@ -1,22 +1,27 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, ClipboardList, GraduationCap, UserCheck, Users } from "lucide-react";
+import { BookOpen, ClipboardList, GraduationCap, LifeBuoy, UserCheck, Users } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { obtenerEstadisticasGenerales } from "@/services/adminService";
 import { getTranslations } from "next-intl/server";
 import { requireAuth } from "@/lib/auth";
+import { getOpenSupportTicketCount } from "@/services/supportService";
 
 export default async function AdminOverviewPage() {
   const { role } = await requireAuth();
   const t = await getTranslations("admin");
+  const supportT = await getTranslations("support");
 
   if (role !== "ADMIN") {
     redirect("/dashboard/cursos");
   }
 
-  const stats = await obtenerEstadisticasGenerales();
+  const [stats, openSupportTickets] = await Promise.all([
+    obtenerEstadisticasGenerales(),
+    getOpenSupportTicketCount(),
+  ]);
 
   return (
     <section className="space-y-6">
@@ -87,7 +92,7 @@ export default async function AdminOverviewPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card className="border-slate-200/80 bg-white/95 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">{t("alumnosManagement")}</CardTitle>
@@ -134,6 +139,28 @@ export default async function AdminOverviewPage() {
               <Link href="/dashboard/admin/cursos">
                 <BookOpen className="mr-2 h-4 w-4" />
                 {t("goToCourses")}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200/80 bg-white/95 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-3 text-lg">
+              {supportT("adminTitle")}
+              {openSupportTickets > 0 && (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                  {openSupportTickets}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-slate-600">{supportT("adminDescription")}</p>
+            <Button asChild>
+              <Link href="/dashboard/admin/soporte">
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                {supportT("ticketInbox")}
               </Link>
             </Button>
           </CardContent>

@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BookOpen,
   FolderClosed,
   GraduationCap,
   LayoutDashboard,
+  LifeBuoy,
   UserCheck,
   UsersRound,
 } from "lucide-react";
@@ -29,12 +31,15 @@ export function DashboardSidebar({
   role,
   userName,
   userId,
+  openSupportTickets,
 }: {
   role: "ADMIN" | "EVALUADOR";
   userName: string;
   userId: number;
+  openSupportTickets: number;
 }) {
   const t = useTranslations("sidebar");
+  const pathname = usePathname();
   const linkClass = cn(
     sidebarMenuButtonVariants(),
     "[&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
@@ -74,6 +79,17 @@ export function DashboardSidebar({
                   <span>{t("encuestados")}</span>
                 </Link>
               </SidebarMenuItem>
+              {role === "EVALUADOR" && (
+                <SidebarMenuItem>
+                  <Link
+                    href={`/dashboard/ayuda?from=${encodeURIComponent(pathname)}`}
+                    className={linkClass}
+                  >
+                    <LifeBuoy className="h-4 w-4" />
+                    <span>{t("help")}</span>
+                  </Link>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -105,6 +121,17 @@ export function DashboardSidebar({
                   <Link href="/dashboard/admin/cursos" className={linkClass}>
                     <BookOpen className="h-4 w-4" />
                     <span>{t("courses")}</span>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/dashboard/admin/soporte" className={linkClass}>
+                    <LifeBuoy className="h-4 w-4" />
+                    <span>{t("support")}</span>
+                    {openSupportTickets > 0 && (
+                      <span className="ml-auto rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">
+                        {openSupportTickets > 99 ? "99+" : openSupportTickets}
+                      </span>
+                    )}
                   </Link>
                 </SidebarMenuItem>
               </SidebarMenu>
