@@ -26,3 +26,17 @@ export function createCourseSchema(locale: Locale) {
 }
 
 export type CreateCourseInput = z.infer<ReturnType<typeof createCourseSchema>>;
+
+export function updateCourseNameSchema(locale: Locale) {
+  return z.object({
+    fullname: z
+      .string()
+      .trim()
+      .min(5, translateError(locale, "validation.courseFullnameMin"))
+      .max(100, translateError(locale, "validation.courseFullnameMax")),
+  });
+}
+
+export type UpdateCourseNameInput = z.infer<
+  ReturnType<typeof updateCourseNameSchema>
+>;

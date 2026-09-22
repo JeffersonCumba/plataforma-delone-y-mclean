@@ -53,6 +53,17 @@ interface NamedLockRow extends RowDataPacket {
   acquired: number | null;
 }
 
+interface MoodleWarning {
+  item?: string;
+  itemid?: number;
+  warningcode?: string;
+  message: string;
+}
+
+interface MoodleWarningsResponse {
+  warnings?: MoodleWarning[];
+}
+
 interface DefaultQuestion {
   dimension: DimensionKey;
   text: string;
@@ -63,7 +74,7 @@ type SurveyLanguage = "es" | "en" | "pt";
 export class CourseIdentifierConflictError extends Error {}
 export class CourseCreationBusyError extends Error {}
 
-const COURSE_CREATION_LOCK = "dlm_course_creation";
+const COURSE_IDENTIFIER_LOCK = "dlm_course_identifiers";
 
 async function createUniqueMoodleCourse(
   data: CreateCourseInput,
@@ -76,7 +87,7 @@ async function createUniqueMoodleCourse(
   try {
     const [lockRows] = await connection.execute<NamedLockRow[]>(
       "SELECT GET_LOCK(?, 10) AS acquired",
-      [COURSE_CREATION_LOCK],
+      [COURSE_IDENTIFIER_LOCK],
     );
     lockAcquired = lockRows[0]?.acquired === 1;
     if (!lockAcquired) {
@@ -129,9 +140,69 @@ async function createUniqueMoodleCourse(
   } finally {
     if (lockAcquired) {
       try {
-        await connection.execute("SELECT RELEASE_LOCK(?)", [COURSE_CREATION_LOCK]);
+        await connection.execute("SELECT RELEASE_LOCK(?)", [COURSE_IDENTIFIER_LOCK]);
       } catch (error) {
         console.error("[createUniqueMoodleCourse:releaseLock]", error);
+      }
+    }
+    connection.release();
+  }
+}
+
+export async function updateMoodleCourseName(
+  courseId: number,
+  fullname: string,
+  lang: Locale,
+): Promise<void> {
+  const connection = await pool.getConnection();
+  let lockAcquired = false;
+
+  try {
+    const [lockRows] = await connection.execute<NamedLockRow[]>(
+      "SELECT GET_LOCK(?, 10) AS acquired",
+      [COURSE_IDENTIFIER_LOCK],
+    );
+    lockAcquired = lockRows[0]?.acquired === 1;
+    if (!lockAcquired) {
+      throw new CourseCreationBusyError(
+        translateError(lang, "course.creationBusy"),
+      );
+    }
+
+    const [existingCourses] = await connection.execute<CourseIdentifierRow[]>(
+      `SELECT fullname, shortname
+         FROM mdl_course
+        WHERE fullname = ? AND id <> ?
+        LIMIT 1`,
+      [fullname, courseId],
+    );
+
+    if (existingCourses.length > 0) {
+      throw new CourseIdentifierConflictError(
+        translateError(lang, "course.fullnameTaken"),
+      );
+    }
+
+    const result = await fetchMoodle<MoodleWarningsResponse>(
+      "core_course_update_courses",
+      {
+      "courses[0][id]": String(courseId),
+      "courses[0][fullname]": fullname,
+      },
+    );
+
+    if (result.warnings?.length) {
+      throw new Error(
+        result.warnings[0]?.message ??
+          translateError(lang, "course.updateFailed"),
+      );
+    }
+  } finally {
+    if (lockAcquired) {
+      try {
+        await connection.execute("SELECT RELEASE_LOCK(?)", [COURSE_IDENTIFIER_LOCK]);
+      } catch (error) {
+        console.error("[updateMoodleCourseName:releaseLock]", error);
       }
     }
     connection.release();

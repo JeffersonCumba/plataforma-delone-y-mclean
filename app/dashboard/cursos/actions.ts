@@ -6,7 +6,10 @@ import { fetchMoodle } from "@/lib/moodle";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
 import { getServerSession } from "@/lib/session";
-import { createCourseSchema } from "@/lib/validations/course";
+import {
+  createCourseSchema,
+  updateCourseNameSchema,
+} from "@/lib/validations/course";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
 import {
   CourseCreationBusyError,
@@ -14,6 +17,7 @@ import {
   crearCursoProfesor,
   obtenerCursosProfesor,
   syncFeedbackLanguageInCourse,
+  updateMoodleCourseName,
 } from "@/services/courseService";
 import { obtenerTodosLosCursos } from "@/services/adminService";
 
@@ -25,6 +29,75 @@ export interface CreateCourseActionResult {
 export interface DeleteCourseActionResult {
   ok: boolean;
   message: string;
+}
+
+export async function updateCourseNameAction(
+  courseId: number,
+  payload: unknown,
+): Promise<{ ok: boolean; message: string; fullname?: string }> {
+  const locale = await getServerLocale();
+  const session = await getServerSession();
+  if (!session) {
+    return { ok: false, message: translateError(locale, "session.invalid") };
+  }
+
+  if (!Number.isInteger(courseId) || courseId <= 0) {
+    return { ok: false, message: translateError(locale, "course.invalid") };
+  }
+
+  const parsed = updateCourseNameSchema(locale).safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message:
+        parsed.error.issues[0]?.message ??
+        translateError(locale, "course.invalidData"),
+    };
+  }
+
+  const courses = session.role === "ADMIN"
+    ? await obtenerTodosLosCursos()
+    : await obtenerCursosProfesor(session.userId, locale);
+  const allowedCourse = courses.find((course) => course.id === courseId);
+  if (!allowedCourse) {
+    return { ok: false, message: translateError(locale, "course.updateForbidden") };
+  }
+
+  if (allowedCourse.fullname.trim() === parsed.data.fullname) {
+    return {
+      ok: true,
+      message: translateError(locale, "course.nameUpdated", {
+        name: parsed.data.fullname,
+      }),
+      fullname: parsed.data.fullname,
+    };
+  }
+
+  try {
+    await updateMoodleCourseName(courseId, parsed.data.fullname, locale);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/cursos");
+    revalidatePath(`/dashboard/cursos/${courseId}`);
+    revalidatePath(`/dashboard/cursos/${courseId}/analitica`);
+
+    return {
+      ok: true,
+      message: translateError(locale, "course.nameUpdated", {
+        name: parsed.data.fullname,
+      }),
+      fullname: parsed.data.fullname,
+    };
+  } catch (error) {
+    console.error("[updateCourseNameAction]", error);
+    if (
+      error instanceof CourseIdentifierConflictError ||
+      error instanceof CourseCreationBusyError
+    ) {
+      return { ok: false, message: error.message };
+    }
+    return { ok: false, message: translateError(locale, "course.updateFailed") };
+  }
 }
 
 export async function updateCourseSurveyLanguageAction(

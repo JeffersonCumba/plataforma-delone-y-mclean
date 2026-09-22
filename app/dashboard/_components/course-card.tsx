@@ -3,14 +3,19 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Link2, MoreVertical, Trash2, UserPlus } from "lucide-react";
+import { ExternalLink, Link2, MoreVertical, Pencil, Trash2, UserPlus } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { copyMoodleLoginLink } from "@/lib/survey-link";
-import { deleteCourseAction } from "@/app/dashboard/cursos/actions";
+import {
+  deleteCourseAction,
+  updateCourseNameAction,
+} from "@/app/dashboard/cursos/actions";
 import { MatricularUsuarioDialog } from "@/app/dashboard/_components/matricular-usuario-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -38,8 +43,19 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [renamedCourse, setRenamedCourse] = useState<{
+    originalName: string;
+    updatedName: string;
+  } | null>(null);
+  const [newCourseName, setNewCourseName] = useState(course.fullname);
   const [isDeleting, startDeletingTransition] = useTransition();
+  const [isRenaming, startRenamingTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const courseName =
+    renamedCourse?.originalName === course.fullname
+      ? renamedCourse.updatedName
+      : course.fullname;
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -51,6 +67,31 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
+
+  const handleRenameCourse = (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    startRenamingTransition(async () => {
+      const result = await updateCourseNameAction(course.id, {
+        fullname: newCourseName,
+      });
+
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+
+      const updatedName = result.fullname ?? newCourseName.trim();
+      setRenamedCourse({
+        originalName: course.fullname,
+        updatedName,
+      });
+      setNewCourseName(updatedName);
+      toast.success(result.message);
+      setIsRenameDialogOpen(false);
+      router.refresh();
+    });
+  };
 
   const handleDeleteCourse = () => {
     startDeletingTransition(async () => {
@@ -73,7 +114,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
       <button
         type="button"
         className="absolute right-3 top-3 z-20 p-2 rounded-md text-slate-600 hover:shadow-sm hover:cursor-pointer hover:text-slate-950"
-        aria-label={t("optionsFor", { name: course.fullname })}
+        aria-label={t("optionsFor", { name: courseName })}
         onClick={() => setIsMenuOpen((current) => !current)}
       >
         <MoreVertical className="h-4 w-4" />
@@ -89,6 +130,18 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             <ExternalLink className="h-4 w-4" />
             {t("viewCourse")}
           </Link>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
+            onClick={() => {
+              setIsMenuOpen(false);
+              setNewCourseName(courseName);
+              setIsRenameDialogOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+            {t("renameCourse")}
+          </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
@@ -135,7 +188,7 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
               <FolderClosed className="h-5 w-5" />
             </div>
             <CardTitle className="line-clamp-2 text-lg leading-6">
-              {course.fullname}
+              {courseName}
             </CardTitle>
             <p className="text-xs text-slate-500">{course.shortname}</p>
           </CardHeader>
@@ -148,12 +201,61 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
         </Card>
       </Link>
 
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("renameDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("renameDialogDescription")}</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={handleRenameCourse}>
+            <div className="space-y-2">
+              <Label htmlFor={`course-name-${course.id}`}>
+                {t("courseNameLabel")}
+              </Label>
+              <Input
+                id={`course-name-${course.id}`}
+                value={newCourseName}
+                onChange={(event) => setNewCourseName(event.target.value)}
+                minLength={5}
+                maxLength={100}
+                disabled={isRenaming}
+                autoFocus
+                required
+              />
+              <p className="text-xs text-slate-500">
+                {t("shortNameUnchanged", { shortname: course.shortname })}
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsRenameDialogOpen(false)}
+                disabled={isRenaming}
+              >
+                {t("cancel")}
+              </Button>
+              <Button type="submit" disabled={isRenaming}>
+                {isRenaming ? (
+                  <>
+                    <Spinner className="mr-2" />
+                    {t("renaming")}
+                  </>
+                ) : (
+                  t("saveName")
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("deleteDialogTitle")}</DialogTitle>
             <DialogDescription>
-              {t("deleteDialogDescription", { name: course.fullname })}
+              {t("deleteDialogDescription", { name: courseName })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
