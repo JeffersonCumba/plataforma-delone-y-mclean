@@ -340,11 +340,10 @@
     "user": "Usuário",
     "fullName": "Nome completo",
     "email": "E-mail",
-    "assignedCourses": "Cursos atribuídos",
     "trialPeriod": "Período de teste",
-    "teacherCoursesTitle": "Cursos do Professor",
-    "noCourses": "Este professor não tem cursos atribuídos.",
-    "viewAnalytics": "Ver analítica"
+    "summaryTitle": "Resumo da atividade",
+    "courseCount": "Cursos atribuídos",
+    "studentCount": "Alunos matriculados"
   },
   "perfil": {
     "title": "Meu Perfil",

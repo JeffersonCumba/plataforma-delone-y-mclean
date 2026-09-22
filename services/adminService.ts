@@ -318,6 +318,22 @@ export async function obtenerCursosDeProfesor(
   }));
 }
 
+export async function obtenerCantidadCursosDeProfesor(
+  teacherId: number,
+): Promise<number> {
+  const [rows] = await pool.execute<CountRow[]>(
+    `SELECT COUNT(DISTINCT ctx.instanceid) AS total
+       FROM mdl_role_assignments ra
+       JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+       JOIN mdl_course c ON c.id = ctx.instanceid AND c.id != 1
+      WHERE ra.roleid = ?
+        AND ra.userid = ?`,
+    [MOODLE_TEACHER_ROLE_ID, teacherId],
+  );
+
+  return rows[0]?.total ?? 0;
+}
+
 export async function eliminarUsuarioMoodle(userId: number): Promise<void> {
   await fetchMoodle<unknown>("core_user_delete_users", {
     "userids[0]": String(userId),
@@ -406,7 +422,7 @@ export async function desmatricularUsuarioCurso(
   userId: number,
   courseId: number,
 ): Promise<void> {
-  const result = await fetchMoodle<unknown>("enrol_manual_unenrol_users", {
+  await fetchMoodle<unknown>("enrol_manual_unenrol_users", {
     "unenrolments[0][roleid]": String(MOODLE_STUDENT_ROLE_ID),
     "unenrolments[0][userid]": String(userId),
     "unenrolments[0][courseid]": String(courseId),
@@ -420,12 +436,19 @@ export async function obtenerEstudiantesDeProfesor(
     `SELECT COUNT(DISTINCT ue.userid) AS total
        FROM mdl_user_enrolments ue
        JOIN mdl_enrol e ON e.id = ue.enrolid
+       JOIN mdl_user u ON u.id = ue.userid AND u.deleted = 0 AND u.suspended = 0
        JOIN mdl_course c ON c.id = e.courseid AND c.id != 1
        JOIN mdl_context ctx ON ctx.contextlevel = 50 AND ctx.instanceid = c.id
        JOIN mdl_role_assignments ra ON ra.contextid = ctx.id
+       JOIN mdl_role_assignments student_ra
+         ON student_ra.contextid = ctx.id
+        AND student_ra.userid = ue.userid
+        AND student_ra.roleid = ?
       WHERE ra.roleid = ?
-        AND ra.userid = ?`,
-    [MOODLE_TEACHER_ROLE_ID, teacherId],
+        AND ra.userid = ?
+        AND e.status = 0
+        AND ue.status = 0`,
+    [MOODLE_STUDENT_ROLE_ID, MOODLE_TEACHER_ROLE_ID, teacherId],
   );
 
   return rows[0]?.total ?? 0;

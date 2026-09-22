@@ -340,11 +340,10 @@
     "user": "User",
     "fullName": "Full name",
     "email": "Email",
-    "assignedCourses": "Assigned courses",
     "trialPeriod": "Trial period",
-    "teacherCoursesTitle": "Teacher Courses",
-    "noCourses": "This teacher has no assigned courses.",
-    "viewAnalytics": "View analytics"
+    "summaryTitle": "Activity summary",
+    "courseCount": "Assigned courses",
+    "studentCount": "Enrolled students"
   },
   "perfil": {
     "title": "My Profile",

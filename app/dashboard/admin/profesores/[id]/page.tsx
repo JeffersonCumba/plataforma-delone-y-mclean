@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, BookOpen, Clock, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { pool } from "@/lib/db";
-import { obtenerCursosDeProfesor } from "@/services/adminService";
+import {
+  obtenerCantidadCursosDeProfesor,
+  obtenerEstudiantesDeProfesor,
+} from "@/services/adminService";
 import { getTeacherTrialInfo, getTrialDays } from "@/services/trialService";
 import type { RowDataPacket } from "mysql2";
 import { TrialTimerHorizontal } from "@/app/dashboard/_components/trial-timer";
@@ -58,9 +61,10 @@ export default async function AdminProfesorDetailPage({
       profesor.email.toLowerCase() ===
         process.env.MOODLE_ADMIN_EMAIL!.toLowerCase());
 
-  const [trialInfo, cursos, TRIAL_DAYS] = await Promise.all([
+  const [trialInfo, courseCount, studentCount, TRIAL_DAYS] = await Promise.all([
     isAdminUser ? Promise.resolve(null) : getTeacherTrialInfo(teacherId),
-    obtenerCursosDeProfesor(teacherId),
+    obtenerCantidadCursosDeProfesor(teacherId),
+    obtenerEstudiantesDeProfesor(teacherId),
     getTrialDays(),
   ]);
 
@@ -165,12 +169,6 @@ export default async function AdminProfesorDetailPage({
               </dt>
               <dd className="mt-1 text-sm text-slate-600">{profesor.email}</dd>
             </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                {t("assignedCourses")}
-              </dt>
-              <dd className="mt-1 text-sm text-slate-900">{cursos.length}</dd>
-            </div>
             {trialInfo && (
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -194,41 +192,33 @@ export default async function AdminProfesorDetailPage({
 
       <Card className="border-slate-200/80 bg-white/90 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">{t("teacherCoursesTitle")}</CardTitle>
+          <CardTitle className="text-lg">{t("summaryTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {cursos.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
-              {t("noCourses")}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {courseCount}
+                </p>
+                <p className="text-sm text-slate-600">{t("courseCount")}</p>
+              </div>
             </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {cursos.map((curso) => (
-                <Link
-                  key={curso.id}
-                  href={`/dashboard/cursos/${curso.id}`}
-                  className="group block rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300"
-                >
-                  <p className="text-sm font-semibold text-slate-900">
-                    {curso.fullname}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {curso.shortname}
-                  </p>
-                  <div className="mt-3 flex items-center text-xs font-medium text-cyan-700">
-                    <span className="group relative inline-block cursor-pointer py-0.5">
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-3 w-3" />
-                        {t("viewAnalytics")}
-                      </span>
-
-                      <span className="absolute bottom-0 left-0 h-px w-0 bg-cyan-700 transition-all duration-300 ease-out group-hover:w-full"></span>
-                    </span>
-                  </div>
-                </Link>
-              ))}
+            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                <UsersRound className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold text-slate-900">
+                  {studentCount}
+                </p>
+                <p className="text-sm text-slate-600">{t("studentCount")}</p>
+              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </section>
