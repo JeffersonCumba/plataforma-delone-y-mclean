@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Pencil, UserRoundPlus, AlertTriangle, Trash2 } from "lucide-react";
+import { ExternalLink, AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CrearProfesorDialog } from "@/app/dashboard/_components/crear-profesor-dialog";
-import { EditarProfesorDialog } from "@/app/dashboard/_components/editar-profesor-dialog";
 import {
   simularWarningAction,
   simularExpiracionAction,
@@ -33,7 +31,6 @@ export function AdminProfesoresTable({
 }: AdminProfesoresTableProps) {
   const router = useRouter();
   const t = useTranslations("adminProfesores");
-  const [editTarget, setEditTarget] = useState<ProfesorRow | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<{
     user: ProfesorRow;
     type: "warning" | "expiration";
@@ -62,19 +59,9 @@ export function AdminProfesoresTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
-          {t("totalRegistered", { count: profesores.length })}
-        </p>
-        <CrearProfesorDialog
-          trigger={
-            <Button>
-              <UserRoundPlus className="mr-2 h-4 w-4" />
-              {t("createProfesor")}
-            </Button>
-          }
-        />
-      </div>
+      <p className="text-sm text-slate-600">
+        {t("totalRegistered", { count: profesores.length })}
+      </p>
 
       {profesores.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
@@ -137,15 +124,6 @@ export function AdminProfesoresTable({
                           {t("view")}
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-slate-600 hover:bg-slate-100"
-                        onClick={() => setEditTarget(profesor)}
-                      >
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        {t("edit")}
-                      </Button>
                       {profesor.username !== "admin" && (
                         <>
                           <Button
@@ -183,19 +161,6 @@ export function AdminProfesoresTable({
           </table>
         </div>
       )}
-
-      {editTarget ? (
-        <EditarProfesorDialog
-          profesor={editTarget}
-          open={editTarget !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditTarget(null);
-              router.refresh();
-            }
-          }}
-        />
-      ) : null}
 
       <Dialog
         open={confirmTarget !== null}

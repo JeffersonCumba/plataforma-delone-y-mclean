@@ -8,16 +8,10 @@ import { pool } from "@/lib/db";
 import { translateError } from "@/lib/errors";
 import { getServerLocale } from "@/lib/server-locale";
 import { getServerSession } from "@/lib/session";
-import { registerUserSchema } from "@/lib/validations/user";
 import { obtenerCursosProfesor } from "@/services/courseService";
-import { registrarUsuario } from "@/services/userService";
-import { markTeacherDeleted, markTeacherExpired, getTrialDays } from "@/services/trialService";
+import { markTeacherDeleted, markTeacherExpired } from "@/services/trialService";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/services/emailService";
-import {
-  eliminarUsuarioMoodle,
-  actualizarUsuarioMoodle,
-  type UpdateUserInput,
-} from "@/services/adminService";
+import { eliminarUsuarioMoodle } from "@/services/adminService";
 
 export interface AdminActionResult {
   ok: boolean;
@@ -91,80 +85,6 @@ export async function eliminarCursoAction(
     return {
       ok: false,
       message: translateError(locale, "admin.courseDeleteFailed"),
-    };
-  }
-}
-
-export async function crearProfesorAction(
-  input: unknown,
-): Promise<AdminActionResult> {
-  const locale = await getServerLocale();
-  try {
-    await requireAdmin();
-  } catch {
-    return { ok: false, message: translateError(locale, "admin.noPermissions") };
-  }
-
-  const parsed = registerUserSchema(locale).safeParse(input);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message:
-        parsed.error.issues[0]?.message ??
-        translateError(locale, "admin.registerInvalidData"),
-    };
-  }
-
-  try {
-    await registrarUsuario(parsed.data, locale);
-
-    const trialDays = await getTrialDays();
-    revalidatePath("/dashboard/admin");
-    revalidatePath("/dashboard/admin/profesores");
-
-    return {
-      ok: true,
-      message: translateError(locale, "admin.profesorCreated", {
-        username: parsed.data.username,
-        days: trialDays,
-      }),
-    };
-  } catch (error) {
-    console.error("[crearProfesorAction]", error);
-    return {
-      ok: false,
-      message: translateError(locale, "admin.profesorCreateFailed"),
-    };
-  }
-}
-
-export async function actualizarProfesorAction(
-  userId: number,
-  input: UpdateUserInput,
-): Promise<AdminActionResult> {
-  const locale = await getServerLocale();
-  try {
-    await requireAdmin();
-  } catch {
-    return { ok: false, message: translateError(locale, "admin.noPermissions") };
-  }
-
-  if (!Number.isInteger(userId) || userId <= 0) {
-    return { ok: false, message: translateError(locale, "admin.invalidUserId") };
-  }
-
-  try {
-    await actualizarUsuarioMoodle(userId, input);
-
-    revalidatePath("/dashboard/admin");
-    revalidatePath("/dashboard/admin/profesores");
-
-    return { ok: true, message: translateError(locale, "admin.profesorUpdated") };
-  } catch (error) {
-    console.error("[actualizarProfesorAction]", error);
-    return {
-      ok: false,
-      message: translateError(locale, "admin.profesorUpdateFailed"),
     };
   }
 }
