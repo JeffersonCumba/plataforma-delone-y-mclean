@@ -1,8 +1,14 @@
 "use server";
 
-import { type RowDataPacket, type ResultSetHeader } from "mysql2";
+import { type RowDataPacket } from "mysql2";
 import { pool } from "@/lib/db";
-import { TRIAL_DAYS, TRIAL_WARNING_DAYS } from "@/lib/constants";
+import {
+  MOODLE_TEACHER_ROLE_ID,
+  TRIAL_DAYS,
+  TRIAL_WARNING_DAYS,
+} from "@/lib/constants";
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 interface TrialRow extends RowDataPacket {
   user_id: number;
@@ -13,6 +19,11 @@ interface TrialRow extends RowDataPacket {
   status: "ACTIVE" | "WARNING" | "EXPIRED" | "CANCELLED";
   warning_sent_at: Date | null;
   expired_at: Date | null;
+}
+
+interface MoodleUserCreationRow extends RowDataPacket {
+  user_id: number;
+  timecreated: number;
 }
 
 export interface TeacherTrialInfo {
@@ -26,7 +37,72 @@ export interface TeacherTrialInfo {
   status: string;
 }
 
+function buildTrialInfo({
+  userId,
+  trialStartDate,
+  trialEndsAt,
+  warningSent,
+  status,
+}: {
+  userId: number;
+  trialStartDate: Date;
+  trialEndsAt: Date;
+  warningSent: boolean;
+  status: TrialRow["status"];
+}): TeacherTrialInfo {
+  const daysRemaining = Math.max(
+    0,
+    Math.ceil((trialEndsAt.getTime() - Date.now()) / MS_PER_DAY),
+  );
+  const isExpired =
+    daysRemaining === 0 || status === "EXPIRED" || status === "CANCELLED";
 
+  return {
+    userId,
+    trialStartDate,
+    trialEndsAt,
+    daysRemaining,
+    isExpired,
+    warningSent,
+    isWarningPeriod:
+      !isExpired && daysRemaining <= TRIAL_WARNING_DAYS && daysRemaining > 0,
+    status,
+  };
+}
+
+function buildTrialFromMoodleCreation(
+  userId: number,
+  timecreated: number,
+): TeacherTrialInfo {
+  const trialStartDate = new Date(timecreated * 1000);
+  const trialEndsAt = new Date(
+    trialStartDate.getTime() + TRIAL_DAYS * MS_PER_DAY,
+  );
+
+  return buildTrialInfo({
+    userId,
+    trialStartDate,
+    trialEndsAt,
+    warningSent: false,
+    status: trialEndsAt.getTime() <= Date.now() ? "EXPIRED" : "ACTIVE",
+  });
+}
+
+async function persistTrialFromMoodleCreation(userId: number): Promise<void> {
+  await pool.execute(
+    `INSERT IGNORE INTO mdl_user_trial
+       (user_id, trial_start_date, trial_ends_at, warning_sent, deleted_at, status)
+     SELECT id,
+            FROM_UNIXTIME(timecreated),
+            TIMESTAMPADD(DAY, ?, FROM_UNIXTIME(timecreated)),
+            FALSE,
+            NULL,
+            'ACTIVE'
+       FROM mdl_user
+      WHERE id = ? AND deleted = 0`,
+    [TRIAL_DAYS, userId],
+  );
+}
 
 async function isAdminUser(userId: number): Promise<boolean> {
   const [rows] = await pool.execute<RowDataPacket[]>(
@@ -86,63 +162,76 @@ export async function getTeacherTrialInfo(userId: number): Promise<TeacherTrialI
   const [rows] = await pool.execute<TrialRow[]>(
     `SELECT user_id, trial_start_date, trial_ends_at, warning_sent, deleted_at, status, warning_sent_at, expired_at
         FROM mdl_user_trial
-       WHERE user_id = ? AND deleted_at IS NULL AND status NOT IN ('EXPIRED', 'CANCELLED')`,
+       WHERE user_id = ?
+       LIMIT 1`,
     [userId],
   );
 
   if (rows.length === 0) {
-    return null;
+    const [users] = await pool.execute<MoodleUserCreationRow[]>(
+      `SELECT id AS user_id, timecreated
+         FROM mdl_user
+        WHERE id = ? AND deleted = 0
+        LIMIT 1`,
+      [userId],
+    );
+
+    if (!users[0]) return null;
+
+    await persistTrialFromMoodleCreation(users[0].user_id);
+    return buildTrialFromMoodleCreation(users[0].user_id, users[0].timecreated);
   }
 
   const row = rows[0];
-  const now = new Date();
-  const trialEndsAt = new Date(row.trial_ends_at);
-  const diffMs = trialEndsAt.getTime() - now.getTime();
-  const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-  const isExpired = daysRemaining === 0;
-  const isWarningPeriod = daysRemaining <= TRIAL_WARNING_DAYS && daysRemaining > 0;
-
-  return {
+  return buildTrialInfo({
     userId: row.user_id,
     trialStartDate: new Date(row.trial_start_date),
-    trialEndsAt,
-    daysRemaining,
-    isExpired,
+    trialEndsAt: new Date(row.trial_ends_at),
     warningSent: row.warning_sent,
-    isWarningPeriod,
     status: row.status,
-  };
+  });
 }
 
 export async function getAllTeachersTrialInfo(): Promise<TeacherTrialInfo[]> {
   const [rows] = await pool.execute<TrialRow[]>(
     `SELECT user_id, trial_start_date, trial_ends_at, warning_sent, deleted_at, status, warning_sent_at, expired_at
-        FROM mdl_user_trial
-       WHERE deleted_at IS NULL AND status NOT IN ('EXPIRED', 'CANCELLED')`,
+        FROM mdl_user_trial`,
   );
 
-  const now = new Date();
   const results: TeacherTrialInfo[] = [];
+  const registeredUserIds = new Set(rows.map((row) => row.user_id));
 
   for (const row of rows) {
     if (await isAdminUser(row.user_id)) continue;
 
-    const trialEndsAt = new Date(row.trial_ends_at);
-    const diffMs = trialEndsAt.getTime() - now.getTime();
-    const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-    const isExpired = daysRemaining === 0;
-    const isWarningPeriod = daysRemaining <= TRIAL_WARNING_DAYS && daysRemaining > 0;
-
-    results.push({
+    results.push(buildTrialInfo({
       userId: row.user_id,
       trialStartDate: new Date(row.trial_start_date),
-      trialEndsAt,
-      daysRemaining,
-      isExpired,
+      trialEndsAt: new Date(row.trial_ends_at),
       warningSent: row.warning_sent,
-      isWarningPeriod,
       status: row.status,
-    });
+    }));
+  }
+
+  const [teachersWithoutTrial] = await pool.execute<MoodleUserCreationRow[]>(
+    `SELECT DISTINCT u.id AS user_id, u.timecreated
+       FROM mdl_role_assignments ra
+       JOIN mdl_context ctx ON ctx.id = ra.contextid AND ctx.contextlevel = 50
+       JOIN mdl_user u ON u.id = ra.userid
+      WHERE ra.roleid = ?
+        AND u.deleted = 0
+        AND u.suspended = 0`,
+    [MOODLE_TEACHER_ROLE_ID],
+  );
+
+  for (const teacher of teachersWithoutTrial) {
+    if (registeredUserIds.has(teacher.user_id)) continue;
+    if (await isAdminUser(teacher.user_id)) continue;
+
+    await persistTrialFromMoodleCreation(teacher.user_id);
+    results.push(
+      buildTrialFromMoodleCreation(teacher.user_id, teacher.timecreated),
+    );
   }
 
   return results;
@@ -174,12 +263,19 @@ export async function markTeacherExpired(userId: number): Promise<void> {
 
 export async function getTeachersNeedingWarning(): Promise<TeacherTrialInfo[]> {
   const all = await getAllTeachersTrialInfo();
-  return all.filter((t) => t.isWarningPeriod && !t.warningSent);
+  return all.filter(
+    (t) =>
+      ["ACTIVE", "WARNING"].includes(t.status) &&
+      t.isWarningPeriod &&
+      !t.warningSent,
+  );
 }
 
 export async function getExpiredTeachers(): Promise<TeacherTrialInfo[]> {
   const all = await getAllTeachersTrialInfo();
-  return all.filter((t) => t.isExpired);
+  return all.filter(
+    (t) => ["ACTIVE", "WARNING"].includes(t.status) && t.isExpired,
+  );
 }
 
 export async function getTrialDays(): Promise<number> {
