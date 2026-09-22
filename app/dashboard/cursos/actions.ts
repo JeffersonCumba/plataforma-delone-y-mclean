@@ -19,7 +19,6 @@ import {
   syncFeedbackLanguageInCourse,
   updateMoodleCourseName,
 } from "@/services/courseService";
-import { obtenerTodosLosCursos } from "@/services/adminService";
 
 export interface CreateCourseActionResult {
   ok: boolean;
@@ -40,6 +39,9 @@ export async function updateCourseNameAction(
   if (!session) {
     return { ok: false, message: translateError(locale, "session.invalid") };
   }
+  if (session.role !== "EVALUADOR") {
+    return { ok: false, message: translateError(locale, "course.teacherOnly") };
+  }
 
   if (!Number.isInteger(courseId) || courseId <= 0) {
     return { ok: false, message: translateError(locale, "course.invalid") };
@@ -55,9 +57,7 @@ export async function updateCourseNameAction(
     };
   }
 
-  const courses = session.role === "ADMIN"
-    ? await obtenerTodosLosCursos()
-    : await obtenerCursosProfesor(session.userId, locale);
+  const courses = await obtenerCursosProfesor(session.userId, locale);
   const allowedCourse = courses.find((course) => course.id === courseId);
   if (!allowedCourse) {
     return { ok: false, message: translateError(locale, "course.updateForbidden") };
@@ -107,6 +107,9 @@ export async function updateCourseSurveyLanguageAction(
   const locale = await getServerLocale();
   const session = await getServerSession();
   if (!session) return { ok: false, message: translateError(locale, "session.invalid") };
+  if (session.role !== "EVALUADOR") {
+    return { ok: false, message: translateError(locale, "course.teacherOnly") };
+  }
   if (!Number.isInteger(courseId) || courseId <= 0) {
     return { ok: false, message: translateError(locale, "course.invalid") };
   }
@@ -114,9 +117,7 @@ export async function updateCourseSurveyLanguageAction(
     return { ok: false, message: translateError(locale, "course.invalidData") };
   }
 
-  const courses = session.role === "ADMIN"
-    ? await obtenerTodosLosCursos()
-    : await obtenerCursosProfesor(session.userId, locale);
+  const courses = await obtenerCursosProfesor(session.userId, locale);
   if (!courses.some((course) => course.id === courseId)) {
     return { ok: false, message: translateError(locale, "course.languageForbidden") };
   }
@@ -145,6 +146,9 @@ export async function createCourseAction(
       message: translateError(locale, "session.invalid"),
     };
   }
+  if (session.role !== "EVALUADOR") {
+    return { ok: false, message: translateError(locale, "course.teacherOnly") };
+  }
 
   const parsed = createCourseSchema(locale).safeParse(payload);
   if (!parsed.success) {
@@ -156,16 +160,14 @@ export async function createCourseAction(
     };
   }
 
-  if (session.role === "EVALUADOR") {
-    const courses = await obtenerCursosProfesor(session.userId, locale);
-    if (courses.length >= MAX_COURSES_PER_USER) {
-      return {
-        ok: false,
-        message: translateError(locale, "course.limitReached", {
-          max: MAX_COURSES_PER_USER,
-        }),
-      };
-    }
+  const courses = await obtenerCursosProfesor(session.userId, locale);
+  if (courses.length >= MAX_COURSES_PER_USER) {
+    return {
+      ok: false,
+      message: translateError(locale, "course.limitReached", {
+        max: MAX_COURSES_PER_USER,
+      }),
+    };
   }
 
   try {
@@ -207,6 +209,9 @@ export async function deleteCourseAction(
       ok: false,
       message: translateError(locale, "session.invalid"),
     };
+  }
+  if (session.role !== "EVALUADOR") {
+    return { ok: false, message: translateError(locale, "course.teacherOnly") };
   }
 
   if (!Number.isInteger(courseId) || courseId <= 0) {

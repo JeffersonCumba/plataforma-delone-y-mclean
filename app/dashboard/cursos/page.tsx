@@ -1,12 +1,19 @@
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
 import { CoursesGrid } from "@/app/dashboard/_components/courses-grid";
 import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
 import { obtenerCursosProfesor } from "@/services/courseService";
 import { requireAuth } from "@/lib/auth";
 import { getServerLocale } from "@/lib/server-locale";
-import { getTranslations } from "next-intl/server";
 
 export default async function DashboardCursosPage() {
-  const { userId } = await requireAuth();
+  const { userId, role } = await requireAuth();
+
+  if (role === "ADMIN") {
+    redirect("/dashboard/admin/cursos");
+  }
+
   const locale = await getServerLocale();
   const t = await getTranslations("courses");
 

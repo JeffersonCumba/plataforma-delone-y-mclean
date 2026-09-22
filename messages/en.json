@@ -294,7 +294,7 @@
   },
   "adminCursos": {
     "title": "Courses",
-    "description": "Manage all courses created in Moodle.",
+    "description": "Informational overview of the courses in Moodle.",
     "listTitle": "Course List",
     "totalCourses": "Total courses in Moodle: {count}",
     "noCourses": "No courses created in Moodle.",
@@ -303,9 +303,7 @@
     "profesores": "Teacher(s)",
     "alumnos": "Students",
     "encuestas": "Surveys",
-    "created": "Created",
-    "actions": "Actions",
-    "analytics": "Analytics"
+    "created": "Created"
   },
   "adminProfesores": {
     "title": "Teachers",
@@ -613,6 +611,7 @@
       "shortnameTaken": "That short code already exists. Generate another one or edit it.",
       "creationBusy": "Another course operation is in progress. Wait a few seconds and try again.",
       "createGenericFailed": "Could not create the course. Check the data and try again.",
+      "teacherOnly": "Only teachers can create or modify their courses.",
       "deleted": "Course {name} deleted successfully.",
       "deleteFailed": "Could not delete the course. Try again later.",
       "invalid": "Invalid course.",

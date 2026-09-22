@@ -1,12 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ExternalLink } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { Button } from "@/components/ui/button";
-import { CreateCourseForm } from "@/app/dashboard/_components/create-course-form";
 import type { AdminCursoRow } from "@/types/admin";
 
 interface AdminCursosTableProps {
@@ -14,7 +9,6 @@ interface AdminCursosTableProps {
 }
 
 export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
-  const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("adminCursos");
 
@@ -29,16 +23,9 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
-          {t("totalCourses", { count: cursos.length })}
-        </p>
-        <CreateCourseForm
-          onSuccess={() => {
-            router.refresh();
-          }}
-        />
-      </div>
+      <p className="text-sm text-slate-600">
+        {t("totalCourses", { count: cursos.length })}
+      </p>
 
       {cursos.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-slate-600">
@@ -55,7 +42,6 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
                 <th className="px-4 py-3 font-medium">{t("alumnos")}</th>
                 <th className="px-4 py-3 font-medium">{t("encuestas")}</th>
                 <th className="px-4 py-3 font-medium">{t("created")}</th>
-                <th className="px-4 py-3 font-medium">{t("actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -83,21 +69,6 @@ export function AdminCursosTable({ cursos }: AdminCursosTableProps) {
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
                     {formatDate(curso.timecreated)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        asChild
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                      >
-                        <Link href={`/dashboard/cursos/${curso.id}`}>
-                          <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                          {t("analytics")}
-                        </Link>
-                      </Button>
-                    </div>
                   </td>
                 </tr>
               ))}

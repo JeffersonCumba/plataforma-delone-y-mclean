@@ -294,7 +294,7 @@
   },
   "adminCursos": {
     "title": "Cursos",
-    "description": "Gestión de todos los cursos creados en Moodle.",
+    "description": "Consulta informativa de los cursos existentes en Moodle.",
     "listTitle": "Listado de Cursos",
     "totalCourses": "Total de cursos en Moodle: {count}",
     "noCourses": "No hay cursos creados en Moodle.",
@@ -303,9 +303,7 @@
     "profesores": "Profesor(es)",
     "alumnos": "Alumnos",
     "encuestas": "Encuestas",
-    "created": "Creado",
-    "actions": "Acciones",
-    "analytics": "Analítica"
+    "created": "Creado"
   },
   "adminProfesores": {
     "title": "Profesores",
@@ -613,6 +611,7 @@
       "shortnameTaken": "Ya existe un curso con ese código corto. Genera otro o edítalo.",
       "creationBusy": "Hay otra operación de curso en proceso. Espera unos segundos e inténtalo de nuevo.",
       "createGenericFailed": "No se pudo crear el curso. Verifica los datos e intenta de nuevo.",
+      "teacherOnly": "Solo los profesores pueden crear o modificar sus cursos.",
       "deleted": "Curso {name} eliminado correctamente.",
       "deleteFailed": "No se pudo eliminar el curso. Intenta de nuevo mas tarde.",
       "invalid": "Curso invalido.",
