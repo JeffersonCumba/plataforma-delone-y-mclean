@@ -44,12 +44,99 @@ interface ModuleRow extends RowDataPacket {
   id: number;
 }
 
+interface CourseIdentifierRow extends RowDataPacket {
+  fullname: string;
+  shortname: string;
+}
+
+interface NamedLockRow extends RowDataPacket {
+  acquired: number | null;
+}
+
 interface DefaultQuestion {
   dimension: DimensionKey;
   text: string;
 }
 
 type SurveyLanguage = "es" | "en" | "pt";
+
+export class CourseIdentifierConflictError extends Error {}
+export class CourseCreationBusyError extends Error {}
+
+const COURSE_CREATION_LOCK = "dlm_course_creation";
+
+async function createUniqueMoodleCourse(
+  data: CreateCourseInput,
+  categoryId: number,
+  lang: Locale,
+): Promise<CreatedCourseResponse[]> {
+  const connection = await pool.getConnection();
+  let lockAcquired = false;
+
+  try {
+    const [lockRows] = await connection.execute<NamedLockRow[]>(
+      "SELECT GET_LOCK(?, 10) AS acquired",
+      [COURSE_CREATION_LOCK],
+    );
+    lockAcquired = lockRows[0]?.acquired === 1;
+    if (!lockAcquired) {
+      throw new CourseCreationBusyError(
+        translateError(lang, "course.creationBusy"),
+      );
+    }
+
+    const [existingCourses] = await connection.execute<CourseIdentifierRow[]>(
+      `SELECT fullname, shortname
+         FROM mdl_course
+        WHERE fullname = ? OR shortname = ?
+        LIMIT 2`,
+      [data.fullname, data.shortname],
+    );
+    const normalizedFullname = data.fullname.toLocaleLowerCase();
+    const normalizedShortname = data.shortname.toLocaleLowerCase();
+
+    if (
+      existingCourses.some(
+        (course) => course.fullname.trim().toLocaleLowerCase() === normalizedFullname,
+      )
+    ) {
+      throw new CourseIdentifierConflictError(
+        translateError(lang, "course.fullnameTaken"),
+      );
+    }
+    if (
+      existingCourses.some(
+        (course) => course.shortname.trim().toLocaleLowerCase() === normalizedShortname,
+      )
+    ) {
+      throw new CourseIdentifierConflictError(
+        translateError(lang, "course.shortnameTaken"),
+      );
+    }
+
+    return await fetchMoodle<CreatedCourseResponse[]>(
+      "core_course_create_courses",
+      {
+        "courses[0][fullname]": data.fullname,
+        "courses[0][shortname]": data.shortname,
+        "courses[0][categoryid]": String(categoryId),
+        "courses[0][summary]": data.summary,
+        "courses[0][summaryformat]": "1",
+        "courses[0][visible]": "1",
+        "courses[0][format]": "topics",
+      },
+    );
+  } finally {
+    if (lockAcquired) {
+      try {
+        await connection.execute("SELECT RELEASE_LOCK(?)", [COURSE_CREATION_LOCK]);
+      } catch (error) {
+        console.error("[createUniqueMoodleCourse:releaseLock]", error);
+      }
+    }
+    connection.release();
+  }
+}
 
 const LIKERT_PRESENTATION_ES =
   "r>>>>>1>>Totalmente en desacuerdo\r|2>>En desacuerdo\r|3>>Ni de acuerdo ni en desacuerdo\r|4>>De acuerdo\r|5>>Totalmente de acuerdo";
@@ -535,18 +622,7 @@ export async function crearCursoProfesor(
   }
 
   try {
-    const createdCourses = await fetchMoodle<CreatedCourseResponse[]>(
-      "core_course_create_courses",
-      {
-        "courses[0][fullname]": data.fullname,
-        "courses[0][shortname]": data.shortname,
-        "courses[0][categoryid]": String(categoryId),
-        "courses[0][summary]": data.summary,
-        "courses[0][summaryformat]": "1",
-        "courses[0][visible]": "1",
-        "courses[0][format]": "topics",
-      },
-    );
+    const createdCourses = await createUniqueMoodleCourse(data, categoryId, lang);
 
     const createdCourse = createdCourses?.[0];
     if (!createdCourse?.id) {

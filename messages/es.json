@@ -139,6 +139,8 @@
     "createCourseDialogDescription": "Al crear el curso se agrega automáticamente la encuesta DeLone & McLean con preguntas fijas.",
     "courseNameLabel": "Nombre del curso",
     "courseNamePlaceholder": "Evaluacion de Software 2026",
+    "generatedCourseNamePrefix": "Curso DeLone y McLean",
+    "generatedNameHint": "Se genera un nombre único que puedes editar antes de crear el curso.",
     "shortCodeLabel": "Codigo corto",
     "shortCodePlaceholder": "DLM-2026",
     "summaryLabel": "Descripcion (opcional)",
@@ -150,6 +152,7 @@
     "questionnaireLanguageDescription": "Actualiza solo las preguntas de este curso. Las respuestas existentes no se modifican.",
     "updateQuestionnaireLanguage": "Actualizar cuestionario",
     "creatingCourse": "Creando curso...",
+    "regenerateIdentifiers": "Generar otro nombre",
     "limitReached": "Límite alcanzado: elimina un curso para poder crear otro."
   },
   "courseCard": {
@@ -619,6 +622,9 @@
       "invalidUserId": "El userId no es valido para consultar cursos",
       "limitReached": "Has alcanzado el límite de {max} cursos. Elimina un curso para poder crear otro.",
       "created": "Curso {name} creado con encuesta base.",
+      "fullnameTaken": "Ya existe un curso con ese nombre. Elige otro nombre.",
+      "shortnameTaken": "Ya existe un curso con ese código corto. Genera otro o edítalo.",
+      "creationBusy": "Hay otro curso en proceso de creación. Espera unos segundos e inténtalo de nuevo.",
       "createGenericFailed": "No se pudo crear el curso. Verifica los datos e intenta de nuevo.",
       "deleted": "Curso {name} eliminado correctamente.",
       "deleteFailed": "No se pudo eliminar el curso. Intenta de nuevo mas tarde.",

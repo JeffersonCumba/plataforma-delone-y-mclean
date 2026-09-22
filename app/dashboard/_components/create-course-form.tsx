@@ -17,11 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
 
-function generateDefaultValues(): { fullname: string; shortname: string } {
+function generateDefaultValues(courseNamePrefix: string): { fullname: string; shortname: string } {
   const now = new Date();
 
   const day = String(now.getDate()).padStart(2, "0");
@@ -30,11 +30,13 @@ function generateDefaultValues(): { fullname: string; shortname: string } {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = String(now.getSeconds()).padStart(2, "0");
+  const uniqueSuffix = Math.random().toString(36).slice(2, 8).toUpperCase();
 
-  const sequenceNumber = String(day).padStart(2, "0");
+  const date = `${now.getFullYear()}-${month}-${day}`;
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
 
-  const fullname = `Encuesta DeLone y McLean_${sequenceNumber}`;
-  const shortname = `DLML${day}${month}${year}${hours}${minutes}${seconds}`;
+  const fullname = `${courseNamePrefix} - ${date} ${hours}:${minutes} ${uniqueSuffix}`;
+  const shortname = `DLM-${timestamp}-${uniqueSuffix}`;
 
   return { fullname, shortname };
 }
@@ -56,10 +58,9 @@ export function CreateCourseForm({
   const t = useTranslations("courses");
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [generatedDefaults] = useState(() => generateDefaultValues());
   const [form, setForm] = useState<CreateCourseFormState>({
-    fullname: generatedDefaults.fullname,
-    shortname: generatedDefaults.shortname,
+    fullname: "",
+    shortname: "",
     summary: "",
     surveyLanguage: "es",
   });
@@ -72,6 +73,15 @@ export function CreateCourseForm({
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((current) => ({ ...current, [field]: event.target.value }));
     };
+
+  const regenerateIdentifiers = () => {
+    const defaults = generateDefaultValues(t("generatedCourseNamePrefix"));
+    setForm((current) => ({
+      ...current,
+      fullname: defaults.fullname,
+      shortname: defaults.shortname,
+    }));
+  };
 
   const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -100,12 +110,7 @@ export function CreateCourseForm({
       ) : null}
       <Dialog open={open} onOpenChange={(newOpen) => {
         if (newOpen) {
-          const defaults = generateDefaultValues();
-          setForm((current) => ({
-            ...current,
-            fullname: defaults.fullname,
-            shortname: defaults.shortname,
-          }));
+          regenerateIdentifiers();
         }
         setOpen(newOpen);
       }}>
@@ -133,6 +138,7 @@ export function CreateCourseForm({
                 disabled={isPending}
                 required
               />
+              <p className="text-xs text-slate-500">{t("generatedNameHint")}</p>
             </div>
 
             <div className="space-y-2">
@@ -145,6 +151,19 @@ export function CreateCourseForm({
                 disabled={isPending}
                 required
               />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isPending}
+                onClick={regenerateIdentifiers}
+              >
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                {t("regenerateIdentifiers")}
+              </Button>
             </div>
 
             <div className="space-y-2">

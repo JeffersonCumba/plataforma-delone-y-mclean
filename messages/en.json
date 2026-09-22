@@ -139,6 +139,8 @@
     "createCourseDialogDescription": "Creating the course automatically adds the DeLone & McLean survey with fixed questions.",
     "courseNameLabel": "Course name",
     "courseNamePlaceholder": "Software Evaluation 2026",
+    "generatedCourseNamePrefix": "DeLone and McLean Course",
+    "generatedNameHint": "A unique name is generated; you can edit it before creating the course.",
     "shortCodeLabel": "Short code",
     "shortCodePlaceholder": "DLM-2026",
     "summaryLabel": "Description (optional)",
@@ -150,6 +152,7 @@
     "questionnaireLanguageDescription": "Updates only this course's questions. Existing responses are not changed.",
     "updateQuestionnaireLanguage": "Update questionnaire",
     "creatingCourse": "Creating course...",
+    "regenerateIdentifiers": "Generate another name",
     "limitReached": "Limit reached: delete a course to create another one."
   },
   "courseCard": {
@@ -619,6 +622,9 @@
       "invalidUserId": "The userId is not valid to query courses",
       "limitReached": "You have reached the limit of {max} courses. Delete a course to create another one.",
       "created": "Course {name} created with base survey.",
+      "fullnameTaken": "A course with that name already exists. Choose another name.",
+      "shortnameTaken": "That short code already exists. Generate another one or edit it.",
+      "creationBusy": "Another course is being created. Wait a few seconds and try again.",
       "createGenericFailed": "Could not create the course. Check the data and try again.",
       "deleted": "Course {name} deleted successfully.",
       "deleteFailed": "Could not delete the course. Try again later.",

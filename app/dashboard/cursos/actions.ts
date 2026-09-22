@@ -9,6 +9,8 @@ import { getServerSession } from "@/lib/session";
 import { createCourseSchema } from "@/lib/validations/course";
 import { MAX_COURSES_PER_USER } from "@/lib/constants";
 import {
+  CourseCreationBusyError,
+  CourseIdentifierConflictError,
   crearCursoProfesor,
   obtenerCursosProfesor,
   syncFeedbackLanguageInCourse,
@@ -109,6 +111,12 @@ export async function createCourseAction(
     };
   } catch (error) {
     console.error("[createCourseAction]", error);
+    if (
+      error instanceof CourseIdentifierConflictError ||
+      error instanceof CourseCreationBusyError
+    ) {
+      return { ok: false, message: error.message };
+    }
     return {
       ok: false,
       message: translateError(locale, "course.createGenericFailed"),
