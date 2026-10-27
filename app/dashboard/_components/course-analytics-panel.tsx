@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Percent,
-  Printer,
   RotateCw,
   ShieldCheck,
   Smile,
@@ -26,31 +25,20 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  type AnalyticsData,
-  type AnalyticsQuestionAlert,
-  type DimensionKey,
-} from "@/types/analytics";
+import type { AnalyticsData, AnalyticsQuestionAlert } from "@/types/analytics";
 import { ExportDropdown } from "@/app/dashboard/_components/export-dropdown";
 import { InterpretChartButton } from "@/app/dashboard/_components/interpret-chart-button";
 import { InterpretationPanel } from "@/app/dashboard/_components/interpretation-panel";
+import { ResponseMatrixTable } from "@/app/dashboard/_components/response-matrix-table";
 import { SatisfactionPieChart } from "@/app/dashboard/_components/satisfaction-pie-chart";
 import { FrequenciesBarChart } from "@/app/dashboard/_components/frequencies-bar-chart";
 import {
   buildBetasPrompt,
   buildCriticalQuestionsPrompt,
-  buildDeloneMcleanCompletePrompt,
   buildDescriptivePrompt,
 } from "@/app/dashboard/_components/chart-ai-prompts";
 import { useInterpretation } from "@/hooks/use-interpretation";
 import { useTranslations } from "next-intl";
-
-
-const DLM_R2_TARGETS: DimensionKey[] = [
-  "uso_sistema",
-  "satis_user",
-  "benef_netos",
-];
 
 function KpiCard({
   icon,
@@ -161,11 +149,6 @@ function CourseAnalyticsContent({
     ...interpretationContext,
     slot: "critical",
   });
-  const deloneMcleanCompleteInterp = useInterpretation({
-    ...interpretationContext,
-    slot: "dlm-complete",
-  });
-
   const betaDomain = useMemo(() => {
     const values = analytics.betaCoefficients.map((entry) => entry.value);
     const maxValue = Math.max(...values, 0);
@@ -177,21 +160,6 @@ function CourseAnalyticsContent({
       Math.max(0, maxValue + padding * 0.15),
     ];
   }, [analytics.betaCoefficients]);
-  const sortedStructuralPaths = useMemo(
-    () =>
-      [...analytics.deloneMcleanModel.structuralPaths].sort(
-        (left, right) => Math.abs(right.coefficient) - Math.abs(left.coefficient),
-      ),
-    [analytics.deloneMcleanModel.structuralPaths],
-  );
-  const discriminantFailures = useMemo(
-    () =>
-      analytics.deloneMcleanModel.discriminantValidity.filter(
-        (item) => !item.passesFornellLarcker,
-      ),
-    [analytics.deloneMcleanModel.discriminantValidity],
-  );
-
   return (
     <section className="space-y-6">
       <Card className="border-slate-200/80 bg-linear-to-br from-white via-slate-50 to-cyan-50 shadow-sm">
@@ -440,172 +408,7 @@ function CourseAnalyticsContent({
         interp={frequenciesInterp}
       />
 
-      <Card className="border-slate-200/80 bg-white/95 shadow-sm">
-        <CardHeader className="space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <CardTitle className="text-xl">
-              {t("dlmComplete")}
-            </CardTitle>
-            <InterpretChartButton
-              onClick={() =>
-                deloneMcleanCompleteInterp.interpret(
-                  buildDeloneMcleanCompletePrompt(courseName, analytics),
-                )
-              }
-              hidden={
-                analytics.totalSurveys === 0 ||
-                deloneMcleanCompleteInterp.isLoading
-              }
-            />
-          </div>
-          <p className="text-sm text-slate-600">
-            {t("dlmCompleteDesc")}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {DLM_R2_TARGETS.map((target) => {
-              const r2 = analytics.deloneMcleanModel.rSquared[target] ?? 0;
-              return (
-                <div
-                  key={target}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    R² {t(`dimensions.${target}`)}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-900">
-                    {r2.toFixed(3)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-2">
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900">
-                {t("structuralPaths")}
-              </h3>
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-slate-100 text-left text-slate-700">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">{t("path")}</th>
-                      <th className="px-3 py-2 font-medium">β</th>
-                      <th className="px-3 py-2 font-medium">{t("ci95")}</th>
-                      <th className="px-3 py-2 font-medium">{t("significance")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedStructuralPaths.map((path) => (
-                      <tr key={path.key} className="border-t border-slate-200">
-                        <td className="px-3 py-2 text-slate-800">{path.name}</td>
-                        <td className="px-3 py-2 font-semibold text-slate-900">
-                          {path.coefficient.toFixed(3)}
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">
-                          [{path.ciLow.toFixed(3)}, {path.ciHigh.toFixed(3)}]
-                        </td>
-                        <td className="px-3 py-2">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                              path.significant
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {path.significant ? t("yes") : t("no")}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900">
-                {t("constructReliability")}
-              </h3>
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-slate-100 text-left text-slate-700">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">{t("construct")}</th>
-                      <th className="px-3 py-2 font-medium">{t("items")}</th>
-                      <th className="px-3 py-2 font-medium">α</th>
-                      <th className="px-3 py-2 font-medium">CR</th>
-                      <th className="px-3 py-2 font-medium">AVE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analytics.deloneMcleanModel.constructReliability.map(
-                      (item) => (
-                        <tr
-                          key={item.dimension}
-                          className="border-t border-slate-200"
-                        >
-                          <td className="px-3 py-2 text-slate-800">{item.name}</td>
-                          <td className="px-3 py-2 text-slate-700">
-                            {item.itemCount}
-                          </td>
-                          <td className="px-3 py-2 text-slate-700">
-                            {item.cronbachAlpha.toFixed(3)}
-                          </td>
-                          <td className="px-3 py-2 text-slate-700">
-                            {item.compositeReliability.toFixed(3)}
-                          </td>
-                          <td className="px-3 py-2 text-slate-700">
-                            {item.ave.toFixed(3)}
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-sm font-medium text-slate-800">
-              {t("discriminantValidity")}
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              {t("pairsEvaluated", {
-                evaluated:
-                  analytics.deloneMcleanModel.discriminantValidity.length,
-                failures: discriminantFailures.length,
-              })}
-            </p>
-            {discriminantFailures.length > 0 ? (
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-700">
-                {discriminantFailures.slice(0, 5).map((item) => (
-                  <li key={`${item.left}-${item.right}`}>
-                    {t("pairsViolation", {
-                      left: item.leftName,
-                      right: item.rightName,
-                      correlation: item.correlation.toFixed(3),
-                    })}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-emerald-700">
-                {t("allPairsComply")}
-              </p>
-            )}
-          </div>
-          <InterpretationPanel
-            text={deloneMcleanCompleteInterp.text}
-            isLoading={deloneMcleanCompleteInterp.isLoading}
-            error={deloneMcleanCompleteInterp.error}
-            onClose={deloneMcleanCompleteInterp.reset}
-          />
-        </CardContent>
-      </Card>
+      <ResponseMatrixTable data={analytics.responseMatrix} />
 
       <Card className="border-slate-200/80 bg-white/95 shadow-sm">
         <CardHeader className="space-y-2">

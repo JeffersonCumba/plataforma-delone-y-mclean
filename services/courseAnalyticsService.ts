@@ -965,6 +965,37 @@ function buildAnalyticsData(
     ),
   );
 
+  const responseMatrixQuestions = Array.from(questionAccumulator.entries())
+    .sort((left, right) => left[1].firstItemId - right[1].firstItemId)
+    .map(([question, metadata], index) => ({
+      code: `P${index + 1}`,
+      itemId: metadata.firstItemId,
+      question,
+      dimension: metadata.dimension,
+    }));
+  const responseMatrixRows = Array.from(surveyAccumulator.entries())
+    .sort(([leftId], [rightId]) => leftId - rightId)
+    .map(([, survey], index) => {
+      const answers = responseMatrixQuestions.map(
+        ({ question }) => survey.questionValues.get(question) ?? null,
+      );
+      const answeredValues = answers.filter(
+        (answer): answer is number => answer !== null,
+      );
+      const total = answeredValues.reduce((sum, answer) => sum + answer, 0);
+      const scorePercentage =
+        answeredValues.length > 0
+          ? Number(((total / (answeredValues.length * 5)) * 100).toFixed(1))
+          : 0;
+
+      return {
+        respondent: index + 1,
+        answers,
+        total,
+        scorePercentage,
+      };
+    });
+
   const regressionRows = Array.from(surveyAccumulator.values()).map(
     (survey) => {
       const dimensionValue = (dimension: DimensionKey) => {
@@ -990,6 +1021,10 @@ function buildAnalyticsData(
     criticalQuestions: buildQuestionAlerts(questionAccumulator),
     satisfactionDistribution: buildSatisfactionDistribution(surveyAccumulator),
     questionFrequencies: buildQuestionFrequencies(questionAccumulator),
+    responseMatrix: {
+      questions: responseMatrixQuestions,
+      rows: responseMatrixRows,
+    },
     deloneMcleanModel: buildDeloneMcleanModel(rows, surveyAccumulator, locale),
   };
 }

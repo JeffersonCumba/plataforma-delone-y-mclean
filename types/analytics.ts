@@ -57,6 +57,25 @@ export interface QuestionFrequency {
   "Totalmente de acuerdo": number;
 }
 
+export interface ResponseMatrixQuestion {
+  code: string;
+  itemId: number;
+  question: string;
+  dimension: DimensionKey;
+}
+
+export interface ResponseMatrixRow {
+  respondent: number;
+  answers: Array<number | null>;
+  total: number;
+  scorePercentage: number;
+}
+
+export interface ResponseMatrixData {
+  questions: ResponseMatrixQuestion[];
+  rows: ResponseMatrixRow[];
+}
+
 export interface StructuralPathResult {
   key: string;
   from: DimensionKey;
@@ -116,5 +135,6 @@ export interface AnalyticsData {
   criticalQuestions: AnalyticsQuestionAlert[];
   satisfactionDistribution: SatisfactionPieDatum[];
   questionFrequencies: QuestionFrequency[];
+  responseMatrix: ResponseMatrixData;
   deloneMcleanModel: DeloneMcleanModelResult;
 }

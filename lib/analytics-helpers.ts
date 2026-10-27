@@ -21,6 +21,10 @@ export function buildEmptyAnalyticsData(): AnalyticsData {
     criticalQuestions: [],
     satisfactionDistribution: [],
     questionFrequencies: [],
+    responseMatrix: {
+      questions: [],
+      rows: [],
+    },
     deloneMcleanModel: {
       sampleSize: 0,
       bootstrapSamples: 0,
