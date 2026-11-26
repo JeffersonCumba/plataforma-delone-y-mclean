@@ -20,7 +20,7 @@ export function ResponseMatrixTable({ data }: { data: ResponseMatrixData }) {
   const t = useTranslations("analytics");
 
   return (
-    <Card className="overflow-hidden border-slate-200/80 bg-white/95 shadow-sm">
+    <Card className="min-w-0 overflow-hidden border-slate-200/80 bg-white/95 shadow-sm">
       <CardHeader className="space-y-4 border-b border-slate-200 bg-linear-to-r from-slate-50 via-white to-cyan-50/60">
         <div>
           <CardTitle className="text-xl">{t("responseMatrix")}</CardTitle>
@@ -41,14 +41,14 @@ export function ResponseMatrixTable({ data }: { data: ResponseMatrixData }) {
           </span>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="min-w-0 p-0">
         {data.rows.length === 0 || data.questions.length === 0 ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">
             {t("responseMatrixEmpty")}
           </div>
         ) : (
           <>
-            <div className="max-h-120 overflow-auto">
+            <div className="max-h-120 w-full min-w-0 overflow-x-auto overflow-y-auto">
               <table className="w-max min-w-full border-separate border-spacing-0 text-center text-xs">
                 <thead className="sticky top-0 z-30 bg-slate-100 text-slate-700 shadow-[0_1px_0_0_#cbd5e1]">
                   <tr>

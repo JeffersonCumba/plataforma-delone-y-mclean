@@ -192,7 +192,7 @@ function CourseAnalyticsContent({
   );
 
   return (
-    <section className="space-y-6">
+    <section className="min-w-0 space-y-6">
       <Card className="border-slate-200/80 bg-linear-to-br from-white via-slate-50 to-cyan-50 shadow-sm">
         <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3">
@@ -482,7 +482,7 @@ function CourseAnalyticsContent({
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">
                 {t("structuralPaths")}
               </h3>
@@ -524,7 +524,7 @@ function CourseAnalyticsContent({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">
                 {t("constructReliability")}
               </h3>
