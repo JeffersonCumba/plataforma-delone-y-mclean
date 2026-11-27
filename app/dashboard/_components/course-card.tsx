@@ -7,7 +7,7 @@ import { ExternalLink, Languages, Link2, MoreVertical, Pencil, Trash2, UserPlus 
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
-import { copyMoodleLoginLink } from "@/lib/survey-link";
+import { copyMoodleCourseLink } from "@/lib/survey-link";
 import { cn } from "@/lib/utils";
 import {
   deleteCourseAction,
@@ -175,7 +175,14 @@ export function CourseCard({ course }: { course: MoodleCourse }) {
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:cursor-pointer"
             onClick={async () => {
               setIsMenuOpen(false);
-              await copyMoodleLoginLink();
+              const result = await copyMoodleCourseLink(course.id);
+              if (result === "copied") {
+                toast.success(t("copyLinkSuccess"));
+              } else if (result === "missing-base") {
+                toast.error(t("copyLinkMissingBase"));
+              } else {
+                toast.error(t("copyLinkError"));
+              }
             }}
           >
             <Link2 className="h-4 w-4" />

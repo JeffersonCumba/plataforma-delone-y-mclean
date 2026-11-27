@@ -1,8 +1,8 @@
 "use client";
 
-import { toast } from "sonner";
-
 import { DEFAULT_LOCALE, isSupportedLocale, LOCALE_COOKIE } from "@/i18n/locales";
+
+export type CopyCourseLinkResult = "copied" | "missing-base" | "failed";
 
 function readDropdownLanguage(): string {
   if (typeof document === "undefined") return DEFAULT_LOCALE;
@@ -12,35 +12,43 @@ function readDropdownLanguage(): string {
   );
   if (!match) return DEFAULT_LOCALE;
 
-  const raw = (match[1] ?? "").replace(/^"|"$/g, "");
-  const decoded = raw.includes("%") ? decodeURIComponent(raw) : raw;
-  return isSupportedLocale(decoded) ? decoded : DEFAULT_LOCALE;
+  try {
+    const raw = (match[1] ?? "").replace(/^"|"$/g, "");
+    const decoded = raw.includes("%") ? decodeURIComponent(raw) : raw;
+    return isSupportedLocale(decoded) ? decoded : DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
 }
 
-export function getMoodleLoginUrl(): string {
-  const base = process.env.NEXT_PUBLIC_MOODLE_BASE_URL?.trim() ?? "";
+function getMoodleBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_MOODLE_BASE_URL?.trim() ?? "").replace(
+    /\/+$/,
+    "",
+  );
+}
+
+export function getMoodleCourseUrl(courseId: number): string | null {
+  const base = getMoodleBaseUrl();
   if (!base) {
-    return "/login/index.php";
+    return null;
   }
   const lang = readDropdownLanguage();
-  const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}lang=${lang}`;
+  return `${base}/course/view.php?id=${courseId}&lang=${lang}`;
 }
 
-export async function copyMoodleLoginLink(): Promise<boolean> {
-  const url = getMoodleLoginUrl();
-
-  if (!url || url === "/login/index.php") {
-    toast.error("No hay URL base configurada para Moodle");
-    return false;
+export async function copyMoodleCourseLink(
+  courseId: number,
+): Promise<CopyCourseLinkResult> {
+  const url = getMoodleCourseUrl(courseId);
+  if (!url) {
+    return "missing-base";
   }
 
   try {
     await navigator.clipboard.writeText(url);
-    toast.success("Enlace copiado");
-    return true;
+    return "copied";
   } catch {
-    toast.error("No se pudo copiar el enlace");
-    return false;
+    return "failed";
   }
 }
